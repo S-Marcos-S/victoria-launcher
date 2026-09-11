@@ -32,6 +32,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.getInsetsController(window, window.decorView).show(
+            androidx.core.view.WindowInsetsCompat.Type.statusBars()
+        )
         val app = application as VictoriaApp
 
         setContent {

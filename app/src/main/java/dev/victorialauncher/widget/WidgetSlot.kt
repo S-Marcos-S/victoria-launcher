@@ -45,6 +45,26 @@ import dev.victorialauncher.VictoriaApp
 import dev.victorialauncher.R
 import androidx.compose.ui.res.stringResource
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.OpenInFull
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import dev.victorialauncher.service.HapticUtil
+import kotlin.math.roundToInt
+
 data class WidgetSlotActions(
     val onAddWidget: () -> Unit,
     val onRemoveWidget: () -> Unit,
@@ -64,6 +84,7 @@ fun WidgetSlot(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val view = LocalView.current
     val app = context.applicationContext as VictoriaApp
     val appWidgetManager = remember { AppWidgetManager.getInstance(context) }
     val providerInfo: AppWidgetProviderInfo? = remember(widgetId) {
@@ -76,10 +97,13 @@ fun WidgetSlot(
     var slotSizeDp by remember { mutableStateOf(0 to 0) }
     var reportedSizeDp by remember(widgetId) { mutableStateOf(0 to 0) }
 
-    Box(modifier = modifier.height(heightDp.dp)) {
+    var isResizing by remember { mutableStateOf(false) }
+    var liveHeightDp by remember(heightDp) { mutableIntStateOf(heightDp) }
+    val effectiveHeightDp = if (isResizing) liveHeightDp else heightDp
+
+    Box(modifier = modifier.height(effectiveHeightDp.dp)) {
         if (widgetId > 0 && providerInfo != null) {
-            // A real long-press (finger held still) opens the edit menu; an ordinary tap or
-            // drag still reaches the widget's own view untouched — see LongPressFrameLayout.
+            // A real long-press (finger held still) opens the edit menu or directly triggers resize
             AndroidView(
                 modifier = Modifier
                     .fillMaxSize()
@@ -93,6 +117,7 @@ fun WidgetSlot(
                     LongPressFrameLayout(ctx).apply {
                         addView(hostView)
                         onLongPress = { x, y ->
+                            HapticUtil.tick(this, hapticsEnabled)
                             menuOffset = with(density) { DpOffset(x.toDp(), y.toDp()) }
                             menuExpanded = true
                         }
@@ -101,14 +126,6 @@ fun WidgetSlot(
                 update = { container ->
                     val hostView = container.getChildAt(0) as? AppWidgetHostView
                     hostView?.setAppWidget(widgetId, providerInfo)
-                    // Widgets lay themselves out for the size they were *told*, not the size of
-                    // the view; without this they render for some other size and get clipped.
-                    //
-                    // Pass the widget's existing options rather than an empty Bundle — a blank
-                    // one replaces them outright, dropping the size hints (and on Android 12+
-                    // the size list) that responsive widgets pick their layout from, which is
-                    // how a widget ends up drawing half its text. Only report real changes,
-                    // since this ran on every recomposition.
                     val (wDp, hDp) = slotSizeDp
                     if (hostView != null && wDp > 0 && hDp > 0 && slotSizeDp != reportedSizeDp) {
                         reportedSizeDp = slotSizeDp
@@ -117,6 +134,7 @@ fun WidgetSlot(
                         hostView.updateAppWidgetSize(options, wDp, hDp, wDp, hDp)
                     }
                     container.onLongPress = { x, y ->
+                        HapticUtil.tick(container, hapticsEnabled)
                         menuOffset = with(density) { DpOffset(x.toDp(), y.toDp()) }
                         menuExpanded = true
                     }
@@ -131,6 +149,7 @@ fun WidgetSlot(
                         detectTapGestures(
                             onTap = { actions.onAddWidget() },
                             onLongPress = { offset ->
+                                HapticUtil.tick(view, hapticsEnabled)
                                 menuOffset = with(density) { DpOffset(offset.x.toDp(), offset.y.toDp()) }
                                 menuExpanded = true
                             },
@@ -150,8 +169,99 @@ fun WidgetSlot(
             }
         }
 
+        // Resizing visual overlay with handles
+        if (isResizing) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .border(2.dp, Color.White.copy(alpha = 0.85f), RoundedCornerShape(16.dp))
+                    .background(Color.Black.copy(alpha = 0.20f), RoundedCornerShape(16.dp)),
+            ) {
+                // Top drag handle
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 4.dp)
+                        .size(width = 44.dp, height = 12.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.White.copy(alpha = 0.8f))
+                        .draggable(
+                            orientation = Orientation.Vertical,
+                            state = rememberDraggableState { delta ->
+                                val deltaDp = with(density) { delta.toDp().value }
+                                val newH = (liveHeightDp - deltaDp).roundToInt().coerceIn(70, 800)
+                                if (newH != liveHeightDp) {
+                                    liveHeightDp = newH
+                                    HapticUtil.tick(view, hapticsEnabled)
+                                }
+                            },
+                            onDragStopped = { actions.onResize(liveHeightDp) },
+                        ),
+                )
+
+                // Center indicator badge with current height and done button
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.Black.copy(alpha = 0.75f))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${liveHeightDp} dp",
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            actions.onResize(liveHeightDp)
+                            isResizing = false
+                        },
+                        modifier = Modifier.size(24.dp),
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White),
+                    ) {
+                        Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.action_done), modifier = Modifier.size(18.dp))
+                    }
+                }
+
+                // Bottom drag handle
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 4.dp)
+                        .size(width = 44.dp, height = 12.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.White.copy(alpha = 0.8f))
+                        .draggable(
+                            orientation = Orientation.Vertical,
+                            state = rememberDraggableState { delta ->
+                                val deltaDp = with(density) { delta.toDp().value }
+                                val newH = (liveHeightDp + deltaDp).roundToInt().coerceIn(70, 800)
+                                if (newH != liveHeightDp) {
+                                    liveHeightDp = newH
+                                    HapticUtil.tick(view, hapticsEnabled)
+                                }
+                            },
+                            onDragStopped = { actions.onResize(liveHeightDp) },
+                        ),
+                )
+            }
+        }
+
         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }, offset = menuOffset) {
             if (widgetId > 0) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_resize)) },
+                    leadingIcon = { Icon(Icons.Filled.OpenInFull, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        liveHeightDp = heightDp
+                        isResizing = true
+                    },
+                )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.action_app_info)) },
                     leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },

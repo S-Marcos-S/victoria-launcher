@@ -74,6 +74,8 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import dev.victorialauncher.service.HapticUtil
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
@@ -194,26 +196,30 @@ fun HomeScreen(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
+    val view = LocalView.current
+    var showHomeOptions by remember { mutableStateOf(false) }
+
     // While a padding handle is being dragged we track it locally so layout follows the
     // finger, and only write the final value to storage on release.
     var liveSlot by remember { mutableStateOf<PaddingSlot?>(null) }
     var liveValue by remember { mutableIntStateOf(0) }
     fun padOf(slot: PaddingSlot): Int = if (liveSlot == slot) liveValue else paddings[slot]
 
-    // Show the widget slot when a widget exists, and also in edit mode when there isn't one —
-    // that placeholder is the only way back to the picker once a widget has been removed.
     val hasWidget = widgetId > 0
     val showWidgetSlot = hasWidget || editMode
 
-    // Reordering runs against a local copy and is committed once on release; going through
-    // storage on every swap would lag behind the finger.
     var dragOrder by remember { mutableStateOf<List<HomeItem>?>(null) }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val itemHeights = remember { mutableStateMapOf<Int, Int>() }
 
-    val homeItems = remember(favorites, widgetPosition, showWidgetSlot) {
-        buildHomeItems(favorites, widgetPosition, showWidgetSlot)
+    val homeItems = remember(favorites) {
+        favorites.map { entry ->
+            when (entry) {
+                is FavoriteEntry.App -> HomeItem.Favorite(entry.app)
+                is FavoriteEntry.FolderRef -> HomeItem.FolderItem(entry.folder)
+            }
+        }
     }
     val displayItems = dragOrder ?: homeItems
 
@@ -377,7 +383,20 @@ fun HomeScreen(
 
             if (!editMode) {
                 // 2.5 cm from the top of the screen
-                Spacer(Modifier.height(CLOCK_TOP_PADDING_DP))
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(CLOCK_TOP_PADDING_DP)
+                        .combinedClickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                            onLongClick = {
+                                HapticUtil.tick(view, hapticsEnabled)
+                                showHomeOptions = true
+                            },
+                        )
+                )
 
                 NiagaraClockWidget(
                     contentColor = contentColor,
@@ -385,10 +404,43 @@ fun HomeScreen(
                     alignRight = alignRight,
                 )
 
+                // Widget slot placed between clock and favorites
+                if (showWidgetSlot) {
+                    val widgetStart = if (!alignRight) sidePaddingDp.dp else 52.dp
+                    val widgetEnd = if (!alignRight) 52.dp else sidePaddingDp.dp
+
+                    Spacer(Modifier.height(14.dp))
+                    WidgetSlot(
+                        widgetId = widgetId,
+                        heightDp = widgetHeightDp,
+                        hapticsEnabled = hapticsEnabled,
+                        onEditLayout = { onEditModeChange(true) },
+                        actions = widgetActions,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = widgetStart, end = widgetEnd),
+                    )
+                }
+
                 // Space favorites to begin from the middle of the screen downwards
                 val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-                val favoritesTopSpacer = (screenHeightDp * 0.50f - CLOCK_TOP_PADDING_DP - 90.dp).coerceAtLeast(16.dp)
-                Spacer(Modifier.height(favoritesTopSpacer))
+                val widgetOccupied = if (showWidgetSlot && hasWidget) widgetHeightDp.dp + 14.dp else 0.dp
+                val favoritesTopSpacer = (screenHeightDp * 0.50f - CLOCK_TOP_PADDING_DP - 90.dp - widgetOccupied).coerceAtLeast(16.dp)
+
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(favoritesTopSpacer)
+                        .combinedClickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                            onLongClick = {
+                                HapticUtil.tick(view, hapticsEnabled)
+                                showHomeOptions = true
+                            },
+                        )
+                )
             }
 
             // With no widget on screen there is nothing above the favorites, so Now Playing
@@ -618,7 +670,31 @@ fun HomeScreen(
                     Spacer(Modifier.height(itemSpacingDp.dp))
                 }
             }
+
+            // Empty space below favorites
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                        onLongClick = {
+                            HapticUtil.tick(view, hapticsEnabled)
+                            showHomeOptions = true
+                        },
+                    )
+            )
         }
+
+        HomeOptionsBottomSheet(
+            visible = showHomeOptions,
+            onDismiss = { showHomeOptions = false },
+            onOpenSettings = onOpenSettings,
+            onManageFavorites = onManageFavorites,
+            onAddWidget = { widgetActions.onAddWidget() },
+        )
     }
 
     folderRenameFor?.let { folder ->

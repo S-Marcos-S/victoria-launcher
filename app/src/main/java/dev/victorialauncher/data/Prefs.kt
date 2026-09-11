@@ -135,7 +135,7 @@ class Prefs(private val context: Context) {
         data.map { it[Keys.DOUBLE_TAP_TO_LOCK] ?: false }.distinctUntilChanged()
 
     val edgeSide: Flow<EdgeSide> = data.map {
-        runCatching { EdgeSide.valueOf(it[Keys.EDGE_SIDE] ?: EdgeSide.LEFT.name) }.getOrDefault(EdgeSide.LEFT)
+        runCatching { EdgeSide.valueOf(it[Keys.EDGE_SIDE] ?: EdgeSide.RIGHT.name) }.getOrDefault(EdgeSide.RIGHT)
     }.distinctUntilChanged()
 
     /** Keep the A-Z strip on screen even when the app list is closed. */

@@ -11,8 +11,11 @@ object ScrubberGeometry {
     /** Top margin in dp to leave space for status bar and widgets. */
     const val TOP_MARGIN_DP = 72f
 
-    /** Bottom margin in dp: 1 centimeter above the screen bottom (10mm = ~63dp). */
+    /** Bottom margin in dp: 1 centimeter above the screen bottom (~64dp). */
     const val BOTTOM_MARGIN_DP = 64f
+
+    /** Slot height for each letter: ~15dp glyph space + ~1mm (6dp) spacing between letters. */
+    const val LETTER_SLOT_DP = 21f
 
     fun indexForY(y: Float, topPx: Float, heightPx: Float, count: Int): Int {
         if (count <= 0 || heightPx <= 0f) return 0
@@ -30,18 +33,19 @@ object ScrubberGeometry {
     /**
      * Computes the vertical band for the alphabet strip:
      * - Ends exactly 1 cm (~64dp) above the bottom edge of the phone.
-     * - Spans comfortably towards the top with safe margins.
+     * - Keeps letters compact with ~1mm gap between them without touching.
      */
     fun computeBand(viewportHeightPx: Float, density: Float, letterCount: Int): ScrubBand {
         if (viewportHeightPx <= 0f || letterCount <= 0) {
             return ScrubBand(topPx = 0f, heightPx = 0f)
         }
-        val topMarginPx = TOP_MARGIN_DP * density
         val bottomMarginPx = BOTTOM_MARGIN_DP * density
-        val bottomPx = (viewportHeightPx - bottomMarginPx).coerceAtLeast(topMarginPx)
-        val heightPx = (bottomPx - topMarginPx).coerceAtLeast(0f)
+        val bottomPx = (viewportHeightPx - bottomMarginPx).coerceAtLeast(0f)
+        val desiredHeightPx = letterCount * LETTER_SLOT_DP * density
+        val topPx = (bottomPx - desiredHeightPx).coerceAtLeast(16f * density)
+        val heightPx = (bottomPx - topPx).coerceAtLeast(0f)
 
-        return ScrubBand(topPx = topMarginPx, heightPx = heightPx)
+        return ScrubBand(topPx = topPx, heightPx = heightPx)
     }
 }
 

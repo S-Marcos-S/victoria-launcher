@@ -36,11 +36,17 @@ object StatusBarFader {
         visible: Boolean,
         durationMs: Long = if (visible) 220 else 650,
     ) {
+        stopInFlight()
+        val insetsController = WindowInsetsControllerCompat(window, window.decorView)
+        if (visible) {
+            insetsController.show(WindowInsetsCompat.Type.statusBars())
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val faded = runCatching { fade(window, visible, durationMs) }.getOrDefault(false)
+            val faded = runCatching { fade(window, false, durationMs) }.getOrDefault(false)
             if (faded) return
         }
-        fallback(window, visible)
+        fallback(window, false)
     }
 
     /** Drops the retained controller and animator. Called when the Activity stops. */
