@@ -30,7 +30,9 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -52,6 +54,7 @@ import dev.victorialauncher.ui.applist.AppListScreen
 import dev.victorialauncher.ui.applist.EdgeScrubber
 import dev.victorialauncher.ui.applist.EdgeTouchZone
 import dev.victorialauncher.ui.applist.ScrubBand
+import dev.victorialauncher.ui.applist.ScrubberGeometry
 import dev.victorialauncher.ui.applist.ScrubState
 import dev.victorialauncher.ui.applist.buildAppListModel
 import dev.victorialauncher.ui.common.FolderPickerDialog
@@ -125,7 +128,6 @@ fun HomeRoute(
     var appListVisible by remember { mutableStateOf(false) }
     val scrub = remember { ScrubState() }
     var viewportHeightPx by remember { mutableIntStateOf(0) }
-    var favBand by remember { mutableStateOf<ScrubBand?>(null) }
     var homeEditMode by remember { mutableStateOf(false) }
     var folderPickerFor by remember { mutableStateOf<AppInfo?>(null) }
 
@@ -134,7 +136,16 @@ fun HomeRoute(
     // Don't reserve the block (or its padding) unless there is something to render:
     // no live session means the whole thing collapses, padding included.
     val nowPlayingHasContent = settings.nowPlayingEnabled && (!listenerGranted || nowPlaying != null)
-    val band = favBand ?: ScrubBand.fallbackFor(viewportHeightPx)
+    val density = LocalDensity.current
+    val screenHeightPx = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val effectiveViewportHeight = if (viewportHeightPx > 0) viewportHeightPx.toFloat() else screenHeightPx
+    val band = remember(effectiveViewportHeight, density.density, listModel.letters.size) {
+        ScrubberGeometry.computeBand(
+            viewportHeightPx = effectiveViewportHeight,
+            density = density.density,
+            letterCount = listModel.letters.size,
+        )
+    }
 
     // Set while a launched app is expected to take over the screen; see closeAfterLaunch.
     var launchClose by remember { mutableStateOf<Job?>(null) }
@@ -300,8 +311,8 @@ fun HomeRoute(
                 onCommitPadding = { slot: PaddingSlot, value: Int ->
                     scope.launch { app.prefs.setHomePadding(slot, value) }
                 },
-                onFavoritesBoundsChanged = { top, bottom ->
-                    favBand = ScrubBand(topPx = top, heightPx = bottom - top)
+                onFavoritesBoundsChanged = { _, _ ->
+                    // Scrubber band is computed independently to ensure consistent vertical centering
                 },
                 nowPlayingHasContent = nowPlayingHasContent,
                 contentColor = settings.contentColor,

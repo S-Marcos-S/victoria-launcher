@@ -71,6 +71,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -372,6 +373,22 @@ fun HomeScreen(
                 }
                 SidePaddingHandle(sidePaddingDp = sidePaddingDp, onSetSidePadding = onSetSidePadding)
                 Spacer(Modifier.height(6.dp))
+            }
+
+            if (!editMode) {
+                // 2.5 cm from the top of the screen
+                Spacer(Modifier.height(CLOCK_TOP_PADDING_DP))
+
+                NiagaraClockWidget(
+                    contentColor = contentColor,
+                    sidePaddingDp = sidePaddingDp,
+                    alignRight = alignRight,
+                )
+
+                // Space favorites to begin from the middle of the screen downwards
+                val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+                val favoritesTopSpacer = (screenHeightDp * 0.50f - CLOCK_TOP_PADDING_DP - 90.dp).coerceAtLeast(16.dp)
+                Spacer(Modifier.height(favoritesTopSpacer))
             }
 
             // With no widget on screen there is nothing above the favorites, so Now Playing

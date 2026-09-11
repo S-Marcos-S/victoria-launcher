@@ -2,15 +2,17 @@
 package dev.victorialauncher.ui.applist
 
 /**
- * One source of truth for where the A-Z strip sits, so the letter your finger is on is the
- * letter that lights up. The strip occupies a band — by default the vertical span of the
- * favorites list — rather than the whole screen, so scrubbing never asks for a stretch.
+ * One source of truth for where the A-Z strip sits, so the letter under the finger
+ * matches the one that highlights. The strip is vertically centered along the screen edge
+ * with comfortable spacing rather than collapsing to the top.
  */
 object ScrubberGeometry {
 
-    /** Fallback band (as a fraction of the screen) when the favorites bounds aren't known. */
-    const val FALLBACK_TOP_FRACTION = 0.35f
-    const val FALLBACK_HEIGHT_FRACTION = 0.5f
+    /** Top margin in dp to leave space for status bar and widgets. */
+    const val TOP_MARGIN_DP = 72f
+
+    /** Bottom margin in dp: 1 centimeter above the screen bottom (10mm = ~63dp). */
+    const val BOTTOM_MARGIN_DP = 64f
 
     fun indexForY(y: Float, topPx: Float, heightPx: Float, count: Int): Int {
         if (count <= 0 || heightPx <= 0f) return 0
@@ -24,6 +26,23 @@ object ScrubberGeometry {
         val spacing = heightPx / count
         return topPx + index * spacing + spacing / 2f
     }
+
+    /**
+     * Computes the vertical band for the alphabet strip:
+     * - Ends exactly 1 cm (~64dp) above the bottom edge of the phone.
+     * - Spans comfortably towards the top with safe margins.
+     */
+    fun computeBand(viewportHeightPx: Float, density: Float, letterCount: Int): ScrubBand {
+        if (viewportHeightPx <= 0f || letterCount <= 0) {
+            return ScrubBand(topPx = 0f, heightPx = 0f)
+        }
+        val topMarginPx = TOP_MARGIN_DP * density
+        val bottomMarginPx = BOTTOM_MARGIN_DP * density
+        val bottomPx = (viewportHeightPx - bottomMarginPx).coerceAtLeast(topMarginPx)
+        val heightPx = (bottomPx - topMarginPx).coerceAtLeast(0f)
+
+        return ScrubBand(topPx = topMarginPx, heightPx = heightPx)
+    }
 }
 
 /** The vertical band the strip is laid out in, in screen pixels. */
@@ -32,8 +51,8 @@ data class ScrubBand(val topPx: Float, val heightPx: Float) {
 
     companion object {
         fun fallbackFor(viewportHeightPx: Int) = ScrubBand(
-            topPx = viewportHeightPx * ScrubberGeometry.FALLBACK_TOP_FRACTION,
-            heightPx = viewportHeightPx * ScrubberGeometry.FALLBACK_HEIGHT_FRACTION,
+            topPx = viewportHeightPx * 0.10f,
+            heightPx = viewportHeightPx * 0.80f,
         )
     }
 }

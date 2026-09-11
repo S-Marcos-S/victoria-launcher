@@ -65,7 +65,7 @@ fun EdgeTouchZone(
                             HapticUtil.tick(view, hapticsEnabled)
                         }
                         // How far the finger has pulled in toward the middle of the screen.
-                        val inward = if (fromLeft) x - size.width else -x
+                        val inward = if (fromLeft) x else (size.width - x)
                         state.update(y, inward.coerceIn(0f, MAX_PULL_DP * density), letters.getOrNull(index))
                     }
 
