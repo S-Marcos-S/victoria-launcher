@@ -130,6 +130,7 @@ fun HomeRoute(
     var viewportHeightPx by remember { mutableIntStateOf(0) }
     var homeEditMode by remember { mutableStateOf(false) }
     var folderPickerFor by remember { mutableStateOf<AppInfo?>(null) }
+    var showHomeOptions by remember { mutableStateOf(false) }
 
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val listenerGranted = remember(homeIntentTick) { isListenerEnabled(context) }
@@ -337,6 +338,7 @@ fun HomeRoute(
                 onChangeIcon = { appInfo -> onNavigate(iconPickerRoute(appInfo.key)) },
                 onAppInfo = { app.appRepository.openAppInfo(it.packageName) },
                 onOpenSettings = { onNavigate("settings") },
+                onOpenHomeOptions = { showHomeOptions = true },
             )
         }
 
@@ -401,7 +403,7 @@ fun HomeRoute(
             )
         }
 
-        if (settings.alwaysShowAz && !appListVisible) {
+        if (settings.alwaysShowAz && !appListVisible && !showHomeOptions) {
             EdgeScrubber(
                 letters = listModel.letters,
                 scrubY = { null },
@@ -442,7 +444,7 @@ fun HomeRoute(
 
         // Edge zones sit on top of everything, so one unbroken touch opens the list and then
         // scrubs it as the finger moves.
-        if (!homeEditMode) {
+        if (!homeEditMode && !showHomeOptions) {
             val sides = remember(settings.edgeSide) {
                 when (settings.edgeSide) {
                     EdgeSide.LEFT -> listOf(EdgeSide.LEFT)
@@ -465,6 +467,14 @@ fun HomeRoute(
                 )
             }
         }
+
+        HomeOptionsBottomSheet(
+            visible = showHomeOptions,
+            onDismiss = { showHomeOptions = false },
+            onOpenSettings = { showHomeOptions = false; onNavigate("settings") },
+            onManageFavorites = { showHomeOptions = false; onNavigate("favorites") },
+            onAddWidget = { showHomeOptions = false; widgetActions.onAddWidget() },
+        )
     }
 }
 

@@ -182,6 +182,7 @@ fun HomeScreen(
     onChangeIcon: (AppInfo) -> Unit,
     onAppInfo: (AppInfo) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenHomeOptions: () -> Unit = {},
 ) {    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     var menuForKey by remember { mutableStateOf<String?>(null) }
@@ -197,7 +198,6 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     val view = LocalView.current
-    var showHomeOptions by remember { mutableStateOf(false) }
 
     // While a padding handle is being dragged we track it locally so layout follows the
     // finger, and only write the final value to storage on release.
@@ -393,7 +393,7 @@ fun HomeScreen(
                             onClick = {},
                             onLongClick = {
                                 HapticUtil.tick(view, hapticsEnabled)
-                                showHomeOptions = true
+                                onOpenHomeOptions()
                             },
                         )
                 )
@@ -437,7 +437,7 @@ fun HomeScreen(
                             onClick = {},
                             onLongClick = {
                                 HapticUtil.tick(view, hapticsEnabled)
-                                showHomeOptions = true
+                                onOpenHomeOptions()
                             },
                         )
                 )
@@ -682,19 +682,11 @@ fun HomeScreen(
                         onClick = {},
                         onLongClick = {
                             HapticUtil.tick(view, hapticsEnabled)
-                            showHomeOptions = true
+                            onOpenHomeOptions()
                         },
                     )
             )
         }
-
-        HomeOptionsBottomSheet(
-            visible = showHomeOptions,
-            onDismiss = { showHomeOptions = false },
-            onOpenSettings = onOpenSettings,
-            onManageFavorites = onManageFavorites,
-            onAddWidget = { widgetActions.onAddWidget() },
-        )
     }
 
     folderRenameFor?.let { folder ->
