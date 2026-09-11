@@ -1,21 +1,23 @@
-### 🚀 Novidades e Melhorias da Versão
+### 🚀 Novidades e Melhorias da Versão 0.48.3
+
+- **Sistema de Atualizações:**
+  - Lançamento da **versão 0.48.3** para validação do fluxo completo de atualização.
+  - Verificação de updates em tempo real sempre que o menu da tela inicial é aberto.
+  - Comparação aprimorada de integridade de versão via commit SHA contra a API do GitHub.
+  - Limpeza automática de versões anteriores baixadas na pasta Downloads antes de salvar o novo APK, evitando arquivos duplicados.
 
 - **Menu da Tela Inicial (Long-Press):**
-  - Adicionada animação fluida de abertura (slide up com spring e fade-in) e de fechamento (slide down suave com fade-out).
-  - Adicionado suporte ao gesto de arrastar o painel para baixo para fechar (swipe down to dismiss) com retorno elástico.
-  - Suporte ao botão/gesto de voltar do Android (`BackHandler`).
-  - Novo card de **Atualização Disponível** exibido apenas quando há uma nova build release no GitHub.
-  - Dois botões lado a lado: **"Mudanças"** (abre este balão flutuante com transparência e blur) e **"Atualizar"** (baixa o APK release diretamente para o dispositivo).
+  - Animação de abertura (slide up com spring e fade-in) e fechamento (slide down suave com fade-out).
+  - Gesto de deslizar para baixo (swipe down) para fechar o menu com amortecimento elástico.
+  - Suporte total ao botão/gesto voltar do sistema (`BackHandler`).
+  - Card de **Atualização Disponível** com botões lado a lado:
+    - **"Mudanças"**: Abre o balão flutuante translúcido com blur.
+    - **"Atualizar"**: Faz o download direto do APK release para o aparelho.
 
 - **Balão Flutuante de Mudanças (Changelog):**
-  - Janela flutuante com efeito frosted-glass (transparência elegante) e desfoque nativo do sistema (`FLAG_BLUR_BEHIND`) no fundo da tela.
-  - Exibe hash do commit, data/hora da compilação, tamanho do arquivo e lista detalhada de implementações.
+  - Janela flutuante no estilo *frosted glass* translúcido com desfoque de sistema no plano de fundo (`FLAG_BLUR_BEHIND`).
+  - Detalhes da release: identificador do commit, data e horário da build, tamanho do pacote e lista das novidades.
 
 - **Toque Duplo para Desligar a Tela:**
-  - Habilitado na tela inicial e na lista de aplicativos.
-  - Animação de colapso visual escurecendo a tela de fora para dentro exatamente no ponto do toque antes de bloquear o aparelho.
-  - Verificação do serviço de acessibilidade com botão de atalho direto nas configurações.
-
-- **Automação e Distribuição:**
-  - Integração do changelog automático nas releases do GitHub Actions.
-  - Script para acompanhar a compilação em tempo real e salvar o APK release diretamente na pasta Downloads.
+  - Gesto disponível na tela inicial e gaveta de apps.
+  - Efeito visual de foco e colapso escurecendo a tela suavemente a partir do ponto de toque.

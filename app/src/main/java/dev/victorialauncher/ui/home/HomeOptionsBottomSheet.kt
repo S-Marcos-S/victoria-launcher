@@ -97,7 +97,7 @@ fun HomeOptionsBottomSheet(
         if (visible) {
             dragOffsetY.snapTo(0f)
             showChangelogDialog = false
-            UpdateManager.checkForUpdates(coroutineScope)
+            UpdateManager.checkForUpdates(coroutineScope, force = true)
         }
     }
 

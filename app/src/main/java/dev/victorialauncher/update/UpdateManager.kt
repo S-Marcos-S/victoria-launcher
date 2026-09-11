@@ -102,11 +102,11 @@ object UpdateManager {
                         !remoteSha.isNullOrBlank() && currentSha.isNotBlank() -> {
                             val isSameSha = remoteSha.startsWith(currentSha, ignoreCase = true) ||
                                     currentSha.startsWith(remoteSha, ignoreCase = true)
-                            !isSameSha && (updatedAtMs == 0L || updatedAtMs > currentBuildTime - 60_000L)
+                            !isSameSha
                         }
                         // Fallback para comparação por timestamp:
                         updatedAtMs > 0L && currentBuildTime > 0L -> {
-                            updatedAtMs > currentBuildTime + 60_000L
+                            updatedAtMs > currentBuildTime + 30_000L
                         }
                         else -> false
                     }
@@ -182,6 +182,16 @@ object UpdateManager {
                 context.startActivity(browserIntent)
                 return
             }
+
+            try {
+                val existingFile = java.io.File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                    "victoria-launcher-release.apk",
+                )
+                if (existingFile.exists()) {
+                    existingFile.delete()
+                }
+            } catch (_: Exception) {}
 
             val request = DownloadManager.Request(Uri.parse(update.apkDownloadUrl)).apply {
                 setTitle("Victoria Launcher")
