@@ -15,12 +15,15 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,15 +39,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +70,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.victorialauncher.R
+import dev.victorialauncher.update.UpdateManager
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -72,6 +86,8 @@ fun HomeOptionsBottomSheet(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val dragOffsetY = remember { Animatable(0f) }
+    val updateInfo by UpdateManager.updateAvailable.collectAsState()
+    var showChangelogDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = visible) {
         onDismiss()
@@ -80,6 +96,8 @@ fun HomeOptionsBottomSheet(
     LaunchedEffect(visible) {
         if (visible) {
             dragOffsetY.snapTo(0f)
+            showChangelogDialog = false
+            UpdateManager.checkForUpdates(coroutineScope)
         }
     }
 
@@ -176,6 +194,115 @@ fun HomeOptionsBottomSheet(
 
                 Spacer(Modifier.height(8.dp))
 
+                updateInfo?.takeIf { it.hasUpdate }?.let { update ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFF1B2E1E).copy(alpha = 0.75f))
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFF4CAF50).copy(alpha = 0.35f),
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                            .padding(14.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.SystemUpdate,
+                                contentDescription = null,
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(22.dp),
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                text = "Nova versão disponível",
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f),
+                            )
+                            update.commitSha?.let { sha ->
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(0xFF2E7D32))
+                                        .padding(horizontal = 7.dp, vertical = 3.dp),
+                                ) {
+                                    Text(
+                                        text = sha.take(7),
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Dois botões lado a lado: Mudanças e Atualizar
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            // Botão 1: Mudanças (abre o balão flutuante transparente com blur)
+                            OutlinedButton(
+                                onClick = { showChangelogDialog = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color.White,
+                                ),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "Mudanças",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+
+                            // Botão 2: Atualizar (inicia o download do APK)
+                            Button(
+                                onClick = {
+                                    onDismiss()
+                                    UpdateManager.startDownload(context, update)
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF2E7D32),
+                                    contentColor = Color.White,
+                                ),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Download,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "Atualizar",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+                }
+
                 OptionItem(
                     icon = Icons.Filled.Settings,
                     label = stringResource(R.string.settings_title),
@@ -204,6 +331,18 @@ fun HomeOptionsBottomSheet(
             }
         }
     }
+
+    if (showChangelogDialog && updateInfo != null) {
+        UpdateChangelogDialog(
+            update = updateInfo!!,
+            onDismissRequest = { showChangelogDialog = false },
+            onDownload = {
+                showChangelogDialog = false
+                onDismiss()
+                UpdateManager.startDownload(context, updateInfo!!)
+            },
+        )
+    }
 }
 
 @Composable
@@ -211,6 +350,8 @@ private fun OptionItem(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
+    badge: String? = null,
+    highlight: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -223,7 +364,7 @@ private fun OptionItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color.White,
+            tint = if (highlight) Color(0xFF4CAF50) else Color.White,
             modifier = Modifier.size(24.dp),
         )
         Spacer(Modifier.width(16.dp))
@@ -231,7 +372,23 @@ private fun OptionItem(
             text = label,
             color = Color.White,
             fontSize = 16.sp,
+            modifier = Modifier.weight(1f),
         )
+        if (badge != null) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color(0xFF2E7D32))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    text = badge,
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
     }
 }
 

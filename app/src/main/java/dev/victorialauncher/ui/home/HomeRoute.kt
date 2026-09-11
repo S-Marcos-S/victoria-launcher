@@ -134,6 +134,10 @@ fun HomeRoute(
     var showHomeOptions by remember { mutableStateOf(false) }
     var lockTargetOffset by remember { mutableStateOf<Offset?>(null) }
 
+    LaunchedEffect(Unit) {
+        dev.victorialauncher.update.UpdateManager.checkForUpdates(this)
+    }
+
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val notificationsByPackage by dev.victorialauncher.notification.NotificationBus.notifications.collectAsState()
     val listenerGranted = remember(homeIntentTick) { isListenerEnabled(context) }

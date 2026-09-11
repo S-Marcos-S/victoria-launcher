@@ -98,18 +98,24 @@ jobs:
           path: artifacts/victoria-launcher-debug.apk
           retention-days: 30
 
+      - name: Append download links to changelog
+        run: |
+          cat >> CHANGELOG_LATEST.md <<EOF
+
+          ### Direct APK Download
+          - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-release.apk)
+          - [Download Debug APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-debug.apk)
+
+          Built automatically from commit \`${{ github.sha }}\`.
+          EOF
+
       - name: Publish GitHub Release for direct download
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: "Victoria Launcher - Latest APKs"
-          body: |
-            ### Direct APK Download
-            - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-release.apk)
-            - [Download Debug APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-debug.apk)
-
-            Built automatically from commit `${{ github.sha }}`.
+          body_path: CHANGELOG_LATEST.md
           prerelease: false
           files: |
             artifacts/victoria-launcher-release.apk

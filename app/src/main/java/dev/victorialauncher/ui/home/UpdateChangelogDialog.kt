@@ -1,0 +1,231 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+package dev.victorialauncher.ui.home
+
+import android.os.Build
+import android.view.WindowManager
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import dev.victorialauncher.update.UpdateInfo
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+@Composable
+fun UpdateChangelogDialog(
+    update: UpdateInfo,
+    onDismissRequest: () -> Unit,
+    onDownload: () -> Unit,
+) {
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dialogWindow != null) {
+            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = dialogWindow.attributes
+            params.blurBehindRadius = 32
+            dialogWindow.attributes = params
+        }
+        onDispose {}
+    }
+
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false,
+        ),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismissRequest,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            // Balão flutuante translúcido (frosted glass) com blur e transparência
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                    ),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xDD171B22), // Transparente escuro (86% opacidade)
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
+                tonalElevation = 12.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(22.dp),
+                ) {
+                    // Cabeçalho: Ícone + Título + Badge de Commit
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF2E7D32).copy(alpha = 0.35f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.NewReleases,
+                                contentDescription = null,
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+
+                        Spacer(Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "O que há de novo",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                            )
+                            update.commitSha?.let { sha ->
+                                Text(
+                                    text = "Build ${sha.take(7)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF81C784),
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                        }
+
+                        if (update.apkSize > 0) {
+                            val sizeMb = update.apkSize / (1024f * 1024f)
+                            Text(
+                                text = String.format(Locale.getDefault(), "%.2f MB", sizeMb),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.6f),
+                            )
+                        }
+                    }
+
+                    if (update.publishedAtMs > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        val dateFormatted = SimpleDateFormat("dd/MM/yyyy 'às' HH:mm", Locale.getDefault())
+                            .format(Date(update.publishedAtMs))
+                        Text(
+                            text = "Compilada em $dateFormatted",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.5f),
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Caixa de texto com rolagem contendo as mudanças da versão
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 260.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color.White.copy(alpha = 0.06f))
+                            .padding(14.dp)
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        Text(
+                            text = update.changelog,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.92f),
+                            lineHeight = 20.sp,
+                        )
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Botões de ação
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(
+                            onClick = onDismissRequest,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = Color.White.copy(alpha = 0.75f),
+                            ),
+                        ) {
+                            Text("Fechar")
+                        }
+
+                        Spacer(Modifier.width(8.dp))
+
+                        Button(
+                            onClick = onDownload,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2E7D32),
+                                contentColor = Color.White,
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Download,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Baixar")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
