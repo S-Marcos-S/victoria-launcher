@@ -205,10 +205,32 @@ fun SettingsScreen(
                     RowDivider()
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_double_tap_lock),
-                        detail = stringResource(R.string.settings_double_tap_lock_detail),
+                        detail = stringResource(
+                            if (doubleTapToLock && !shadeGestureReady) R.string.settings_double_tap_lock_not_ready
+                            else R.string.settings_double_tap_lock_detail
+                        ),
                         checked = doubleTapToLock,
-                        onCheckedChange = onSetDoubleTapToLock,
+                        onCheckedChange = { enable ->
+                            onSetDoubleTapToLock(enable)
+                            if (enable && !shadeGestureReady) {
+                                onOpenAccessibilitySettings()
+                            }
+                        },
                     )
+                    if (doubleTapToLock && !shadeGestureReady) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                            horizontalArrangement = Arrangement.End,
+                        ) {
+                            FilledChip(
+                                label = stringResource(R.string.settings_enable),
+                                selected = false,
+                                onClick = onOpenAccessibilitySettings,
+                            )
+                        }
+                    }
                     RowDivider()
                     SwitchRow(stringResource(R.string.settings_always_show_az), alwaysShowAz, onSetAlwaysShowAz)
                     RowDivider()

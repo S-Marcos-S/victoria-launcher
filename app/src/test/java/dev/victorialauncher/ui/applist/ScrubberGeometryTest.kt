@@ -63,8 +63,8 @@ class ScrubberGeometryTest {
     @Test
     fun `the fallback band is derived from the viewport`() {
         val band = ScrubBand.fallbackFor(1000)
-        assertEquals(350f, band.topPx, 0.01f)
-        assertEquals(500f, band.heightPx, 0.01f)
-        assertEquals(850f, band.bottomPx, 0.01f)
+        assertEquals(100f, band.topPx, 0.01f)
+        assertEquals(800f, band.heightPx, 0.01f)
+        assertEquals(900f, band.bottomPx, 0.01f)
     }
 }

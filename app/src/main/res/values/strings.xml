@@ -79,7 +79,8 @@
     <string name="settings_haptics_detail">Follows your system\'s touch feedback setting</string>
     <string name="settings_edge_side">Which edge opens the app list</string>
     <string name="settings_double_tap_lock">Double-tap to lock screen</string>
-    <string name="settings_double_tap_lock_detail">Tap twice on empty space in the app list</string>
+    <string name="settings_double_tap_lock_detail">Tap twice on empty space on the home screen</string>
+    <string name="settings_double_tap_lock_not_ready">Accessibility service required to lock the screen; tap Enable to grant permission</string>
     <string name="settings_always_show_az">Always show A-Z</string>
     <string name="settings_shade_gesture">Swipe down for notifications</string>
     <string name="settings_shade_ready">Ready — pull down on the home screen</string>

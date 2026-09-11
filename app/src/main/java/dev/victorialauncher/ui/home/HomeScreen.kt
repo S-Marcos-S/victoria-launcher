@@ -186,6 +186,8 @@ fun HomeScreen(
     onOpenHomeOptions: () -> Unit = {},
     showAppNotifications: Boolean = false,
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
+    doubleTapToLock: Boolean = false,
+    onDoubleTapLock: (Offset) -> Unit = {},
 ) {    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
@@ -294,10 +296,22 @@ fun HomeScreen(
     }
     val editScrollState = rememberScrollState()
 
+    val handleDoubleTapLock: (() -> Unit)? = if (doubleTapToLock) {
+        {
+            val pos = if (touchPosition.value != Offset.Zero) {
+                touchPosition.value
+            } else {
+                Offset(with(density) { 180.dp.toPx() }, viewportHeight / 2f)
+            }
+            onDoubleTapLock(pos)
+        }
+    } else null
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .onSizeChanged { viewportHeight = it.height }
+            .recordTouchPosition(touchPosition)
             .draggable(
                 orientation = Orientation.Vertical,
                 enabled = !editMode && liveSlot == null,
@@ -341,6 +355,17 @@ fun HomeScreen(
                             stiffness = Spring.StiffnessMediumLow,
                         ),
                     )
+                },
+            )
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = !editMode,
+                onClick = {},
+                onDoubleClick = handleDoubleTapLock,
+                onLongClick = {
+                    HapticUtil.tick(view, hapticsEnabled)
+                    onOpenHomeOptions()
                 },
             ),
     ) {
@@ -395,6 +420,7 @@ fun HomeScreen(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {},
+                            onDoubleClick = handleDoubleTapLock,
                             onLongClick = {
                                 HapticUtil.tick(view, hapticsEnabled)
                                 onOpenHomeOptions()
@@ -439,6 +465,7 @@ fun HomeScreen(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {},
+                            onDoubleClick = handleDoubleTapLock,
                             onLongClick = {
                                 HapticUtil.tick(view, hapticsEnabled)
                                 onOpenHomeOptions()
@@ -695,6 +722,7 @@ fun HomeScreen(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
+                        onDoubleClick = handleDoubleTapLock,
                         onLongClick = {
                             HapticUtil.tick(view, hapticsEnabled)
                             onOpenHomeOptions()

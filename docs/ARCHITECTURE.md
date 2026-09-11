@@ -105,7 +105,6 @@ whichever app is the current Home.
 - Work-profile apps are invisible. `AppRepository` uses `PackageManager` rather than
   `LauncherApps`, and `AppInfo` carries no `UserHandle`. Fixing this changes
   `AppInfo.key`, which is the persisted favorites key, so it needs a data migration.
-- Double-tap-to-lock works only in the app list, not on the home screen.
 - No Baseline Profile. Generating one needs a device or emulator; it is the largest
   remaining first-launch win.
 - Unit tests cover only framework-free logic. Anything touching `PackageManager`,

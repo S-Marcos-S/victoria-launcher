@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -131,6 +132,7 @@ fun HomeRoute(
     var homeEditMode by remember { mutableStateOf(false) }
     var folderPickerFor by remember { mutableStateOf<AppInfo?>(null) }
     var showHomeOptions by remember { mutableStateOf(false) }
+    var lockTargetOffset by remember { mutableStateOf<Offset?>(null) }
 
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val notificationsByPackage by dev.victorialauncher.notification.NotificationBus.notifications.collectAsState()
@@ -190,6 +192,9 @@ fun HomeRoute(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) closeAppList(snap = true)
+            if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_STOP) {
+                lockTargetOffset = null
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -223,6 +228,12 @@ fun HomeRoute(
     DisposableEffect(view) {
         // Settings and the other screens must get the system back-gesture back.
         onDispose { ViewCompat.setSystemGestureExclusionRects(view, emptyList()) }
+    }
+
+    val handleDoubleTapLock: (Offset) -> Unit = { offset ->
+        if (lockTargetOffset == null) {
+            lockTargetOffset = offset
+        }
     }
 
     Box(
@@ -342,6 +353,8 @@ fun HomeRoute(
                 onOpenHomeOptions = { showHomeOptions = true },
                 showAppNotifications = settings.showAppNotifications,
                 notificationsByPackage = notificationsByPackage,
+                doubleTapToLock = settings.doubleTapToLock,
+                onDoubleTapLock = handleDoubleTapLock,
             )
         }
 
@@ -396,15 +409,7 @@ fun HomeRoute(
                 doubleTapToLock = settings.doubleTapToLock,
                 showAppNotifications = settings.showAppNotifications,
                 notificationsByPackage = notificationsByPackage,
-                onDoubleTapLock = {
-                    if (!SystemUi.lockScreen()) {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.toast_enable_accessibility_lock),
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                    }
-                },
+                onDoubleTapLock = handleDoubleTapLock,
             )
         }
 
@@ -480,6 +485,23 @@ fun HomeRoute(
             onManageFavorites = { showHomeOptions = false; onNavigate("favorites") },
             onAddWidget = { showHomeOptions = false; widgetActions.onAddWidget() },
         )
+
+        lockTargetOffset?.let { target ->
+            ScreenOffEffect(
+                targetOffset = target,
+                onAnimationEnd = {
+                    val locked = SystemUi.lockScreen()
+                    if (!locked) {
+                        lockTargetOffset = null
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.toast_enable_accessibility_lock),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                },
+            )
+        }
     }
 }
 

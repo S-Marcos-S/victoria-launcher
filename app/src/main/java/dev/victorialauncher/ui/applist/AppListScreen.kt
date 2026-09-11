@@ -140,7 +140,7 @@ fun AppListScreen(
     showAlphabet: Boolean,
     alignRight: Boolean,
     doubleTapToLock: Boolean,
-    onDoubleTapLock: () -> Unit,
+    onDoubleTapLock: (Offset) -> Unit,
     showAppNotifications: Boolean = false,
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
 ) {
@@ -531,7 +531,7 @@ fun AppListScreen(
                         pending != null -> {
                             pending.cancel()
                             pendingDismiss = null
-                            currentDoubleTapLock()
+                            currentDoubleTapLock(start)
                         }
 
                         doubleTapToLock -> {
