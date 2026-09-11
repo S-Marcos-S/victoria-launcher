@@ -28,6 +28,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -98,8 +100,8 @@ fun WidgetSlot(
     var reportedSizeDp by remember(widgetId) { mutableStateOf(0 to 0) }
 
     var isResizing by remember { mutableStateOf(false) }
-    var liveHeightDp by remember(heightDp) { mutableIntStateOf(heightDp) }
-    val effectiveHeightDp = if (isResizing) liveHeightDp else heightDp
+    var liveHeightDp by remember(heightDp) { mutableFloatStateOf(heightDp.toFloat()) }
+    val effectiveHeightDp = if (isResizing) liveHeightDp.roundToInt() else heightDp
 
     Box(modifier = modifier.height(effectiveHeightDp.dp)) {
         if (widgetId > 0 && providerInfo != null) {
@@ -189,13 +191,13 @@ fun WidgetSlot(
                             orientation = Orientation.Vertical,
                             state = rememberDraggableState { delta ->
                                 val deltaDp = with(density) { delta.toDp().value }
-                                val newH = (liveHeightDp - deltaDp).roundToInt().coerceIn(70, 800)
-                                if (newH != liveHeightDp) {
-                                    liveHeightDp = newH
+                                val newH = (liveHeightDp - deltaDp).coerceIn(70f, 800f)
+                                if (newH.roundToInt() != liveHeightDp.roundToInt()) {
                                     HapticUtil.tick(view, hapticsEnabled)
                                 }
+                                liveHeightDp = newH
                             },
-                            onDragStopped = { actions.onResize(liveHeightDp) },
+                            onDragStopped = { actions.onResize(liveHeightDp.roundToInt()) },
                         ),
                 )
 
@@ -209,7 +211,7 @@ fun WidgetSlot(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "${liveHeightDp} dp",
+                        "${liveHeightDp.roundToInt()} dp",
                         color = Color.White,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -217,7 +219,7 @@ fun WidgetSlot(
                     Spacer(Modifier.width(8.dp))
                     IconButton(
                         onClick = {
-                            actions.onResize(liveHeightDp)
+                            actions.onResize(liveHeightDp.roundToInt())
                             isResizing = false
                         },
                         modifier = Modifier.size(24.dp),
@@ -239,13 +241,13 @@ fun WidgetSlot(
                             orientation = Orientation.Vertical,
                             state = rememberDraggableState { delta ->
                                 val deltaDp = with(density) { delta.toDp().value }
-                                val newH = (liveHeightDp + deltaDp).roundToInt().coerceIn(70, 800)
-                                if (newH != liveHeightDp) {
-                                    liveHeightDp = newH
+                                val newH = (liveHeightDp + deltaDp).coerceIn(70f, 800f)
+                                if (newH.roundToInt() != liveHeightDp.roundToInt()) {
                                     HapticUtil.tick(view, hapticsEnabled)
                                 }
+                                liveHeightDp = newH
                             },
-                            onDragStopped = { actions.onResize(liveHeightDp) },
+                            onDragStopped = { actions.onResize(liveHeightDp.roundToInt()) },
                         ),
                 )
             }
@@ -258,7 +260,7 @@ fun WidgetSlot(
                     leadingIcon = { Icon(Icons.Filled.OpenInFull, contentDescription = null) },
                     onClick = {
                         menuExpanded = false
-                        liveHeightDp = heightDp
+                        liveHeightDp = heightDp.toFloat()
                         isResizing = true
                     },
                 )

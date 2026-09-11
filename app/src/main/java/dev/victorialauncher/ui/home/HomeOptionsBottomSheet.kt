@@ -109,7 +109,7 @@ fun HomeOptionsBottomSheet(
 
                     OptionItem(
                         icon = Icons.Filled.Settings,
-                        label = stringResource(R.string.title_settings),
+                        label = stringResource(R.string.settings_title),
                         onClick = { onDismiss(); onOpenSettings() },
                     )
 
