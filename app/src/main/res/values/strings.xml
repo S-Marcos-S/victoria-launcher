@@ -1,11 +1,15 @@
 <resources>
     <string name="app_name">Victoria Launcher</string>
     <string name="accessibility_description">Lets the swipe-down gesture open the notification shade. Victoria Launcher does not read or act on screen content.</string>
+    <string name="accessibility_service_label">Victoria Launcher gestures</string>
+    <string name="notification_service_label">Victoria Launcher Now Playing</string>
 
     <!-- Shared actions -->
     <string name="action_back">Back</string>
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_download">Download</string>
     <string name="action_reset">Reset</string>
     <string name="action_create">Create</string>
     <string name="action_done">Done</string>
@@ -19,6 +23,8 @@
     <string name="action_open_settings">Victoria Launcher settings</string>
 
     <!-- Home screen -->
+    <string name="options_title">Options</string>
+    <string name="home_option_wallpaper">Wallpaper</string>
     <string name="home_reorder_hint">Hold and drag to reorder</string>
     <string name="home_no_favorites_title">No favorites yet</string>
     <string name="home_no_favorites_body">Touch the screen edge to open the app list, or pick your favorites from the list below.</string>
@@ -29,6 +35,17 @@
     <string name="home_folder_name_label">Folder name</string>
     <string name="home_folder_use_previews">Use app previews</string>
     <string name="home_display_name_label">Display name</string>
+
+    <!-- Updates -->
+    <string name="update_available_title">New version available</string>
+    <string name="update_action_changelog">Changes</string>
+    <string name="update_action_download">Update</string>
+    <string name="update_dialog_title">What\'s new</string>
+    <string name="update_build_prefix">Build %1$s</string>
+    <string name="update_compiled_at">Compiled on %1$s</string>
+    <string name="update_downloading_notification_desc">Downloading update%1$s…</string>
+    <string name="update_toast_downloading">Downloading update… Track progress in notifications</string>
+    <string name="update_toast_error">Error starting download: %1$s</string>
 
     <!-- Edit-mode drag handles -->
     <string name="handle_side_padding">↔ Side padding · %1$ddp</string>

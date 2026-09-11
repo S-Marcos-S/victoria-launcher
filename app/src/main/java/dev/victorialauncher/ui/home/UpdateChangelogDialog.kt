@@ -40,12 +40,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import dev.victorialauncher.R
 import dev.victorialauncher.update.UpdateInfo
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -132,14 +134,14 @@ fun UpdateChangelogDialog(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "O que há de novo",
+                                text = stringResource(R.string.update_dialog_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White,
                             )
                             update.commitSha?.let { sha ->
                                 Text(
-                                    text = "Build ${sha.take(7)}",
+                                    text = stringResource(R.string.update_build_prefix, sha.take(7)),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color(0xFF81C784),
                                     fontWeight = FontWeight.Medium,
@@ -162,7 +164,7 @@ fun UpdateChangelogDialog(
                         val dateFormatted = SimpleDateFormat("dd/MM/yyyy 'às' HH:mm", Locale.getDefault())
                             .format(Date(update.publishedAtMs))
                         Text(
-                            text = "Compilada em $dateFormatted",
+                            text = stringResource(R.string.update_compiled_at, dateFormatted),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.5f),
                         )
@@ -202,7 +204,7 @@ fun UpdateChangelogDialog(
                                 contentColor = Color.White.copy(alpha = 0.75f),
                             ),
                         ) {
-                            Text("Fechar")
+                            Text(stringResource(R.string.action_close))
                         }
 
                         Spacer(Modifier.width(8.dp))
@@ -221,7 +223,7 @@ fun UpdateChangelogDialog(
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text("Baixar")
+                            Text(stringResource(R.string.action_download))
                         }
                     }
                 }

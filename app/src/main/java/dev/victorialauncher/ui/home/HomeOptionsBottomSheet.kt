@@ -185,7 +185,7 @@ fun HomeOptionsBottomSheet(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    text = "Opções",
+                    text = stringResource(R.string.options_title),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -219,7 +219,7 @@ fun HomeOptionsBottomSheet(
                             )
                             Spacer(Modifier.width(10.dp))
                             Text(
-                                text = "Nova versão disponível",
+                                text = stringResource(R.string.update_available_title),
                                 color = Color.White,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -266,7 +266,7 @@ fun HomeOptionsBottomSheet(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = "Mudanças",
+                                    text = stringResource(R.string.update_action_changelog),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                 )
@@ -292,7 +292,7 @@ fun HomeOptionsBottomSheet(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = "Atualizar",
+                                    text = stringResource(R.string.update_action_download),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                 )
@@ -311,7 +311,7 @@ fun HomeOptionsBottomSheet(
 
                 OptionItem(
                     icon = Icons.Filled.Image,
-                    label = "Papel de parede",
+                    label = stringResource(R.string.home_option_wallpaper),
                     onClick = { onDismiss(); launchWallpaperPicker(context) },
                 )
 
@@ -323,7 +323,7 @@ fun HomeOptionsBottomSheet(
 
                 OptionItem(
                     icon = Icons.Filled.Widgets,
-                    label = "Adicionar widget",
+                    label = stringResource(R.string.widget_add),
                     onClick = { onDismiss(); onAddWidget() },
                 )
 

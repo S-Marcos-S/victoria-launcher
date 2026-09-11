@@ -1,23 +1,16 @@
-### 🚀 Novidades e Melhorias da Versão 0.48.3
+### 🚀 Novidades e Melhorias da Versão 0.48.4
 
-- **Sistema de Atualizações:**
-  - Lançamento da **versão 0.48.3** para validação do fluxo completo de atualização.
-  - Verificação de updates em tempo real sempre que o menu da tela inicial é aberto.
-  - Comparação aprimorada de integridade de versão via commit SHA contra a API do GitHub.
-  - Limpeza automática de versões anteriores baixadas na pasta Downloads antes de salvar o novo APK, evitando arquivos duplicados.
+- **Tradução Completa para Português (Brasil - pt-BR / pt):**
+  - Tradução integral de 100% dos textos, botões, opções e telas de configuração para o Português.
+  - Adicionado suporte nativo de localização com diretórios `values-pt` e `values-pt-rBR` totalmente sincronizados.
+  - Tradução dos nomes e descrições dos serviços de sistema no Android (Gestos de Acessibilidade e Acesso a Notificações).
+  - Remoção de todos os textos fixos (*hardcoded*) nas telas de opções, diálogo flutuante de mudanças e notificações de download.
 
-- **Menu da Tela Inicial (Long-Press):**
-  - Animação de abertura (slide up com spring e fade-in) e fechamento (slide down suave com fade-out).
-  - Gesto de deslizar para baixo (swipe down) para fechar o menu com amortecimento elástico.
-  - Suporte total ao botão/gesto voltar do sistema (`BackHandler`).
-  - Card de **Atualização Disponível** com botões lado a lado:
-    - **"Mudanças"**: Abre o balão flutuante translúcido com blur.
-    - **"Atualizar"**: Faz o download direto do APK release para o aparelho.
+- **Menu da Tela Inicial e Diálogo de Mudanças:**
+  - Exibição de todas as ações e alertas em Português ("Opções", "Papel de parede", "Adicionar widget", "Mudanças", "Atualizar", "O que há de novo").
+  - Diálogo de mudanças com efeito translúcido (*frosted glass*) e desfoque nativo (`FLAG_BLUR_BEHIND`).
+  - Animação suave com gestos elásticos de arrastar para baixo para fechar.
 
-- **Balão Flutuante de Mudanças (Changelog):**
-  - Janela flutuante no estilo *frosted glass* translúcido com desfoque de sistema no plano de fundo (`FLAG_BLUR_BEHIND`).
-  - Detalhes da release: identificador do commit, data e horário da build, tamanho do pacote e lista das novidades.
+- **Gestos e Desligamento de Tela:**
+  - Toque duplo para desligar a tela na tela inicial e gaveta de aplicativos com efeito de colapso visual escurecendo a tela a partir do ponto de toque.
 
-- **Toque Duplo para Desligar a Tela:**
-  - Gesto disponível na tela inicial e gaveta de apps.
-  - Efeito visual de foco e colapso escurecendo a tela suavemente a partir do ponto de toque.

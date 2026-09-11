@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
 import dev.victorialauncher.BuildConfig
+import dev.victorialauncher.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -194,8 +195,8 @@ object UpdateManager {
             } catch (_: Exception) {}
 
             val request = DownloadManager.Request(Uri.parse(update.apkDownloadUrl)).apply {
-                setTitle("Victoria Launcher")
-                setDescription("Baixando atualização${update.commitSha?.let { " (${it.take(7)})" } ?: ""}...")
+                setTitle(context.getString(R.string.app_name))
+                setDescription(context.getString(R.string.update_downloading_notification_desc, update.commitSha?.let { " (${it.take(7)})" } ?: ""))
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 setDestinationInExternalPublicDir(
                     Environment.DIRECTORY_DOWNLOADS,
@@ -207,7 +208,7 @@ object UpdateManager {
             downloadManager.enqueue(request)
             Toast.makeText(
                 context,
-                "Baixando atualização... Acompanhe pela barra de notificações",
+                context.getString(R.string.update_toast_downloading),
                 Toast.LENGTH_LONG,
             ).show()
         } catch (e: Exception) {
@@ -217,7 +218,11 @@ object UpdateManager {
                 }
                 context.startActivity(browserIntent)
             } catch (_: Exception) {
-                Toast.makeText(context, "Erro ao iniciar download: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.update_toast_error, e.message ?: ""),
+                    Toast.LENGTH_SHORT,
+                ).show()
             }
         }
     }
