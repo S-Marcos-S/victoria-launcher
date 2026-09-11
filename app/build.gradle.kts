@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream
 import java.util.Properties
 
 plugins {
@@ -15,7 +16,7 @@ val keystoreProperties = Properties().apply {
 val hasSigningConfig = keystoreProperties.getProperty("storeFile") != null
 
 val gitCommitSha: String = System.getenv("GITHUB_SHA")?.ifBlank { null } ?: runCatching {
-    val stdout = java.io.ByteArrayOutputStream()
+    val stdout = ByteArrayOutputStream()
     rootProject.exec {
         commandLine("git", "rev-parse", "HEAD")
         standardOutput = stdout
