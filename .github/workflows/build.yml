@@ -17,6 +17,9 @@ on:
           - 'release'
           - 'both'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build APKs
@@ -102,6 +105,23 @@ jobs:
           name: victoria-launcher-apks
           path: artifacts/*.apk
           retention-days: 30
+
+      - name: Publish GitHub Release for direct download
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Victoria Launcher - Latest APK"
+          body: |
+            ### Direct APK Download
+            - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-release.apk)
+            - [Download Debug APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-debug.apk)
+
+            Built automatically from commit `${{ github.sha }}`.
+          prerelease: false
+          files: artifacts/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   check:
     name: Tests & Code Quality
