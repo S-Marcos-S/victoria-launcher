@@ -406,8 +406,8 @@ fun HomeScreen(
 
                 // Widget slot placed between clock and favorites
                 if (showWidgetSlot) {
-                    val widgetStart = if (!alignRight) sidePaddingDp.dp else 52.dp
-                    val widgetEnd = if (!alignRight) 52.dp else sidePaddingDp.dp
+                    val widgetStart = if (!alignRight) sidePaddingDp.dp else maxOf(sidePaddingDp, 48).dp
+                    val widgetEnd = if (!alignRight) maxOf(sidePaddingDp, 48).dp else sidePaddingDp.dp
 
                     Spacer(Modifier.height(14.dp))
                     WidgetSlot(
