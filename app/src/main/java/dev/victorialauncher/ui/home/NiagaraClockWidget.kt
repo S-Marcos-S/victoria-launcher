@@ -136,11 +136,10 @@ fun NiagaraClockWidget(
     }
 }
 
-/** Attempts to launch the device's clock or alarms activity. */
+/** Attempts to launch the device clock or alarms activity. */
 private fun launchClockApp(context: Context) {
     val candidates = listOf(
         Intent(AlarmClock.ACTION_SHOW_ALARMS),
-        Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CLOCK),
         Intent(AlarmClock.ACTION_SET_ALARM),
     )
     for (intent in candidates) {
@@ -150,9 +149,24 @@ private fun launchClockApp(context: Context) {
             return
         } catch (_: Exception) {}
     }
+    val clockPkgs = listOf(
+        "com.google.android.deskclock",
+        "com.android.deskclock",
+        "com.sec.android.app.clockpackage",
+    )
+    for (pkg in clockPkgs) {
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(pkg)
+        if (launchIntent != null) {
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                context.startActivity(launchIntent)
+                return
+            } catch (_: Exception) {}
+        }
+    }
 }
 
-/** Attempts to launch the device's calendar activity. */
+/** Attempts to launch the device calendar activity. */
 private fun launchCalendarApp(context: Context) {
     val candidates = listOf(
         Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CALENDAR),
