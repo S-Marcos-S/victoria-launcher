@@ -133,6 +133,7 @@ fun HomeRoute(
     var showHomeOptions by remember { mutableStateOf(false) }
 
     val nowPlaying by NowPlayingBus.state.collectAsState()
+    val notificationsByPackage by dev.victorialauncher.notification.NotificationBus.notifications.collectAsState()
     val listenerGranted = remember(homeIntentTick) { isListenerEnabled(context) }
     // Don't reserve the block (or its padding) unless there is something to render:
     // no live session means the whole thing collapses, padding included.
@@ -339,6 +340,8 @@ fun HomeRoute(
                 onAppInfo = { app.appRepository.openAppInfo(it.packageName) },
                 onOpenSettings = { onNavigate("settings") },
                 onOpenHomeOptions = { showHomeOptions = true },
+                showAppNotifications = settings.showAppNotifications,
+                notificationsByPackage = notificationsByPackage,
             )
         }
 
@@ -391,6 +394,8 @@ fun HomeRoute(
                 showAlphabet = settings.showAlphabet,
                 alignRight = settings.alignRight,
                 doubleTapToLock = settings.doubleTapToLock,
+                showAppNotifications = settings.showAppNotifications,
+                notificationsByPackage = notificationsByPackage,
                 onDoubleTapLock = {
                     if (!SystemUi.lockScreen()) {
                         Toast.makeText(
@@ -499,4 +504,5 @@ data class HomeSettings(
     val showFavoriteLabels: Boolean,
     val doubleTapToLock: Boolean,
     val contentColor: Color,
+    val showAppNotifications: Boolean = false,
 )

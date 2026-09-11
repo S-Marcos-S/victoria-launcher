@@ -127,6 +127,7 @@ fun VictoriaNavHost(
     val widgetPosition by app.prefs.widgetPosition.collectAsState(initial = 0)
     val widgetHeightDp by app.prefs.widgetHeightDp.collectAsState(initial = 180)
     val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = false)
+    val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
     val folders by app.prefs.folders.collectAsState(initial = emptyList())
     val contentColor = rememberContentColor(textColorMode)
 
@@ -172,6 +173,7 @@ fun VictoriaNavHost(
         showFavoriteLabels = showFavoriteLabels,
         doubleTapToLock = doubleTapToLock,
         contentColor = contentColor,
+        showAppNotifications = showAppNotifications,
     )
 
     var pendingIconTarget by remember { mutableStateOf<String?>(null) }
@@ -291,6 +293,8 @@ fun VictoriaNavHost(
                 alignRight = alignRight,
                 nowPlayingEnabled = nowPlayingEnabled,
                 nowPlayingListenerEnabled = listenerEnabled,
+                showAppNotifications = showAppNotifications,
+                onSetShowAppNotifications = { scope.launch { app.prefs.setShowAppNotifications(it) } },
                 onSetIconPack = { scope.launch { app.prefs.setIconPackPackage(it) } },
                 onSetIconSize = { scope.launch { app.prefs.setIconSizeDp(it) } },
                 onSetLabelSize = { scope.launch { app.prefs.setLabelSizeSp(it) } },

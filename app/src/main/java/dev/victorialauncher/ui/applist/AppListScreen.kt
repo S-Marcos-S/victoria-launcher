@@ -140,7 +140,10 @@ fun AppListScreen(
     alignRight: Boolean,
     doubleTapToLock: Boolean,
     onDoubleTapLock: () -> Unit,
+    showAppNotifications: Boolean = false,
+    notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
 ) {
+    var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     // The gesture handlers below outlive the composition that created them, so they must not
@@ -602,26 +605,37 @@ fun AppListScreen(
                 ) {
                 when (row) {
                     is AppListRow.Header -> SectionHeader(row.text, labelSizeSp, contentColor, alignRight)
-                    is AppListRow.Entry -> AppRow(
-                        contentColor = contentColor,
-                        alignRight = alignRight,
-                        app = row.app,
-                        label = displayName(row.app),
-                        iconSizeDp = iconSizeDp,
-                        labelSizeSp = labelSizeSp,
-                        isFavorite = favoriteKeys.contains(row.app.key),
-                        menuExpanded = menuForKey == row.app.key,
-                        menuOffset = menuOffset,
-                        touchPosition = touchPosition,
-                        onLaunch = { onLaunch(row.app) },
-                        onLongPress = { offset -> menuOffset = offset; menuForKey = row.app.key },
-                        onDismissMenu = { menuForKey = null },
-                        onSetFavorite = { onSetFavorite(row.app, it) },
-                        onEdit = { editDialogFor = row.app },
-                        onAppInfo = { onAppInfo(row.app) },
-                        onHide = { onHideApp(row.app) },
-                        onMoveToFolder = { onMoveToFolder(row.app) },
-                    )
+                    is AppListRow.Entry -> {
+                        val appNotifications = if (showAppNotifications) {
+                            notificationsByPackage[row.app.packageName].orEmpty()
+                        } else emptyList()
+                        val latestNotification = appNotifications.firstOrNull()
+
+                        AppRow(
+                            contentColor = contentColor,
+                            alignRight = alignRight,
+                            app = row.app,
+                            label = displayName(row.app),
+                            iconSizeDp = iconSizeDp,
+                            labelSizeSp = labelSizeSp,
+                            isFavorite = favoriteKeys.contains(row.app.key),
+                            notification = latestNotification,
+                            onNotificationClick = { notif ->
+                                activeDialogNotification = notif to row.app
+                            },
+                            menuExpanded = menuForKey == row.app.key,
+                            menuOffset = menuOffset,
+                            touchPosition = touchPosition,
+                            onLaunch = { onLaunch(row.app) },
+                            onLongPress = { offset -> menuOffset = offset; menuForKey = row.app.key },
+                            onDismissMenu = { menuForKey = null },
+                            onSetFavorite = { onSetFavorite(row.app, it) },
+                            onEdit = { editDialogFor = row.app },
+                            onAppInfo = { onAppInfo(row.app) },
+                            onHide = { onHideApp(row.app) },
+                            onMoveToFolder = { onMoveToFolder(row.app) },
+                        )
+                    }
                 }
                 }
             }
@@ -695,6 +709,23 @@ fun AppListScreen(
             )
         }
 
+        activeDialogNotification?.let { (notif, app) ->
+            dev.victorialauncher.ui.notification.NotificationDetailDialog(
+                item = notif,
+                appInfo = app,
+                appName = displayName(app),
+                onDismissRequest = { activeDialogNotification = null },
+                onOpen = {
+                    activeDialogNotification = null
+                    runCatching { notif.contentIntent?.send() }
+                },
+                onDismissNotification = {
+                    activeDialogNotification = null
+                    dev.victorialauncher.notification.NotificationBus.dismissNotification(notif.key)
+                },
+            )
+        }
+
         // Bubble for the current letter, dragged out from the strip and springing back.
         if (scrubLetter != null) {
             val bubble = 72.dp
@@ -764,6 +795,8 @@ private fun AppRow(
     onAppInfo: () -> Unit,
     onHide: () -> Unit,
     onMoveToFolder: () -> Unit,
+    notification: dev.victorialauncher.notification.AppNotificationItem? = null,
+    onNotificationClick: (dev.victorialauncher.notification.AppNotificationItem) -> Unit = {},
 ) {
     // Same press treatment as the home screen: the stock ripple all but vanishes against a
     // wallpaper, and without any feedback a tap that did register reads as one that didn't.
@@ -801,20 +834,64 @@ private fun AppRow(
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val notificationContent: @Composable () -> Unit = {
+                if (notification != null) {
+                    val notifText = if (notification.text.isNotBlank()) {
+                        "${notification.title}: ${notification.text}"
+                    } else {
+                        notification.title
+                    }
+                    Text(
+                        text = notifText,
+                        color = contentColor.copy(alpha = 0.65f),
+                        fontSize = (labelSizeSp - 3).coerceAtLeast(11).sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onNotificationClick(notification) },
+                            ),
+                    )
+                }
+            }
+
             if (alignRight) {
-                Text(
-                    label,
-                    color = contentColor,
-                    fontSize = labelSizeSp.sp,
+                Column(
                     modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End,
-                )
+                    horizontalAlignment = Alignment.End,
+                ) {
+                    Text(
+                        label,
+                        color = contentColor,
+                        fontSize = labelSizeSp.sp,
+                        textAlign = TextAlign.End,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                    notificationContent()
+                }
                 Spacer(Modifier.width(16.dp))
                 AppIcon(app = app, sizeDp = iconSizeDp)
             } else {
                 AppIcon(app = app, sizeDp = iconSizeDp)
                 Spacer(Modifier.width(16.dp))
-                Text(label, color = contentColor, fontSize = labelSizeSp.sp, modifier = Modifier.weight(1f))
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    Text(
+                        label,
+                        color = contentColor,
+                        fontSize = labelSizeSp.sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                    notificationContent()
+                }
             }
         }
 

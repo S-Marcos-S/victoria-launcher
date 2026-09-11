@@ -95,6 +95,10 @@
     <string name="settings_hidden_apps">Hidden apps</string>
     <string name="settings_hidden_none">None hidden</string>
     <string name="settings_hidden_count">%1$d hidden</string>
+    <string name="settings_show_notifications">Show notifications on apps</string>
+    <string name="settings_show_notifications_detail">Display recent notifications below app names</string>
+    <string name="notification_open">Open</string>
+    <string name="notification_dismiss">Dismiss</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_less">Less</string>
     <string name="settings_more">More</string>

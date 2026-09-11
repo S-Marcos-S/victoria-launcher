@@ -183,8 +183,11 @@ fun HomeScreen(
     onAppInfo: (AppInfo) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHomeOptions: () -> Unit = {},
+    showAppNotifications: Boolean = false,
+    notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
 ) {    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
+    var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var menuForKey by remember { mutableStateOf<String?>(null) }
     var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     var renameDialogFor by remember { mutableStateOf<AppInfo?>(null) }
@@ -591,29 +594,40 @@ fun HomeScreen(
                             onRemoveApp = { member -> onRemoveFromFolder(item.folder, member) },
                         )
 
-                        is HomeItem.Favorite -> FavoriteRow(
-                            app = item.app,
-                            label = displayName(item.app),
-                            editMode = editMode,
-                            iconSizeDp = iconSizeDp,
-                            labelSizeSp = labelSizeSp,
-                            sidePaddingDp = sidePaddingDp,
-                            contentColor = contentColor,
-                            showLabels = showFavoriteLabels,
-                            alignRight = alignRight,
-                            menuExpanded = menuForKey == item.app.key,
-                            menuOffset = menuOffset,
-                            touchPosition = touchPosition,
-                            onLaunch = { onLaunch(item.app) },
-                            onOpenMenu = { offset -> menuOffset = offset; menuForKey = item.app.key },
-                            onDismissMenu = { menuForKey = null },
-                            onMoveToFolder = { menuForKey = null; onMoveToFolder(item.app) },
-                            onEditLayout = { menuForKey = null; onEditModeChange(true) },
-                            onAppInfo = { menuForKey = null; onAppInfo(item.app) },
-                            onRemove = { menuForKey = null; onRemoveFavorite(item.app) },
-                            onEditIconName = { menuForKey = null; renameDialogFor = item.app },
-                            onOpenSettings = { menuForKey = null; onOpenSettings() },
-                        )
+                        is HomeItem.Favorite -> {
+                            val appNotifications = if (showAppNotifications) {
+                                notificationsByPackage[item.app.packageName].orEmpty()
+                            } else emptyList()
+                            val latestNotification = appNotifications.firstOrNull()
+
+                            FavoriteRow(
+                                app = item.app,
+                                label = displayName(item.app),
+                                editMode = editMode,
+                                iconSizeDp = iconSizeDp,
+                                labelSizeSp = labelSizeSp,
+                                sidePaddingDp = sidePaddingDp,
+                                contentColor = contentColor,
+                                showLabels = showFavoriteLabels,
+                                alignRight = alignRight,
+                                notification = latestNotification,
+                                onNotificationClick = { notif ->
+                                    activeDialogNotification = notif to item.app
+                                },
+                                menuExpanded = menuForKey == item.app.key,
+                                menuOffset = menuOffset,
+                                touchPosition = touchPosition,
+                                onLaunch = { onLaunch(item.app) },
+                                onOpenMenu = { offset -> menuOffset = offset; menuForKey = item.app.key },
+                                onDismissMenu = { menuForKey = null },
+                                onMoveToFolder = { menuForKey = null; onMoveToFolder(item.app) },
+                                onEditLayout = { menuForKey = null; onEditModeChange(true) },
+                                onAppInfo = { menuForKey = null; onAppInfo(item.app) },
+                                onRemove = { menuForKey = null; onRemoveFavorite(item.app) },
+                                onEditIconName = { menuForKey = null; renameDialogFor = item.app },
+                                onOpenSettings = { menuForKey = null; onOpenSettings() },
+                            )
+                        }
                     }
                 }
 
@@ -708,6 +722,23 @@ fun HomeScreen(
             onDismiss = { renameDialogFor = null },
         )
     }
+
+    activeDialogNotification?.let { (notif, app) ->
+        dev.victorialauncher.ui.notification.NotificationDetailDialog(
+            item = notif,
+            appInfo = app,
+            appName = displayName(app),
+            onDismissRequest = { activeDialogNotification = null },
+            onOpen = {
+                activeDialogNotification = null
+                runCatching { notif.contentIntent?.send() }
+            },
+            onDismissNotification = {
+                activeDialogNotification = null
+                dev.victorialauncher.notification.NotificationBus.dismissNotification(notif.key)
+            },
+        )
+    }
 }
 
 /** One favorite: icon, optional name, press highlight and its context menu. */
@@ -734,6 +765,8 @@ private fun FavoriteRow(
     onRemove: () -> Unit,
     onEditIconName: () -> Unit,
     onOpenSettings: () -> Unit,
+    notification: dev.victorialauncher.notification.AppNotificationItem? = null,
+    onNotificationClick: (dev.victorialauncher.notification.AppNotificationItem) -> Unit = {},
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -773,15 +806,47 @@ private fun FavoriteRow(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val notificationContent: @Composable () -> Unit = {
+                if (notification != null) {
+                    val notifText = if (notification.text.isNotBlank()) {
+                        "${notification.title}: ${notification.text}"
+                    } else {
+                        notification.title
+                    }
+                    Text(
+                        text = notifText,
+                        color = contentColor.copy(alpha = 0.65f),
+                        fontSize = (labelSizeSp - 3).coerceAtLeast(11).sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onNotificationClick(notification) },
+                            ),
+                    )
+                }
+            }
+
             if (alignRight) {
                 if (showLabels) {
-                    Text(
-                        label,
-                        color = contentColor,
-                        fontSize = labelSizeSp.sp,
+                    Column(
                         modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.End,
-                    )
+                        horizontalAlignment = Alignment.End,
+                    ) {
+                        Text(
+                            label,
+                            color = contentColor,
+                            fontSize = labelSizeSp.sp,
+                            textAlign = TextAlign.End,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        notificationContent()
+                    }
                     Spacer(Modifier.width(16.dp))
                 } else {
                     Spacer(Modifier.weight(1f))
@@ -791,7 +856,19 @@ private fun FavoriteRow(
                 AppIcon(app = app, sizeDp = iconSizeDp)
                 if (showLabels) {
                     Spacer(Modifier.width(16.dp))
-                    Text(label, color = contentColor, fontSize = labelSizeSp.sp, modifier = Modifier.weight(1f))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.Start,
+                    ) {
+                        Text(
+                            label,
+                            color = contentColor,
+                            fontSize = labelSizeSp.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        notificationContent()
+                    }
                 } else {
                     Spacer(Modifier.weight(1f))
                 }

@@ -6,8 +6,11 @@ import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
+import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import dev.victorialauncher.notification.AppNotificationItem
+import dev.victorialauncher.notification.NotificationBus
 
 class NowPlayingListenerService : NotificationListenerService() {
 
@@ -33,24 +36,66 @@ class NowPlayingListenerService : NotificationListenerService() {
         super.onListenerConnected()
         sessionManager = getSystemService(MediaSessionManager::class.java)
         componentName = ComponentName(this, NowPlayingListenerService::class.java)
+        NotificationBus.registerCancelCallback { key ->
+            runCatching { cancelNotification(key) }
+        }
         try {
             sessionManager.addOnActiveSessionsChangedListener(sessionsListener, componentName)
             attachTo(sessionManager.getActiveSessions(componentName))
         } catch (e: SecurityException) {
             NowPlayingBus.update(null)
         }
+        refreshNotifications()
     }
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
+        NotificationBus.registerCancelCallback(null)
         runCatching { sessionManager.removeOnActiveSessionsChangedListener(sessionsListener) }
         detach()
         NowPlayingBus.update(null)
+        NotificationBus.updateNotifications(emptyList())
     }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification?) = refresh()
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        refresh()
+        refreshNotifications()
+    }
 
-    override fun onNotificationRemoved(sbn: StatusBarNotification?) = refresh()
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
+        refresh()
+        refreshNotifications()
+    }
+
+    private fun refreshNotifications() {
+        runCatching {
+            val active = activeNotifications ?: return@runCatching
+            val list = active.mapNotNull { sbn ->
+                val notification = sbn.notification ?: return@mapNotNull null
+                val extras = notification.extras ?: return@mapNotNull null
+                val title = (extras.getCharSequence(Notification.EXTRA_TITLE)
+                    ?: extras.getCharSequence(Notification.EXTRA_TITLE_BIG))?.toString().orEmpty().trim()
+                val text = (extras.getCharSequence(Notification.EXTRA_TEXT)
+                    ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT))?.toString().orEmpty().trim()
+                val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()?.trim()
+
+                // If both title and text are blank, it's not useful to show
+                if (title.isBlank() && text.isBlank()) return@mapNotNull null
+
+                AppNotificationItem(
+                    key = sbn.key,
+                    packageName = sbn.packageName,
+                    title = if (title.isNotBlank()) title else text,
+                    text = if (title.isNotBlank()) text else "",
+                    subText = subText,
+                    postTime = sbn.postTime,
+                    contentIntent = notification.contentIntent,
+                    isClearable = sbn.isClearable,
+                )
+            }
+            NotificationBus.updateNotifications(list)
+        }
+    }
 
     private fun refresh() {
         if (::sessionManager.isInitialized) {

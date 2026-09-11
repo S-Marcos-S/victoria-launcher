@@ -93,6 +93,8 @@ fun SettingsScreen(
     onSetShowAlphabet: (Boolean) -> Unit,
     onSetAlignRight: (Boolean) -> Unit,
     onSetNowPlayingEnabled: (Boolean) -> Unit,
+    showAppNotifications: Boolean,
+    onSetShowAppNotifications: (Boolean) -> Unit,
     shadeGestureReady: Boolean,
     onOpenAccessibilitySettings: () -> Unit,
     onOpenHiddenApps: () -> Unit,
@@ -237,7 +239,14 @@ fun SettingsScreen(
             item {
                 Section(stringResource(R.string.settings_section_now_playing)) {
                     SwitchRow(stringResource(R.string.settings_now_playing_show), nowPlayingEnabled, onSetNowPlayingEnabled)
-                    if (nowPlayingEnabled) {
+                    RowDivider()
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_show_notifications),
+                        detail = stringResource(R.string.settings_show_notifications_detail),
+                        checked = showAppNotifications,
+                        onCheckedChange = onSetShowAppNotifications,
+                    )
+                    if (nowPlayingEnabled || showAppNotifications) {
                         RowDivider()
                         Row(
                             modifier = Modifier
