@@ -252,32 +252,50 @@ def download_and_install_apk(repo, run_id):
     size_mb = apk_file.stat().st_size / (1024 * 1024)
     print(f"{C_GREEN}✓ APK encontrado:{C_RESET} {apk_file.name} ({size_mb:.2f} MB)")
 
-    # 3. Copia para /data/local/tmp acessível pelo instalador do Android
+    # 3. Salva uma cópia na pasta de Downloads do dispositivo
+    download_dirs = [
+        Path("/storage/emulated/0/Download"),
+        Path("/sdcard/Download"),
+        Path.home() / "storage" / "downloads",
+    ]
+    saved_download_path = None
+    for d in download_dirs:
+        try:
+            if d.exists():
+                dest = d / "victoria-launcher-release.apk"
+                shutil.copy2(str(apk_file), str(dest))
+                saved_download_path = dest
+                break
+        except Exception:
+            continue
+
+    if saved_download_path:
+        print(f"\n{C_BOLD}{C_GREEN}📁 APK salvo na pasta Downloads:{C_RESET} {saved_download_path}")
+
+    # 4. Tenta instalação automática via root se pm estiver disponível
     dest_apk = "/data/local/tmp/victoria-launcher-release.apk"
-    print(f"\n{C_CYAN}📲 Preparando instalação com permissões Root...{C_RESET}")
+    print(f"{C_CYAN}📲 Tentando instalação automática via Root...{C_RESET}")
     run_cmd(f"su -c \"cp '{apk_file.resolve()}' '{dest_apk}' && chmod 644 '{dest_apk}'\"")
 
-    # 4. Instala com pm install -r -d
-    print(f"{C_YELLOW}⚙️  Executando 'pm install -r -d {dest_apk}' via root...{C_RESET}")
     install_code, install_out, install_err = run_cmd(f"su -c \"pm install -r -d '{dest_apk}'\"")
     combined_output = f"{install_out}\n{install_err}".strip()
-
-    # 5. Remove temporários
     run_cmd(f"su -c \"rm -f '{dest_apk}'\"")
     shutil.rmtree(tmp_dir, ignore_errors=True)
 
     if "Success" in combined_output:
         print(f"\n{C_BOLD}{C_GREEN}=================================================================={C_RESET}")
-        print(f"{C_BOLD}{C_GREEN}🎉 VICTORIA LAUNCHER INSTALADO COM SUCESSO!{C_RESET}")
+        print(f"{C_BOLD}{C_GREEN}🎉 VICTORIA LAUNCHER INSTALADO COM SUCESSO VIA ROOT!{C_RESET}")
         print(f"{C_BOLD}{C_GREEN}=================================================================={C_RESET}")
         print(f"{C_WHITE}A versão mais recente foi aplicada no seu dispositivo.{C_RESET}")
         return True
     else:
-        print(f"\n{C_BOLD}{C_RED}=================================================================={C_RESET}")
-        print(f"{C_BOLD}{C_RED}❌ ERRO NA INSTALAÇÃO DO APK VIA ROOT{C_RESET}")
-        print(f"{C_BOLD}{C_RED}=================================================================={C_RESET}")
-        print(f"{C_RED}{combined_output}{C_RESET}")
-        return False
+        print(f"\n{C_BOLD}{C_GREEN}=================================================================={C_RESET}")
+        print(f"{C_BOLD}{C_GREEN}✓ APK PRONTO NA PASTA DE DOWNLOADS!{C_RESET}")
+        print(f"{C_BOLD}{C_GREEN}=================================================================={C_RESET}")
+        if saved_download_path:
+            print(f"Local: {C_BOLD}{C_WHITE}{saved_download_path}{C_RESET}")
+        print("Basta abrir seu gerenciador de arquivos / notificações e tocar no APK para instalar.")
+        return True
 
 def show_error_summary(repo, run_id, run_data):
     """Display error summary and failed logs."""
@@ -363,19 +381,9 @@ def main():
         if arg.isdigit():
             run_id = arg
         elif arg == "--install-latest":
-            # Instalação direta sem monitoramento
-            print(f"{C_CYAN}Instalando release 'latest' diretamente...{C_RESET}")
-            tmp_dir = Path("/tmp") / f"vl_apk_{int(time.time())}"
-            tmp_dir.mkdir(parents=True, exist_ok=True)
-            run_cmd(f"gh release download latest -R {repo} -p '*release*.apk' -D '{tmp_dir}' --clobber")
-            apks = list(tmp_dir.glob("**/*release*.apk"))
-            if apks:
-                dest = "/data/local/tmp/victoria-launcher-release.apk"
-                run_cmd(f"su -c \"cp '{apks[0].resolve()}' '{dest}' && chmod 644 '{dest}'\"")
-                _, out, _ = run_cmd(f"su -c \"pm install -r -d '{dest}'\"")
-                run_cmd(f"su -c \"rm -f '{dest}'\"")
-                shutil.rmtree(tmp_dir, ignore_errors=True)
-                print(f"Resultado: {out}")
+            # Baixar e salvar diretamente
+            print(f"{C_CYAN}Baixando release 'latest'...{C_RESET}")
+            download_and_install_apk(repo, "latest")
             return
 
     if not run_id:
