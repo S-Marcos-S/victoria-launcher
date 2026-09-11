@@ -65,14 +65,14 @@ jobs:
           EOF
           fi
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
+      - name: Build Release and Debug APKs
+        run: ./gradlew assembleRelease assembleDebug --stacktrace
 
       - name: Clean up temporary keystore
         if: always()
         run: rm -f release.keystore keystore.properties
 
-      - name: Prepare APK for upload
+      - name: Prepare APKs for upload
         run: |
           mkdir -p artifacts
           if [ -f app/build/outputs/apk/release/app-release.apk ]; then
@@ -80,12 +80,15 @@ jobs:
           elif [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
             cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/victoria-launcher-release.apk
           fi
+          if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
+            cp app/build/outputs/apk/debug/app-debug.apk artifacts/victoria-launcher-debug.apk
+          fi
 
-      - name: Upload Release APK
+      - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: victoria-launcher-release
-          path: artifacts/victoria-launcher-release.apk
+          name: victoria-launcher-apks
+          path: artifacts/*.apk
           retention-days: 30
 
       - name: Publish GitHub Release for direct download
@@ -93,14 +96,17 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "Victoria Launcher - Latest Release APK"
+          name: "Victoria Launcher - Latest APKs"
           body: |
             ### Direct APK Download
             - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-release.apk)
+            - [Download Debug APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-debug.apk)
 
             Built automatically from commit `${{ github.sha }}`.
           prerelease: false
-          files: artifacts/victoria-launcher-release.apk
+          files: |
+            artifacts/victoria-launcher-release.apk
+            artifacts/victoria-launcher-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
