@@ -84,11 +84,18 @@ jobs:
             cp app/build/outputs/apk/debug/app-debug.apk artifacts/victoria-launcher-debug.apk
           fi
 
-      - name: Upload APK Artifacts
+      - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: victoria-launcher-apks
-          path: artifacts/*.apk
+          name: victoria-launcher-release
+          path: artifacts/victoria-launcher-release.apk
+          retention-days: 30
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: victoria-launcher-debug
+          path: artifacts/victoria-launcher-debug.apk
           retention-days: 30
 
       - name: Publish GitHub Release for direct download

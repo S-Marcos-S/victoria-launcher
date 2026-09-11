@@ -223,9 +223,9 @@ def download_and_install_apk(repo, run_id):
     tmp_dir = Path("/tmp") / f"vl_apk_{int(time.time())}"
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Tenta baixar via artefato da run atual
-    print(f"{C_DIM}Baixando artefato 'victoria-launcher-apks' da execução {run_id}...{C_RESET}")
-    cmd = f"gh run download {run_id} -R {repo} -n victoria-launcher-apks -D '{tmp_dir}'"
+    # 1. Tenta baixar via artefato de release específico da run atual
+    print(f"{C_DIM}Baixando artefato de release da execução {run_id}...{C_RESET}")
+    cmd = f"gh run download {run_id} -R {repo} -n victoria-launcher-release -D '{tmp_dir}'"
     code, _, err = run_cmd(cmd)
 
     apk_file = None
@@ -234,15 +234,30 @@ def download_and_install_apk(repo, run_id):
         if apks:
             apk_file = apks[0]
 
-    # 2. Se não encontrou no artefato, tenta da release 'latest'
+    # 2. Se não encontrou o artefato isolado, tenta baixar apenas o APK release da release 'latest'
     if not apk_file:
-        print(f"{C_YELLOW}Artefato direto não encontrado, baixando da release 'latest'...{C_RESET}")
+        print(f"{C_YELLOW}Artefato direto de release não encontrado, baixando da release 'latest'...{C_RESET}")
         cmd = f"gh release download latest -R {repo} -p '*release*.apk' -D '{tmp_dir}' --clobber"
         code, _, _ = run_cmd(cmd)
         if code == 0:
             apks = list(tmp_dir.glob("**/*release*.apk"))
             if apks:
                 apk_file = apks[0]
+
+    # 3. Fallback para execuções legadas com o bundle 'victoria-launcher-apks'
+    if not apk_file:
+        cmd = f"gh run download {run_id} -R {repo} -n victoria-launcher-apks -D '{tmp_dir}'"
+        code, _, _ = run_cmd(cmd)
+        if code == 0:
+            apks = list(tmp_dir.glob("**/*release*.apk"))
+            if apks:
+                apk_file = apks[0]
+            # Remove qualquer APK de debug que possa ter vindo junto
+            for dbg in tmp_dir.glob("**/*debug*.apk"):
+                try:
+                    dbg.unlink()
+                except Exception:
+                    pass
 
     if not apk_file or not apk_file.is_file():
         print(f"{C_RED}❌ Não foi possível encontrar o arquivo APK de release baixado.{C_RESET}")
