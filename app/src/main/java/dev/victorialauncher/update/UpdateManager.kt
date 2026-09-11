@@ -1,24 +1,39 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.update
 
-import android.app.DownloadManager
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.widget.Toast
 import dev.victorialauncher.BuildConfig
 import dev.victorialauncher.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
+
+sealed class DownloadStatus {
+    object Idle : DownloadStatus()
+    data class Downloading(val progressPercent: Int) : DownloadStatus()
+    data class Finished(val fileUri: Uri?) : DownloadStatus()
+    data class Failed(val error: String) : DownloadStatus()
+}
 
 data class UpdateInfo(
     val hasUpdate: Boolean,
@@ -37,6 +52,11 @@ object UpdateManager {
 
     private val _updateAvailable = MutableStateFlow<UpdateInfo?>(null)
     val updateAvailable: StateFlow<UpdateInfo?> = _updateAvailable.asStateFlow()
+
+    private val _downloadStatus = MutableStateFlow<DownloadStatus>(DownloadStatus.Idle)
+    val downloadStatus: StateFlow<DownloadStatus> = _downloadStatus.asStateFlow()
+
+    private val updateScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private var lastCheckTimeMs = 0L
     private const val CHECK_INTERVAL_MS = 5 * 60 * 1000L // 5 minutos de cache
@@ -174,56 +194,215 @@ object UpdateManager {
     }
 
     fun startDownload(context: Context, update: UpdateInfo) {
-        try {
-            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-            if (downloadManager == null) {
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(update.apkDownloadUrl)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(browserIntent)
-                return
-            }
+        if (_downloadStatus.value is DownloadStatus.Downloading) {
+            return
+        }
 
+        val appContext = context.applicationContext
+        _downloadStatus.value = DownloadStatus.Downloading(0)
+        Toast.makeText(
+            appContext,
+            appContext.getString(R.string.update_toast_downloading),
+            Toast.LENGTH_SHORT,
+        ).show()
+
+        updateScope.launch {
             try {
-                val existingFile = java.io.File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    "victoria-launcher-release.apk",
-                )
-                if (existingFile.exists()) {
-                    existingFile.delete()
+                // 1. Segue redirecionamentos HTTP 302/307 do GitHub Releases até o asset final
+                var currentUrl = update.apkDownloadUrl
+                var conn: HttpURLConnection? = null
+                var redirects = 0
+                while (redirects < 6) {
+                    val connection = (URL(currentUrl).openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 15000
+                        readTimeout = 25000
+                        instanceFollowRedirects = false
+                        setRequestProperty("User-Agent", "Mozilla/5.0 VictoriaLauncher/${BuildConfig.VERSION_NAME}")
+                        setRequestProperty("Accept", "*/*")
+                    }
+                    val code = connection.responseCode
+                    if (code in 300..399) {
+                        val location = connection.getHeaderField("Location")
+                        connection.disconnect()
+                        if (!location.isNullOrBlank()) {
+                            currentUrl = location
+                            redirects++
+                            continue
+                        }
+                    }
+                    conn = connection
+                    break
+                }
+
+                if (conn == null || conn.responseCode != 200) {
+                    throw IllegalStateException("Servidor retornou código ${conn?.responseCode ?: "desconhecido"}")
+                }
+
+                val totalLength = conn.contentLengthLong.takeIf { it > 0 } ?: update.apkSize
+
+                // 2. Salva o fluxo na pasta Downloads usando MediaStore (Android 10+) ou FileOutputStream
+                val savedUri = conn.inputStream.use { input ->
+                    saveStreamToDownloads(appContext, input, totalLength) { percent ->
+                        _downloadStatus.value = DownloadStatus.Downloading(percent)
+                    }
+                }
+
+                conn.disconnect()
+                _downloadStatus.value = DownloadStatus.Finished(savedUri)
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        appContext,
+                        appContext.getString(R.string.update_toast_download_completed),
+                        Toast.LENGTH_LONG,
+                    ).show()
+
+                    savedUri?.let { uri ->
+                        promptInstall(appContext, uri)
+                    }
+                }
+            } catch (e: Exception) {
+                _downloadStatus.value = DownloadStatus.Failed(e.message ?: "Erro")
+                withContext(Dispatchers.Main) {
+                    try {
+                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(update.apkDownloadUrl)).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        appContext.startActivity(browserIntent)
+                    } catch (_: Exception) {
+                        Toast.makeText(
+                            appContext,
+                            appContext.getString(R.string.update_toast_error, e.message ?: ""),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun saveStreamToDownloads(
+        context: Context,
+        input: InputStream,
+        totalBytes: Long,
+        onProgress: (Int) -> Unit,
+    ): Uri? {
+        val fileName = "victoria-launcher-release.apk"
+
+        // Tenta remover qualquer APK antigo com o mesmo nome na pasta física
+        try {
+            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val physicalFile = File(dir, fileName)
+            if (physicalFile.exists()) {
+                physicalFile.delete()
+            }
+        } catch (_: Exception) {}
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val resolver = context.contentResolver
+            val downloadsUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+
+            // Limpa entradas anteriores do MediaStore para não criar duplicatas como (1).apk
+            try {
+                val projection = arrayOf(MediaStore.MediaColumns._ID)
+                val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+                val selectionArgs = arrayOf(fileName)
+                resolver.query(downloadsUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                    val idCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+                    while (cursor.moveToNext()) {
+                        val id = cursor.getLong(idCol)
+                        resolver.delete(ContentUris.withAppendedId(downloadsUri, id), null, null)
+                    }
                 }
             } catch (_: Exception) {}
 
-            val request = DownloadManager.Request(Uri.parse(update.apkDownloadUrl)).apply {
-                setTitle(context.getString(R.string.app_name))
-                setDescription(context.getString(R.string.update_downloading_notification_desc, update.commitSha?.let { " (${it.take(7)})" } ?: ""))
-                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                setDestinationInExternalPublicDir(
-                    Environment.DIRECTORY_DOWNLOADS,
-                    "victoria-launcher-release.apk"
-                )
-                setMimeType("application/vnd.android.package-archive")
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.android.package-archive")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
 
-            downloadManager.enqueue(request)
-            Toast.makeText(
-                context,
-                context.getString(R.string.update_toast_downloading),
-                Toast.LENGTH_LONG,
-            ).show()
-        } catch (e: Exception) {
+            val uri = resolver.insert(downloadsUri, contentValues)
+                ?: throw IllegalStateException("Não foi possível criar entrada no MediaStore.Downloads")
+
             try {
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(update.apkDownloadUrl)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(browserIntent)
-            } catch (_: Exception) {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.update_toast_error, e.message ?: ""),
-                    Toast.LENGTH_SHORT,
-                ).show()
+                resolver.openOutputStream(uri)?.use { output ->
+                    copyStreamWithProgress(input, output, totalBytes, onProgress)
+                } ?: throw IllegalStateException("Falha ao abrir fluxo de saída em Downloads")
+
+                contentValues.clear()
+                contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, contentValues, null, null)
+                return uri
+            } catch (e: Exception) {
+                try { resolver.delete(uri, null, null) } catch (_: Exception) {}
+                throw e
             }
+        } else {
+            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            val targetFile = File(dir, fileName)
+            if (targetFile.exists()) {
+                targetFile.delete()
+            }
+            targetFile.outputStream().use { output ->
+                copyStreamWithProgress(input, output, totalBytes, onProgress)
+            }
+            return Uri.fromFile(targetFile)
+        }
+    }
+
+    private fun copyStreamWithProgress(
+        input: InputStream,
+        output: OutputStream,
+        totalBytes: Long,
+        onProgress: (Int) -> Unit,
+    ) {
+        val buffer = ByteArray(8192)
+        var bytesRead: Int
+        var totalRead = 0L
+        var lastPercent = -1
+        while (input.read(buffer).also { bytesRead = it } != -1) {
+            output.write(buffer, 0, bytesRead)
+            totalRead += bytesRead
+            if (totalBytes > 0) {
+                val percent = ((totalRead * 100) / totalBytes).toInt().coerceIn(0, 100)
+                if (percent != lastPercent) {
+                    lastPercent = percent
+                    onProgress(percent)
+                }
+            }
+        }
+        output.flush()
+        onProgress(100)
+    }
+
+    fun promptInstall(context: Context, uri: Uri) {
+        try {
+            val contentUri = if (uri.scheme == "file") {
+                val file = uri.path?.let { File(it) }
+                if (file != null && file.exists()) {
+                    androidx.core.content.FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        file,
+                    )
+                } else uri
+            } else {
+                uri
+            }
+
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(contentUri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            // Se o instalador não puder ser chamado via intent, o APK está disponível na pasta Downloads
         }
     }
 }

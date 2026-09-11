@@ -41,11 +41,14 @@
     <string name="update_available_title">Nova versão disponível</string>
     <string name="update_action_changelog">Mudanças</string>
     <string name="update_action_download">Atualizar</string>
+    <string name="update_action_install">Instalar</string>
     <string name="update_dialog_title">O que há de novo</string>
     <string name="update_build_prefix">Build %1$s</string>
     <string name="update_compiled_at">Compilada em %1$s</string>
     <string name="update_downloading_notification_desc">Baixando atualização%1$s…</string>
+    <string name="update_downloading_progress">Baixando %1$d%%…</string>
     <string name="update_toast_downloading">Baixando atualização… Acompanhe pela barra de notificações</string>
+    <string name="update_toast_download_completed">Download concluído! APK salvo na pasta Downloads</string>
     <string name="update_toast_error">Erro ao iniciar download: %1$s</string>
 
     <!-- Alças de arrasto no modo de edição -->

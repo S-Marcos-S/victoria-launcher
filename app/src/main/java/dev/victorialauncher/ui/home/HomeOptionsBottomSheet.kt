@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import dev.victorialauncher.update.DownloadStatus
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -87,6 +89,7 @@ fun HomeOptionsBottomSheet(
     val coroutineScope = rememberCoroutineScope()
     val dragOffsetY = remember { Animatable(0f) }
     val updateInfo by UpdateManager.updateAvailable.collectAsState()
+    val downloadStatus by UpdateManager.downloadStatus.collectAsState()
     var showChangelogDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = visible) {
@@ -272,30 +275,76 @@ fun HomeOptionsBottomSheet(
                                 )
                             }
 
-                            // Botão 2: Atualizar (inicia o download do APK)
-                            Button(
-                                onClick = {
-                                    onDismiss()
-                                    UpdateManager.startDownload(context, update)
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF2E7D32),
-                                    contentColor = Color.White,
-                                ),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Download,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(R.string.update_action_download),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
+                            // Botão 2: Atualizar / Baixar / Instalar
+                            when (val status = downloadStatus) {
+                                is DownloadStatus.Downloading -> {
+                                    Button(
+                                        onClick = {},
+                                        enabled = false,
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            disabledContainerColor = Color(0xFF2E7D32).copy(alpha = 0.7f),
+                                            disabledContentColor = Color.White,
+                                        ),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.update_downloading_progress, status.progressPercent),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                    }
+                                }
+                                is DownloadStatus.Finished -> {
+                                    Button(
+                                        onClick = {
+                                            status.fileUri?.let { UpdateManager.promptInstall(context, it) }
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF2E7D32),
+                                            contentColor = Color.White,
+                                        ),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            text = stringResource(R.string.update_action_install),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                    }
+                                }
+                                else -> {
+                                    Button(
+                                        onClick = {
+                                            UpdateManager.startDownload(context, update)
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF2E7D32),
+                                            contentColor = Color.White,
+                                        ),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Download,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            text = stringResource(R.string.update_action_download),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -337,8 +386,6 @@ fun HomeOptionsBottomSheet(
             update = updateInfo!!,
             onDismissRequest = { showChangelogDialog = false },
             onDownload = {
-                showChangelogDialog = false
-                onDismiss()
                 UpdateManager.startDownload(context, updateInfo!!)
             },
         )

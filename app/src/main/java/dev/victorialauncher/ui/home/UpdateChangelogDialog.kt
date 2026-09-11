@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.Button
@@ -34,11 +35,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,7 +52,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import dev.victorialauncher.R
+import dev.victorialauncher.update.DownloadStatus
 import dev.victorialauncher.update.UpdateInfo
+import dev.victorialauncher.update.UpdateManager
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -59,6 +65,8 @@ fun UpdateChangelogDialog(
     onDismissRequest: () -> Unit,
     onDownload: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val downloadStatus by UpdateManager.downloadStatus.collectAsState()
     val view = LocalView.current
     DisposableEffect(view) {
         val dialogWindow = (view.parent as? DialogWindowProvider)?.window
@@ -209,21 +217,58 @@ fun UpdateChangelogDialog(
 
                         Spacer(Modifier.width(8.dp))
 
-                        Button(
-                            onClick = onDownload,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2E7D32),
-                                contentColor = Color.White,
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Download,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.action_download))
+                        when (val status = downloadStatus) {
+                            is DownloadStatus.Downloading -> {
+                                Button(
+                                    onClick = {},
+                                    enabled = false,
+                                    colors = ButtonDefaults.buttonColors(
+                                        disabledContainerColor = Color(0xFF2E7D32).copy(alpha = 0.7f),
+                                        disabledContentColor = Color.White,
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Text(stringResource(R.string.update_downloading_progress, status.progressPercent))
+                                }
+                            }
+                            is DownloadStatus.Finished -> {
+                                Button(
+                                    onClick = {
+                                        status.fileUri?.let { UpdateManager.promptInstall(context, it) }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF2E7D32),
+                                        contentColor = Color.White,
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.update_action_install))
+                                }
+                            }
+                            else -> {
+                                Button(
+                                    onClick = onDownload,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF2E7D32),
+                                        contentColor = Color.White,
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Download,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.action_download))
+                                }
+                            }
                         }
                     }
                 }

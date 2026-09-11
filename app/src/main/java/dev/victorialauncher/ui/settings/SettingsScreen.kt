@@ -518,13 +518,15 @@ private fun IconPackRow(packs: List<IconPackRepository.IconPackInfo>, selected: 
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FontRow(selected: AppFont, onSelect: (AppFont) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(stringResource(R.string.settings_font), style = MaterialTheme.typography.bodyMedium)
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AppFont.entries.forEach { f ->
                 // Each chip is rendered in the font it selects, so the choice previews itself.
@@ -564,6 +566,7 @@ private fun RowPreview(app: AppInfo?, iconSizeDp: Int, labelSizeSp: Int, font: A
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TextColorRow(selected: TextColorMode, onSelect: (TextColorMode) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -573,9 +576,10 @@ private fun TextColorRow(selected: TextColorMode, onSelect: (TextColorMode) -> U
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TextColorMode.entries.forEach { mode ->
                 FilledChip(stringResource(mode.labelRes()), selected == mode) { onSelect(mode) }
@@ -584,13 +588,15 @@ private fun TextColorRow(selected: TextColorMode, onSelect: (TextColorMode) -> U
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EdgeSideRow(selected: EdgeSide, onSelect: (EdgeSide) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(stringResource(R.string.settings_edge_side), style = MaterialTheme.typography.bodyMedium)
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             EdgeSide.entries.forEach { side ->
                 FilledChip(stringResource(side.labelRes()), selected == side) { onSelect(side) }
