@@ -202,6 +202,7 @@ fun HomeScreen(
     val touchPosition = remember { mutableStateOf(Offset.Zero) }
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val view = LocalView.current
 
