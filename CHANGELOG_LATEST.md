@@ -1,5 +1,10 @@
 ### 🚀 Novidades e Melhorias
 
+- **Visualização Imediata da Tela Inicial ao Rolar até a Estrela (`★`):**
+  - Ao rolar o alfabeto lateral até a estrela, a gaveta de aplicativos fica invisível e a tela inicial (com os aplicativos favoritos e widgets) é exibida em primeiro plano imediatamente durante a rolagem.
+  - Ao continuar rolando para baixo para qualquer letra (ex: 'A'), a lista de aplicativos ressurge suavemente.
+  - Ao soltar o dedo na estrela, a gaveta é fechada e o usuário permanece na tela inicial.
+
 - **Correção de Duplicação de Contatos/Conversas nas Notificações (ex: WhatsApp):**
   - Corrigida a duplicação do nome da pessoa / card no topo do balão de notificação quando múltiplos alertas chegam para a mesma conversa.
   - O serviço de notificações agora filtra resumos de grupo (`FLAG_GROUP_SUMMARY`) redundantes quando notificações individuais da conversa já estão ativas.

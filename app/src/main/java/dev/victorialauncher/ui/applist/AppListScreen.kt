@@ -565,7 +565,8 @@ fun AppListScreen(
                   val scale = 1f - 0.12f * progress
                   scaleX = scale
                   scaleY = scale
-                  alpha = 1f - 0.85f * progress
+                  val starAlpha = if (scrubLetter == SCRUBBER_STAR) 0f else 1f
+                  alpha = (1f - 0.85f * progress) * starAlpha
               }
               .background(Color.Black.copy(alpha = dimAlpha)),
       ) {

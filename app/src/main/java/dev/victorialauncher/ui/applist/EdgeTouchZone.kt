@@ -87,9 +87,16 @@ fun EdgeTouchZone(
                             state.markScrubbing()
                         }
                         val letter = report(change.position.x, change.position.y)
-                        if (!opened && letter != null && letter != SCRUBBER_STAR) {
-                            opened = true
-                            onOpen()
+                        if (letter == SCRUBBER_STAR) {
+                            if (opened) {
+                                opened = false
+                                onDismiss()
+                            }
+                        } else if (letter != null) {
+                            if (!opened) {
+                                opened = true
+                                onOpen()
+                            }
                         }
                         change.consume()
                     }

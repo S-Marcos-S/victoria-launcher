@@ -54,6 +54,7 @@ import dev.victorialauncher.ui.applist.AppListModel
 import dev.victorialauncher.ui.applist.AppListScreen
 import dev.victorialauncher.ui.applist.EdgeScrubber
 import dev.victorialauncher.ui.applist.EdgeTouchZone
+import dev.victorialauncher.ui.applist.SCRUBBER_STAR
 import dev.victorialauncher.ui.applist.ScrubBand
 import dev.victorialauncher.ui.applist.ScrubberGeometry
 import dev.victorialauncher.ui.applist.ScrubState
@@ -250,9 +251,10 @@ fun HomeRoute(
         // Opening answers a finger on the edge and must not lag behind it, so it snaps. Coming
         // back gets a short decelerating fade: the wallpaper is already there, so this is only
         // the icons settling in, and cutting them in on a single frame is what read as a jolt.
+        val showHome = !appListVisible || scrub.letter == SCRUBBER_STAR
         val homeAlpha by animateFloatAsState(
-            targetValue = if (appListVisible) 0f else 1f,
-            animationSpec = if (appListVisible || snapHome) {
+            targetValue = if (showHome) 1f else 0f,
+            animationSpec = if (!showHome || snapHome) {
                 snap()
             } else {
                 tween(HOME_FADE_MS, easing = LinearOutSlowInEasing)
