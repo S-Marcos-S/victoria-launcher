@@ -20,9 +20,6 @@ import kotlinx.coroutines.launch
 /** How far the strip may be dragged inward before the pull stops growing. */
 private const val MAX_PULL_DP = 400f
 
-/** How close two taps on the strip have to be to count as one gesture. */
-private const val DOUBLE_TAP_WINDOW_MS = 300L
-
 /**
  * The invisible strip along a screen edge that opens the app list and then scrubs it, so one
  * unbroken touch does both.
@@ -40,8 +37,6 @@ fun EdgeTouchZone(
     hapticsEnabled: Boolean,
     state: ScrubState,
     onOpen: () -> Unit,
-    /** Null when double-tap-to-lock is off, so a second tap is simply another tap. */
-    onDoubleTap: (() -> Unit)? = null,
     onDismiss: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -49,9 +44,6 @@ fun EdgeTouchZone(
     val density = LocalDensity.current.density
     val scope = rememberCoroutineScope()
     val fromLeft = side == EdgeSide.LEFT
-    // The gesture handler outlives the composition that built it, so it must not close over
-    // this frame's callbacks.
-    val currentDoubleTap by rememberUpdatedState(onDoubleTap)
 
     Box(
         modifier = modifier
@@ -62,7 +54,6 @@ fun EdgeTouchZone(
                     val down = awaitFirstDown(requireUnconsumed = false)
                     down.consume()
                     state.begin(side)
-                    onOpen()
 
                     var lastIndex = -1
                     fun report(x: Float, y: Float): Char? {
@@ -81,43 +72,25 @@ fun EdgeTouchZone(
                     }
 
                     report(down.position.x, down.position.y)
+                    onOpen()
 
-                    // Two things start the same way, told apart by whether the finger moves:
-                    // travelling is a scrub, letting go without it is a tap that a second tap
-                    // turns into a lock. Opening the list on the down is untouched by either.
-                    var moved = false
                     while (true) {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == down.id } ?: break
                         if (!change.pressed) break
                         // A tap places the list without ever counting as a scrub, so the
                         // overlay does not spend the tap fading itself out and back in.
-                        if (!moved &&
-                            (change.position - down.position).getDistance() > viewConfiguration.touchSlop
-                        ) {
-                            moved = true
+                        if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                             state.markScrubbing()
                         }
                         report(change.position.x, change.position.y)
                         change.consume()
                     }
-
                     val releasedOnStar = letters.getOrNull(lastIndex) == SCRUBBER_STAR
                     scope.launch {
                         state.release()
                         if (releasedOnStar) {
                             onDismiss()
-                        }
-                    }
-
-                    if (!moved) {
-                        val doubleTap = currentDoubleTap
-                        val previous = state.lastTapUptimeMs
-                        if (doubleTap != null && down.uptimeMillis - previous <= DOUBLE_TAP_WINDOW_MS) {
-                            state.lastTapUptimeMs = 0L
-                            doubleTap()
-                        } else {
-                            state.lastTapUptimeMs = down.uptimeMillis
                         }
                     }
                 }

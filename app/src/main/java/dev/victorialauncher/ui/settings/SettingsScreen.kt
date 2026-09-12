@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,14 +41,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.roundToInt
 import dev.victorialauncher.BuildConfig
 import dev.victorialauncher.data.AppFont
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.EdgeSide
-import dev.victorialauncher.data.HomeAlignment
-import dev.victorialauncher.data.IconSide
-import dev.victorialauncher.data.QuickLaunchSlot
 import dev.victorialauncher.data.IconPackRepository
 import dev.victorialauncher.data.TextColorMode
 import dev.victorialauncher.ui.common.AppIcon
@@ -78,51 +73,32 @@ fun SettingsScreen(
     edgeSide: EdgeSide,
     alwaysShowAz: Boolean,
     showAlphabet: Boolean,
-    sortByUsage: Boolean,
-    appListSearch: Boolean,
-    appListSearchBottom: Boolean,
-    swipeUpOpensList: Boolean,
-    alignment: HomeAlignment,
-    appListAlignment: HomeAlignment,
-    iconSide: IconSide,
+    alignRight: Boolean,
     nowPlayingEnabled: Boolean,
     nowPlayingListenerEnabled: Boolean,
-    showAppIcons: Boolean,
     onSetIconPack: (String?) -> Unit,
-    onSetShowAppIcons: (Boolean) -> Unit,
     onSetIconSize: (Int) -> Unit,
     onSetLabelSize: (Int) -> Unit,
     onSetItemSpacing: (Int) -> Unit,
     onSetFont: (AppFont) -> Unit,
-    statusBarPeekSeconds: Int,
     onSetHideStatusBar: (Boolean) -> Unit,
-    onSetStatusBarPeekSeconds: (Int) -> Unit,
     onSetDimWallpaper: (Float) -> Unit,
     onSetHaptics: (Boolean) -> Unit,
     onSetDimHome: (Float) -> Unit,
     onSetShowFavoriteLabels: (Boolean) -> Unit,
     onSetTextColorMode: (TextColorMode) -> Unit,
     onSetDoubleTapToLock: (Boolean) -> Unit,
-    edgeZoneWidthDp: Int,
     onSetEdgeSide: (EdgeSide) -> Unit,
-    onSetEdgeZoneWidth: (Int) -> Unit,
     onSetAlwaysShowAz: (Boolean) -> Unit,
     onSetShowAlphabet: (Boolean) -> Unit,
-    onSetSortByUsage: (Boolean) -> Unit,
-    onSetSwipeUpOpensList: (Boolean) -> Unit,
-    onSetAppListSearch: (Boolean) -> Unit,
-    onSetAppListSearchBottom: (Boolean) -> Unit,
-    quickLaunchLeftLabel: String?,
-    quickLaunchRightLabel: String?,
-    onOpenQuickLaunchPicker: (QuickLaunchSlot) -> Unit,
-    onSetAlignment: (HomeAlignment) -> Unit,
-    onSetAppListAlignment: (HomeAlignment) -> Unit,
-    onSetIconSide: (IconSide) -> Unit,
+    onSetAlignRight: (Boolean) -> Unit,
     onSetNowPlayingEnabled: (Boolean) -> Unit,
+    showAppNotifications: Boolean,
+    onSetShowAppNotifications: (Boolean) -> Unit,
+    folderWindowPopup: Boolean,
+    onSetFolderWindowPopup: (Boolean) -> Unit,
     shadeGestureReady: Boolean,
-    lockGestureReady: Boolean,
     onOpenAccessibilitySettings: () -> Unit,
-    onOpenAppInfo: () -> Unit,
     onOpenHiddenApps: () -> Unit,
     onOpenFavorites: () -> Unit,
     onOpenNotificationSettings: () -> Unit,
@@ -157,7 +133,7 @@ fun SettingsScreen(
                     // Live preview of exactly how a home row will render.
                     RowPreview(previewApp, iconSizeDp, labelSizeSp, font)
                     RowDivider()
-                    IconPackRow(iconPacks, iconPackPackage, showAppIcons, onSetIconPack, onSetShowAppIcons)
+                    IconPackRow(iconPacks, iconPackPackage, onSetIconPack)
                     RowDivider()
                     SliderRow(
                         label = stringResource(R.string.settings_icon_size),
@@ -187,33 +163,16 @@ fun SettingsScreen(
                     RowDivider()
                     TextColorRow(textColorMode, onSetTextColorMode)
                     RowDivider()
-                    AlignmentRow(
-                        stringResource(R.string.settings_alignment_favorites),
-                        alignment,
-                        onSetAlignment,
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_right_handed),
+                        detail = stringResource(R.string.settings_right_handed_detail),
+                        checked = alignRight,
+                        onCheckedChange = onSetAlignRight,
                     )
-                    RowDivider()
-                    AlignmentRow(
-                        stringResource(R.string.settings_alignment_applist),
-                        appListAlignment,
-                        onSetAppListAlignment,
-                    )
-                    RowDivider()
-                    IconSideRow(iconSide, onSetIconSide)
                     RowDivider()
                     SwitchRow(stringResource(R.string.settings_show_names), showFavoriteLabels, onSetShowFavoriteLabels)
                     RowDivider()
                     SwitchRow(stringResource(R.string.settings_hide_status_bar), hideStatusBar, onSetHideStatusBar)
-                    if (hideStatusBar) {
-                        RowDivider()
-                        SliderRow(
-                            label = stringResource(R.string.settings_status_bar_timeout),
-                            value = statusBarPeekSeconds.toFloat(),
-                            range = 1f..30f,
-                            valueLabel = "${statusBarPeekSeconds}s",
-                            onValueChange = { onSetStatusBarPeekSeconds(it.roundToInt()) },
-                        )
-                    }
                     RowDivider()
                     SliderRow(
                         label = stringResource(R.string.settings_dim_home),
@@ -246,84 +205,36 @@ fun SettingsScreen(
                     RowDivider()
                     EdgeSideRow(edgeSide, onSetEdgeSide)
                     RowDivider()
-                    SliderRow(
-                        label = stringResource(R.string.settings_edge_zone_width),
-                        value = edgeZoneWidthDp.toFloat(),
-                        range = 32f..96f,
-                        valueLabel = "${edgeZoneWidthDp}dp",
-                        onValueChange = { onSetEdgeZoneWidth(it.roundToInt()) },
-                        step = 4f,
-                    )
-                    RowDivider()
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_double_tap_lock),
-                        detail = stringResource(R.string.settings_double_tap_lock_detail),
+                        detail = stringResource(
+                            if (doubleTapToLock && !shadeGestureReady) R.string.settings_double_tap_lock_not_ready
+                            else R.string.settings_double_tap_lock_detail
+                        ),
                         checked = doubleTapToLock,
-                        onCheckedChange = onSetDoubleTapToLock,
+                        onCheckedChange = { enable ->
+                            onSetDoubleTapToLock(enable)
+                            if (enable && !shadeGestureReady) {
+                                onOpenAccessibilitySettings()
+                            }
+                        },
                     )
-                    // Switching it on does nothing at all without the permission, so the way
-                    // to grant it belongs right here rather than buried in a toast later.
-                    if (doubleTapToLock && !lockGestureReady) {
+                    if (doubleTapToLock && !shadeGestureReady) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                                .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                            horizontalArrangement = Arrangement.End,
                         ) {
-                            Text(
-                                stringResource(R.string.settings_lock_needs_accessibility),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.weight(1f),
+                            FilledChip(
+                                label = stringResource(R.string.settings_enable),
+                                selected = false,
+                                onClick = onOpenAccessibilitySettings,
                             )
-                            AccessibilityActions(onOpenAccessibilitySettings, onOpenAppInfo)
                         }
                     }
                     RowDivider()
                     SwitchRow(stringResource(R.string.settings_always_show_az), alwaysShowAz, onSetAlwaysShowAz)
-                    RowDivider()
-                    SwitchRow(stringResource(R.string.settings_show_alphabet), showAlphabet, onSetShowAlphabet)
-                    RowDivider()
-                    QuickLaunchRow(
-                        label = stringResource(R.string.settings_quick_launch_left),
-                        value = quickLaunchLeftLabel,
-                        onClick = { onOpenQuickLaunchPicker(QuickLaunchSlot.LEFT) },
-                    )
-                    RowDivider()
-                    QuickLaunchRow(
-                        label = stringResource(R.string.settings_quick_launch_right),
-                        value = quickLaunchRightLabel,
-                        onClick = { onOpenQuickLaunchPicker(QuickLaunchSlot.RIGHT) },
-                    )
-                    RowDivider()
-                    SwitchRowWithDetail(
-                        label = stringResource(R.string.settings_swipe_up_list),
-                        detail = stringResource(R.string.settings_swipe_up_list_detail),
-                        checked = swipeUpOpensList,
-                        onCheckedChange = onSetSwipeUpOpensList,
-                    )
-                    RowDivider()
-                    SwitchRowWithDetail(
-                        label = stringResource(R.string.settings_search_bar),
-                        detail = stringResource(R.string.settings_search_bar_detail),
-                        checked = appListSearch,
-                        onCheckedChange = onSetAppListSearch,
-                    )
-                    if (appListSearch) {
-                        RowDivider()
-                        SwitchRow(
-                            stringResource(R.string.settings_search_bar_bottom),
-                            appListSearchBottom,
-                            onSetAppListSearchBottom,
-                        )
-                    }
-                    RowDivider()
-                    SwitchRowWithDetail(
-                        label = stringResource(R.string.settings_sort_by_usage),
-                        detail = stringResource(R.string.settings_sort_by_usage_detail),
-                        checked = sortByUsage,
-                        onCheckedChange = onSetSortByUsage,
-                    )
                     RowDivider()
                     Row(
                         modifier = Modifier
@@ -343,7 +254,7 @@ fun SettingsScreen(
                             )
                         }
                         if (!shadeGestureReady) {
-                            AccessibilityActions(onOpenAccessibilitySettings, onOpenAppInfo)
+                            FilledChip(stringResource(R.string.settings_enable), selected = false, onClick = onOpenAccessibilitySettings)
                         }
                     }
                 }
@@ -352,7 +263,14 @@ fun SettingsScreen(
             item {
                 Section(stringResource(R.string.settings_section_now_playing)) {
                     SwitchRow(stringResource(R.string.settings_now_playing_show), nowPlayingEnabled, onSetNowPlayingEnabled)
-                    if (nowPlayingEnabled) {
+                    RowDivider()
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_show_notifications),
+                        detail = stringResource(R.string.settings_show_notifications_detail),
+                        checked = showAppNotifications,
+                        onCheckedChange = onSetShowAppNotifications,
+                    )
+                    if (nowPlayingEnabled || showAppNotifications) {
                         RowDivider()
                         Row(
                             modifier = Modifier
@@ -434,6 +352,13 @@ fun SettingsScreen(
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         )
                     }
+                    RowDivider()
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_folder_window_popup),
+                        detail = stringResource(R.string.settings_folder_window_popup_detail),
+                        checked = folderWindowPopup,
+                        onCheckedChange = onSetFolderWindowPopup,
+                    )
                   }
                 }
             }
@@ -578,13 +503,7 @@ private fun SliderRow(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun IconPackRow(
-    packs: List<IconPackRepository.IconPackInfo>,
-    selected: String?,
-    showIcons: Boolean,
-    onSelect: (String?) -> Unit,
-    onSetShowIcons: (Boolean) -> Unit,
-) {
+private fun IconPackRow(packs: List<IconPackRepository.IconPackInfo>, selected: String?, onSelect: (String?) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(stringResource(R.string.settings_icon_pack), style = MaterialTheme.typography.bodyMedium)
         FlowRow(
@@ -592,18 +511,10 @@ private fun IconPackRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            FilledChip(stringResource(R.string.settings_icon_pack_default), showIcons && selected == null) {
-                onSetShowIcons(true)
-                onSelect(null)
-            }
+            FilledChip(stringResource(R.string.settings_icon_pack_default), selected == null) { onSelect(null) }
             packs.forEach { pack ->
-                FilledChip(pack.label, showIcons && selected == pack.packageName) {
-                    onSetShowIcons(true)
-                    onSelect(pack.packageName)
-                }
+                FilledChip(pack.label, selected == pack.packageName) { onSelect(pack.packageName) }
             }
-            // Not a pack but a choice about packs: draw no icons at all.
-            FilledChip(stringResource(R.string.settings_icon_pack_no_icons), !showIcons) { onSetShowIcons(false) }
         }
         if (packs.isEmpty()) {
             Text(
@@ -616,13 +527,15 @@ private fun IconPackRow(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FontRow(selected: AppFont, onSelect: (AppFont) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(stringResource(R.string.settings_font), style = MaterialTheme.typography.bodyMedium)
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AppFont.entries.forEach { f ->
                 // Each chip is rendered in the font it selects, so the choice previews itself.
@@ -662,18 +575,20 @@ private fun RowPreview(app: AppInfo?, iconSizeDp: Int, labelSizeSp: Int, font: A
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TextColorRow(selected: TextColorMode, onSelect: (TextColorMode) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text(stringResource(R.string.settings_text_color), style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.settings_text_colour), style = MaterialTheme.typography.bodyMedium)
         Text(
-            stringResource(R.string.settings_text_color_detail),
+            stringResource(R.string.settings_text_colour_detail),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TextColorMode.entries.forEach { mode ->
                 FilledChip(stringResource(mode.labelRes()), selected == mode) { onSelect(mode) }
@@ -682,85 +597,15 @@ private fun TextColorRow(selected: TextColorMode, onSelect: (TextColorMode) -> U
     }
 }
 
-/**
- * Getting to the accessibility toggle, and to the screen that unblocks it.
- *
- * Android 13 and later refuse to let an app installed outside an app store be switched on
- * under Accessibility at all — the toggle is there but greyed, with no explanation offered at
- * the point of failure. It has to be unblocked first from the app's own info screen, under the
- * overflow menu, so that screen is one tap away here rather than something to go hunting for.
- */
-@Composable
-private fun AccessibilityActions(onOpenAccessibilitySettings: () -> Unit, onOpenAppInfo: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilledChip(stringResource(R.string.settings_app_info), selected = false, onClick = onOpenAppInfo)
-        FilledChip(stringResource(R.string.settings_enable), selected = false, onClick = onOpenAccessibilitySettings)
-    }
-}
-
-@Composable
-private fun QuickLaunchRow(label: String, value: String?, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.bodyMedium)
-            Text(
-                value ?: stringResource(R.string.settings_quick_launch_none),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            )
-        }
-        Icon(
-            Icons.AutoMirrored.Filled.ArrowForwardIos,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-        )
-    }
-}
-
-@Composable
-private fun AlignmentRow(label: String, selected: HomeAlignment, onSelect: (HomeAlignment) -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            HomeAlignment.entries.forEach { option ->
-                FilledChip(
-                    label = stringResource(option.labelRes()),
-                    selected = option == selected,
-                    onClick = { onSelect(option) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun IconSideRow(selected: IconSide, onSelect: (IconSide) -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text(stringResource(R.string.settings_icon_side), style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IconSide.entries.forEach { option ->
-                FilledChip(
-                    label = stringResource(option.labelRes()),
-                    selected = option == selected,
-                    onClick = { onSelect(option) },
-                )
-            }
-        }
-    }
-}
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EdgeSideRow(selected: EdgeSide, onSelect: (EdgeSide) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(stringResource(R.string.settings_edge_side), style = MaterialTheme.typography.bodyMedium)
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             EdgeSide.entries.forEach { side ->
                 FilledChip(stringResource(side.labelRes()), selected == side) { onSelect(side) }

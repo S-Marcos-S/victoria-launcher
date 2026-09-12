@@ -35,16 +35,3 @@ fun EdgeSide.labelRes(): Int = when (this) {
     EdgeSide.RIGHT -> R.string.edge_right
     EdgeSide.BOTH -> R.string.edge_both
 }
-
-@StringRes
-fun dev.victorialauncher.data.HomeAlignment.labelRes(): Int = when (this) {
-    dev.victorialauncher.data.HomeAlignment.LEFT -> R.string.alignment_left
-    dev.victorialauncher.data.HomeAlignment.CENTER -> R.string.alignment_center
-    dev.victorialauncher.data.HomeAlignment.RIGHT -> R.string.alignment_right
-}
-
-@StringRes
-fun dev.victorialauncher.data.IconSide.labelRes(): Int = when (this) {
-    dev.victorialauncher.data.IconSide.LEFT -> R.string.alignment_left
-    dev.victorialauncher.data.IconSide.RIGHT -> R.string.alignment_right
-}

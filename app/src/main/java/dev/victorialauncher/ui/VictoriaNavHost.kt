@@ -7,8 +7,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.LauncherApps
-import android.os.UserHandle
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -33,13 +31,8 @@ import dev.victorialauncher.VictoriaApp
 import dev.victorialauncher.data.AppFont
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.EdgeSide
-import dev.victorialauncher.data.HomeAlignment
-import dev.victorialauncher.data.IconSide
 import dev.victorialauncher.data.HomePaddings
-import dev.victorialauncher.data.QuickLaunchSlot
 import dev.victorialauncher.data.TextColorMode
-import androidx.compose.ui.res.stringResource
-import dev.victorialauncher.R
 import dev.victorialauncher.data.folderIdFromToken
 import dev.victorialauncher.media.isListenerEnabled
 import dev.victorialauncher.service.SystemUi
@@ -50,7 +43,6 @@ import dev.victorialauncher.ui.common.warmIconCache
 import dev.victorialauncher.ui.home.FavoriteEntry
 import dev.victorialauncher.ui.home.HomeRoute
 import dev.victorialauncher.ui.home.HomeSettings
-import dev.victorialauncher.ui.settings.AppPickerScreen
 import dev.victorialauncher.ui.settings.FolderAppsScreen
 import dev.victorialauncher.ui.settings.HiddenAppsScreen
 import dev.victorialauncher.ui.settings.ManageFavoritesScreen
@@ -91,52 +83,25 @@ fun VictoriaNavHost(
     }
     LaunchedEffect(Unit) { reloadApps() }
 
-    // Before anything the user does can write to the store, so "the store is empty" still
-    // means "this is a first run" when it is read.
-    LaunchedEffect(Unit) { app.prefs.ensureInstallMarker() }
-
     DisposableEffect(Unit) {
-        val launcherApps = context.getSystemService(LauncherApps::class.java)
-        fun refresh() {
-            scope.launch {
-                // An app that ships a new icon in an update changes none of the cache
-                // key's components, so nothing else would invalidate the stale bitmap.
-                clearIconCache()
-                reloadApps()
-            }
-        }
-
-        // LauncherApps reports package changes across every profile. The PACKAGE_* broadcasts
-        // only ever describe the profile we run in, so an app installed into a work profile or
-        // a private space would never reach the list.
-        val callback = object : LauncherApps.Callback() {
-            override fun onPackageAdded(packageName: String?, user: UserHandle?) = refresh()
-            override fun onPackageRemoved(packageName: String?, user: UserHandle?) = refresh()
-            override fun onPackageChanged(packageName: String?, user: UserHandle?) = refresh()
-            override fun onPackagesAvailable(names: Array<out String>?, user: UserHandle?, replacing: Boolean) = refresh()
-            override fun onPackagesUnavailable(names: Array<out String>?, user: UserHandle?, replacing: Boolean) = refresh()
-        }
-        runCatching { launcherApps.registerCallback(callback) }
-
-        // Locking a private space removes the whole profile rather than any package, so it
-        // arrives as one of these instead and no package callback ever fires.
         val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_MANAGED_PROFILE_AVAILABLE)
-            addAction(Intent.ACTION_MANAGED_PROFILE_UNAVAILABLE)
-            addAction("android.intent.action.PROFILE_ACCESSIBLE")
-            addAction("android.intent.action.PROFILE_INACCESSIBLE")
-            addAction("android.intent.action.PROFILE_ADDED")
-            addAction("android.intent.action.PROFILE_REMOVED")
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_CHANGED)
+            addDataScheme("package")
         }
         val receiver = object : BroadcastReceiver() {
-            override fun onReceive(c: Context, intent: Intent) = refresh()
+            override fun onReceive(c: Context, intent: Intent) {
+                scope.launch {
+                    // An app that ships a new icon in an update changes none of the cache
+                    // key's components, so nothing else would invalidate the stale bitmap.
+                    clearIconCache()
+                    reloadApps()
+                }
+            }
         }
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
-
-        onDispose {
-            runCatching { launcherApps.unregisterCallback(callback) }
-            context.unregisterReceiver(receiver)
-        }
+        onDispose { context.unregisterReceiver(receiver) }
     }
 
     val hiddenApps by app.prefs.hiddenApps.collectAsState(initial = emptySet())
@@ -149,7 +114,7 @@ fun VictoriaNavHost(
     val nowPlayingHeightDp by app.prefs.nowPlayingHeightDp.collectAsState(initial = 64)
     val homePaddings by app.prefs.homePaddings.collectAsState(initial = HomePaddings.Default)
     val edgeSide by app.prefs.edgeSide.collectAsState(initial = EdgeSide.RIGHT)
-    val alwaysShowAz by app.prefs.alwaysShowAz.collectAsState(initial = false)
+    val alwaysShowAz by app.prefs.alwaysShowAz.collectAsState(initial = true)
     val showAlphabet by app.prefs.showAlphabet.collectAsState(initial = true)
     val alignRight by app.prefs.alignRight.collectAsState(initial = false)
     val dimWallpaperAlpha by app.prefs.dimWallpaperAlpha.collectAsState(initial = 0.35f)
@@ -162,26 +127,9 @@ fun VictoriaNavHost(
     val widgetPosition by app.prefs.widgetPosition.collectAsState(initial = 0)
     val widgetHeightDp by app.prefs.widgetHeightDp.collectAsState(initial = 180)
     val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = false)
+    val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
+    val folderWindowPopup by app.prefs.folderWindowPopup.collectAsState(initial = true)
     val folders by app.prefs.folders.collectAsState(initial = emptyList())
-    val widgetIds by app.prefs.widgetIds.collectAsState(initial = emptyList())
-    val widgetSidePaddingDp by app.prefs.widgetSidePaddingDp.collectAsState(initial = sidePaddingDp)
-    val swipeUpOpensList by app.prefs.swipeUpOpensList.collectAsState(initial = false)
-    val appListSearchEnabled by app.prefs.appListSearchEnabled.collectAsState(initial = false)
-    val appListSearchBottom by app.prefs.appListSearchBottom.collectAsState(initial = false)
-    val sortByUsage by app.prefs.sortByUsage.collectAsState(initial = false)
-    val launchCounts by app.prefs.launchCounts.collectAsState(initial = emptyMap())
-    val edgeZoneWidthDp by app.prefs.edgeZoneWidthDp.collectAsState(initial = 56)
-    val quickLaunchLeftKey by app.prefs.quickLaunchLeft.collectAsState(initial = null)
-    val quickLaunchRightKey by app.prefs.quickLaunchRight.collectAsState(initial = null)
-    val showAppIcons by app.prefs.showAppIcons.collectAsState(initial = true)
-    val alignment by app.prefs.alignment.collectAsState(initial = HomeAlignment.LEFT)
-    val appListAlignment by app.prefs.appListAlignment.collectAsState(initial = HomeAlignment.LEFT)
-    val iconSide by app.prefs.iconSide.collectAsState(initial = IconSide.LEFT)
-    val statusBarPeekSeconds by app.prefs.statusBarPeekSeconds.collectAsState(initial = 5)
-    val scrubBand by app.prefs.scrubBand.collectAsState(initial = null)
-    val layoutDefaultsVersion by app.prefs.layoutDefaultsVersion.collectAsState(initial = null)
-    val welcomeSeen by app.prefs.welcomeSeen.collectAsState(initial = true)
-    val hasCustomLayout by app.prefs.hasCustomLayout.collectAsState(initial = true)
     val contentColor = rememberContentColor(textColorMode)
 
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
@@ -219,26 +167,15 @@ fun VictoriaNavHost(
         edgeSide = edgeSide,
         alwaysShowAz = alwaysShowAz,
         showAlphabet = showAlphabet,
-        alignment = alignment,
-        appListAlignment = appListAlignment,
-        iconSide = iconSide,
-        widgetSidePaddingDp = widgetSidePaddingDp,
-        edgeZoneWidthDp = edgeZoneWidthDp,
-        swipeUpOpensAppList = swipeUpOpensList,
-        appListSearch = appListSearchEnabled,
-        appListSearchBottom = appListSearchBottom,
-        sortByUsage = sortByUsage,
-        quickLaunchLeft = quickLaunchLeftKey?.let { appsByKey[it] },
-        quickLaunchRight = quickLaunchRightKey?.let { appsByKey[it] },
-        // Both flows start null/true so nothing is centered or offered before the stored
-        // answer arrives; a legacy install is stamped 0 and never enters either path.
-        centerFavorites = layoutDefaultsVersion == 1 && !hasCustomLayout,
+        alignRight = alignRight,
         dimWallpaperAlpha = dimWallpaperAlpha,
         dimHomeAlpha = dimHomeAlpha,
         hapticsEnabled = hapticsEnabled,
         showFavoriteLabels = showFavoriteLabels,
         doubleTapToLock = doubleTapToLock,
         contentColor = contentColor,
+        showAppNotifications = showAppNotifications,
+        folderWindowPopup = folderWindowPopup,
     )
 
     var pendingIconTarget by remember { mutableStateOf<String?>(null) }
@@ -264,35 +201,39 @@ fun VictoriaNavHost(
     val widgetPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             val id = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
-            // Appended rather than replacing: picking a widget now adds a page.
-            if (id != -1) scope.launch { app.prefs.addWidgetId(id) }
+            if (id != -1) {
+                // Replacing a widget has to release the one it replaces, or its ID stays
+                // allocated in the host and its provider keeps broadcasting updates forever.
+                val previous = widgetId
+                if (previous > 0 && previous != id) app.widgetHost.deleteAppWidgetId(previous)
+                scope.launch { app.prefs.setWidgetId(id) }
+            }
         }
     }
 
-    val widgetActions = remember {
+    val widgetActions = remember(widgetId) {
         WidgetSlotActions(
             onAddWidget = { widgetPickerLauncher.launch(Intent(context, WidgetPickerActivity::class.java)) },
-            onRemoveWidget = { id ->
+            onRemoveWidget = {
                 scope.launch {
-                    // Releasing the host id matters: left allocated, its provider keeps
-                    // broadcasting updates to a widget nobody can see.
-                    if (id > 0) app.widgetHost.deleteAppWidgetId(id)
-                    app.prefs.removeWidgetId(id)
+                    if (widgetId > 0) app.widgetHost.deleteAppWidgetId(widgetId)
+                    app.prefs.setWidgetId(-1)
                 }
             },
-            onWidgetSettings = { id ->
-                val configure = AppWidgetManager.getInstance(context).getAppWidgetInfo(id)?.configure
+            onWidgetSettings = {
+                val info = AppWidgetManager.getInstance(context).getAppWidgetInfo(widgetId)
+                val configure = info?.configure
                 if (configure != null) {
                     val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
                         component = configure
-                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
                     }
                     runCatching { context.startActivity(intent) }
                 }
             },
-            onAppInfo = { id ->
-                AppWidgetManager.getInstance(context).getAppWidgetInfo(id)
-                    ?.let { app.appRepository.openAppInfo(it.provider.packageName) }
+            onAppInfo = {
+                val info = AppWidgetManager.getInstance(context).getAppWidgetInfo(widgetId)
+                info?.let { app.appRepository.openAppInfo(it.provider.packageName) }
             },
             onResize = { newHeight -> scope.launch { app.prefs.setWidgetHeightDp(newHeight) } },
             onOpenSettings = { navController.navigate("settings") },
@@ -320,19 +261,10 @@ fun VictoriaNavHost(
                 favoriteKeys = favoriteKeys,
                 hiddenApps = hiddenApps,
                 nameOverrides = nameOverrides,
-                widgetIds = widgetIds,
+                widgetId = widgetId,
                 widgetPosition = widgetPosition,
                 widgetHeightDp = widgetHeightDp,
                 widgetActions = widgetActions,
-                launchCounts = launchCounts,
-                // Both flows start at a value that shows nothing, so the dialog can't flash
-                // before the stored answer arrives. A legacy install is stamped 0 and never
-                // qualifies.
-                showWelcome = layoutDefaultsVersion == 1 && !welcomeSeen,
-                onWelcomeDismissed = { scope.launch { app.prefs.setWelcomeSeen(true) } },
-                scrubBandFractions = scrubBand,
-                onSetScrubBand = { top, height -> scope.launch { app.prefs.setScrubBand(top, height) } },
-                onClearScrubBand = { scope.launch { app.prefs.clearScrubBand() } },
                 onPeekStatusBar = onPeekStatusBar,
                 onNavigate = { route -> navController.navigate(route) },
             )
@@ -345,25 +277,12 @@ fun VictoriaNavHost(
                 hiddenCount = hiddenApps.size,
                 iconPacks = iconPacks,
                 iconPackPackage = iconPackPackage,
-                showAppIcons = showAppIcons,
-                // The Settings app rather than whatever happens to sort first: a stable,
-                // recognizable icon to judge a size against on every device.
-                previewApp = remember(allApps) {
-                    val settingsPkg = runCatching {
-                        @Suppress("DEPRECATION")
-                        context.packageManager.resolveActivity(Intent(Settings.ACTION_SETTINGS), 0)
-                            ?.activityInfo?.packageName
-                    }.getOrNull()
-                    allApps.firstOrNull { it.packageName == settingsPkg }
-                        ?: allApps.firstOrNull { it.packageName == "com.android.settings" }
-                        ?: allApps.firstOrNull()
-                },
+                previewApp = allApps.firstOrNull(),
                 iconSizeDp = iconSizeDp,
                 labelSizeSp = labelSizeSp,
                 itemSpacingDp = itemSpacingDp,
                 font = font,
                 hideStatusBar = hideStatusBar,
-                statusBarPeekSeconds = statusBarPeekSeconds,
                 dimWallpaperAlpha = dimWallpaperAlpha,
                 hapticsEnabled = hapticsEnabled,
                 dimHomeAlpha = dimHomeAlpha,
@@ -371,26 +290,21 @@ fun VictoriaNavHost(
                 textColorMode = textColorMode,
                 doubleTapToLock = doubleTapToLock,
                 edgeSide = edgeSide,
-                edgeZoneWidthDp = edgeZoneWidthDp,
                 alwaysShowAz = alwaysShowAz,
                 showAlphabet = showAlphabet,
-                sortByUsage = sortByUsage,
-                appListSearch = appListSearchEnabled,
-                appListSearchBottom = appListSearchBottom,
-                swipeUpOpensList = swipeUpOpensList,
-                alignment = alignment,
-                appListAlignment = appListAlignment,
-                iconSide = iconSide,
+                alignRight = alignRight,
                 nowPlayingEnabled = nowPlayingEnabled,
                 nowPlayingListenerEnabled = listenerEnabled,
+                showAppNotifications = showAppNotifications,
+                onSetShowAppNotifications = { scope.launch { app.prefs.setShowAppNotifications(it) } },
+                folderWindowPopup = folderWindowPopup,
+                onSetFolderWindowPopup = { scope.launch { app.prefs.setFolderWindowPopup(it) } },
                 onSetIconPack = { scope.launch { app.prefs.setIconPackPackage(it) } },
-                onSetShowAppIcons = { scope.launch { app.prefs.setShowAppIcons(it) } },
                 onSetIconSize = { scope.launch { app.prefs.setIconSizeDp(it) } },
                 onSetLabelSize = { scope.launch { app.prefs.setLabelSizeSp(it) } },
                 onSetItemSpacing = { scope.launch { app.prefs.setItemSpacingDp(it) } },
                 onSetFont = { scope.launch { app.prefs.setFont(it) } },
                 onSetHideStatusBar = { scope.launch { app.prefs.setHideStatusBar(it) } },
-                onSetStatusBarPeekSeconds = { scope.launch { app.prefs.setStatusBarPeekSeconds(it) } },
                 onSetDimWallpaper = { scope.launch { app.prefs.setDimWallpaperAlpha(it) } },
                 onSetHaptics = { scope.launch { app.prefs.setHapticsEnabled(it) } },
                 onSetDimHome = { scope.launch { app.prefs.setDimHomeAlpha(it) } },
@@ -398,36 +312,14 @@ fun VictoriaNavHost(
                 onSetTextColorMode = { scope.launch { app.prefs.setTextColorMode(it) } },
                 onSetDoubleTapToLock = { scope.launch { app.prefs.setDoubleTapToLock(it) } },
                 onSetEdgeSide = { scope.launch { app.prefs.setEdgeSide(it) } },
-                onSetEdgeZoneWidth = { scope.launch { app.prefs.setEdgeZoneWidthDp(it) } },
                 onSetAlwaysShowAz = { scope.launch { app.prefs.setAlwaysShowAz(it) } },
                 onSetShowAlphabet = { scope.launch { app.prefs.setShowAlphabet(it) } },
-                onSetSortByUsage = { scope.launch { app.prefs.setSortByUsage(it) } },
-                onSetAppListSearch = { scope.launch { app.prefs.setAppListSearchEnabled(it) } },
-                onSetAppListSearchBottom = { scope.launch { app.prefs.setAppListSearchBottom(it) } },
-                onSetSwipeUpOpensList = { scope.launch { app.prefs.setSwipeUpOpensList(it) } },
-                quickLaunchLeftLabel = quickLaunchLeftKey?.let { key ->
-                    appsByKey[key]?.let { nameOverrides[it.key] ?: it.label }
-                },
-                quickLaunchRightLabel = quickLaunchRightKey?.let { key ->
-                    appsByKey[key]?.let { nameOverrides[it.key] ?: it.label }
-                },
-                onOpenQuickLaunchPicker = { slot -> navController.navigate("apppicker/" + slot.name) },
-                onSetAlignment = { scope.launch { app.prefs.setAlignment(it) } },
-                onSetAppListAlignment = { scope.launch { app.prefs.setAppListAlignment(it) } },
-                onSetIconSide = { scope.launch { app.prefs.setIconSide(it) } },
+                onSetAlignRight = { scope.launch { app.prefs.setAlignRight(it) } },
                 onSetNowPlayingEnabled = { scope.launch { app.prefs.setNowPlayingEnabled(it) } },
                 shadeGestureReady = remember(homeIntentTick) { SystemUi.canExpandShade() },
-                lockGestureReady = remember(homeIntentTick) { SystemUi.canLockScreen() },
                 onOpenAccessibilitySettings = {
                     context.startActivity(
                         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
-                },
-                onOpenAppInfo = {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                            .setData(Uri.fromParts("package", context.packageName, null))
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     )
                 },
                 onOpenHiddenApps = { navController.navigate("settings/hidden") },
@@ -472,27 +364,6 @@ fun VictoriaNavHost(
                             app.prefs.removeAppFromFolder(id, appInfo.key)
                         }
                     }
-                },
-                onBack = { navController.popBackStack() },
-            )
-        }
-
-        composable("apppicker/{slot}") { entry ->
-            val slot = runCatching {
-                QuickLaunchSlot.valueOf(entry.arguments?.getString("slot").orEmpty())
-            }.getOrDefault(QuickLaunchSlot.LEFT)
-            AppPickerScreen(
-                title = stringResource(
-                    if (slot == QuickLaunchSlot.LEFT) R.string.settings_quick_launch_left
-                    else R.string.settings_quick_launch_right
-                ),
-                allApps = allApps,
-                selectedKey = if (slot == QuickLaunchSlot.LEFT) quickLaunchLeftKey else quickLaunchRightKey,
-                nameOverrides = nameOverrides,
-                iconSizeDp = iconSizeDp,
-                onPick = { picked ->
-                    scope.launch { app.prefs.setQuickLaunch(slot, picked?.key) }
-                    navController.popBackStack()
                 },
                 onBack = { navController.popBackStack() },
             )

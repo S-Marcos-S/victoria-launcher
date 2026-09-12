@@ -123,12 +123,7 @@ private const val CHUNK_SIZE = 16
  * appears, each resolving its icon twice (once for the initial value, once for the real one).
  */
 @Immutable
-data class IconConfig(
-    val pack: String?,
-    val overrides: Map<String, String>,
-    /** False draws no icons at all, for people who want the list to be nothing but names. */
-    val showIcons: Boolean = true,
-)
+data class IconConfig(val pack: String?, val overrides: Map<String, String>)
 
 val LocalIconConfig = staticCompositionLocalOf { IconConfig(null, emptyMap()) }
 
@@ -137,8 +132,6 @@ fun AppIcon(app: AppInfo, sizeDp: Int, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val victoriaApp = context.applicationContext as VictoriaApp
     val config = LocalIconConfig.current
-    // Nothing drawn and no space taken, so rows close up rather than leaving a hole.
-    if (!config.showIcons) return
     val iconPackPackage = config.pack
     val overrideValue = config.overrides[app.key]
     val px = with(LocalDensity.current) { sizeDp.dp.roundToPx() }.coerceAtLeast(1)
@@ -200,5 +193,5 @@ private fun resolveDrawable(
 ): Drawable =
     decodeIconOverride(context, victoriaApp, overrideValue)
         ?: victoriaApp.iconPackRepository.getIcon(iconPackPackage, app.componentName) {
-            victoriaApp.appRepository.loadIcon(app)
+            victoriaApp.appRepository.loadIcon(app.componentName)
         }

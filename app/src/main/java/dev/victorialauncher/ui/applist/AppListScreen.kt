@@ -18,13 +18,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -36,12 +29,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
@@ -62,7 +53,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -80,6 +70,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -90,15 +81,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.EdgeSide
-import dev.victorialauncher.data.HomeAlignment
-import dev.victorialauncher.data.IconSide
 import dev.victorialauncher.ui.common.AppIcon
-import dev.victorialauncher.ui.common.LocalIconConfig
 import dev.victorialauncher.ui.common.recordTouchPosition
 import dev.victorialauncher.ui.common.EditAppDialog
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import dev.victorialauncher.R
@@ -107,6 +96,9 @@ import androidx.compose.ui.res.stringResource
 /** Where the selected letter's section sits, as a fraction down the screen. */
 private const val SECTION_TOP_FRACTION = 0.26f
 
+/** How long a background tap waits for a second one before it dismisses the list. */
+private const val DOUBLE_TAP_WINDOW_MS = 280L
+
 /** Breathing room above A and below the settings row when no scrub has placed the list. */
 private val IDLE_TOP_PADDING = 64.dp
 private val IDLE_BOTTOM_PADDING = 32.dp
@@ -114,17 +106,8 @@ private val IDLE_BOTTOM_PADDING = 32.dp
 /** Smallest comfortable row, so a tap beside a small icon still lands on its app. */
 private val MIN_ROW_HEIGHT = 48.dp
 
-/** How far rows are held back from the edge the A-Z strip occupies. */
-private val STRIP_INSET = 56.dp
-
 /** How far either end of the list may be dragged past its content. */
 private val MAX_EDGE_STRETCH = 40.dp
-
-/**
- * How much of the collapse travel commits it. Shared with the swipe that opens the list, so
- * closing takes the same push as opening rather than roughly twice it.
- */
-private const val COMMIT_FRACTION = 0.4f
 
 /**
  * Damping for the edge elastic. Under 1 so a fling into an end overshoots and comes back
@@ -156,28 +139,21 @@ fun AppListScreen(
     onDismiss: () -> Unit,
     contentColor: Color,
     showAlphabet: Boolean,
-    edgeSide: EdgeSide,
-    /** Hoisted so a swipe that overshoots the opening animation can keep scrolling it. */
-    listState: LazyListState,
-    /** How far the list still has to travel to be fully open; 0 once it has arrived. */
-    enterPullPx: Float,
-    searchEnabled: Boolean,
-    searchAtBottom: Boolean,
-    query: String,
-    onQueryChange: (String) -> Unit,
-    alignment: HomeAlignment,
-    iconSide: IconSide,
+    alignRight: Boolean,
+    doubleTapToLock: Boolean,
+    onDoubleTapLock: (Offset) -> Unit,
     showAppNotifications: Boolean = false,
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
-    onNotificationClick: (dev.victorialauncher.notification.AppNotificationItem) -> Unit = {},
 ) {
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
+    var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     // The gesture handlers below outlive the composition that created them, so they must not
     // capture this frame's callbacks — a dismiss half a minute old still has to close the
     // list that is up now.
     val currentDismiss by rememberUpdatedState(onDismiss)
+    val currentDoubleTapLock by rememberUpdatedState(onDoubleTapLock)
 
     // Reading these here confines the invalidation to this composable: the home screen
     // behind the overlay never sees the letter change. currentY/currentPull stay as
@@ -188,15 +164,7 @@ fun AppListScreen(
     val scrubY = remember(scrub) { scrub::currentY }
     val pullPx = remember(scrub) { scrub::currentPull }
 
-    // Searching is a different mode from scrubbing: the letters shrink to whatever matched,
-    // so the strip is hidden and placement stays out of it until the query is cleared.
-    val searching = searchEnabled && query.isNotBlank()
-    val displayModel = remember(model, query, searchEnabled) {
-        if (!searching) model else model.filtered { displayName(it).contains(query.trim(), ignoreCase = true) }
-    }
-    /** Height of the pinned search field, so list-relative offsets can be compared to taps. */
-    var searchHeightPx by remember { mutableIntStateOf(0) }
-
+    val listState = rememberLazyListState()
     // Rows outside the scrubbed letter fade out; the section itself never moves, because it
     // is the same list the whole time. Only ever read inside a graphicsLayer, so the fade
     // runs in the draw phase instead of recomposing every visible row 60 times a second.
@@ -213,14 +181,19 @@ fun AppListScreen(
     // The LazyColumn always holds the full list — while scrubbing it's just hidden and
     // pre-scrolled, with the letter's apps drawn over the top. Filtering the rows themselves
     // meant that on release the unfiltered list was briefly parked back at A.
-    val scrubRowIndex = remember(displayModel, scrubLetter) {
+    val scrubRowIndex = remember(model, scrubLetter) {
         val letter = scrubLetter ?: return@remember -1
-        displayModel.letterIndex.firstOrNull { it.first == letter }?.second ?: -1
+        model.letterIndex.firstOrNull { it.first == letter }?.second ?: -1
     }
 
     // Row indices of the highlighted section. Applied *after* the scroll lands, otherwise
     // the new letter lights up a frame before the list moves to it — that was the jitter.
     var highlightRange by remember { mutableStateOf(IntRange.EMPTY) }
+
+    // Dismissing on the first tap is what made double-tap-to-lock unreachable: the overlay
+    // stops receiving touches the moment it hides, so the second tap never arrived. With the
+    // setting on, the dismiss waits out the double-tap window and a second tap cancels it.
+    var pendingDismiss by remember { mutableStateOf<Job?>(null) }
 
     // Pull-to-collapse from either end, done the way pull-to-refresh is done: one
     // nested-scroll connection that actually *consumes* the drag. Held signed throughout —
@@ -233,14 +206,7 @@ fun AppListScreen(
     // outstanding, and winding back up spends the pull before the list moves again — so the
     // gesture is always in exactly one state.
     val density = LocalDensity.current
-    // The travel a collapse is drawn over, and the share of it that commits — deliberately
-    // the same fraction the swipe-up uses to open, so the two gestures answer alike.
     val dismissPullPx = with(density) { 150.dp.toPx() }
-    val dismissCommitPx = dismissPullPx * COMMIT_FRACTION
-    // Per-frame drag big enough to call a flick rather than a deliberate push.
-    val fastDragPx = with(density) { 12.dp.toPx() }
-    // How far a gesture may have scrolled the list and still count as starting at the end.
-    val nearEndPx = with(density) { 48.dp.toPx() }
     val maxPullPx = with(density) { 320.dp.toPx() }
     val maxStretchPx = with(density) { MAX_EDGE_STRETCH.toPx() }
     val idleTopPaddingPx = with(density) { IDLE_TOP_PADDING.roundToPx() }
@@ -250,15 +216,7 @@ fun AppListScreen(
     var overPull by remember { mutableFloatStateOf(0f) }
     val collapseAnim = remember { Animatable(0f) }
     var collapsing by remember { mutableStateOf(false) }
-    // Entering and collapsing are the same transform in opposite directions, so the distance
-    // left to travel on the way in is fed through the very same path.
-    val collapseProvider: () -> Float = {
-        when {
-            collapsing -> collapseAnim.value
-            enterPullPx > 0f -> enterPullPx
-            else -> overPull
-        }
-    }
+    val collapseProvider: () -> Float = { if (collapsing) collapseAnim.value else overPull }
 
     // Both ends of the list share one elastic. A drag past an end stretches it, a fling into
     // an end seeds it with the leftover *velocity*, and it always springs back to rest.
@@ -275,10 +233,10 @@ fun AppListScreen(
     // Everything the overlay left behind has to be cleared explicitly, because it stays
     // composed while hidden: the tail padding and the collapse transform from the last scrub
     // would otherwise still be there the next time it opens.
-    val focusManager = LocalFocusManager.current
     LaunchedEffect(visible) {
         if (!visible) {
-            focusManager.clearFocus()
+            pendingDismiss?.cancel()
+            pendingDismiss = null
             highlightRange = IntRange.EMPTY
             overPull = 0f
             stretchPx = 0f
@@ -304,7 +262,7 @@ fun AppListScreen(
     fun forwardRoom(): Float {
         val info = listState.layoutInfo
         val last = info.visibleItemsInfo.lastOrNull() ?: return Float.MAX_VALUE
-        if (last.index < displayModel.rows.size) return Float.MAX_VALUE
+        if (last.index < model.rows.size) return Float.MAX_VALUE
         val bottom = (last.offset - info.viewportStartOffset + last.size).toFloat()
         return bottom + idleBottomPaddingPx - viewportHeightPx
     }
@@ -318,7 +276,7 @@ fun AppListScreen(
     fun placementSettled(): Boolean {
         val items = listState.layoutInfo.visibleItemsInfo
         val first = items.firstOrNull() ?: return true
-        if (first.index == 0 && items.last().index >= displayModel.rows.size) return true
+        if (first.index == 0 && items.last().index >= model.rows.size) return true
         return topGapRemaining() <= 0f
     }
 
@@ -350,16 +308,22 @@ fun AppListScreen(
         val compensate = minOf(shrinkBy, forwardRoom()).coerceAtLeast(0f)
         highlightRange = IntRange.EMPTY
         // dispatchRawDelta rather than scrollBy: the drag that got us here holds the scroll
-        // mutex at UserInput priority, and a scrollBy would just be canceled by it.
+        // mutex at UserInput priority, and a scrollBy would just be cancelled by it.
         if (compensate > 0f) listState.dispatchRawDelta(-compensate)
     }
 
-    LaunchedEffect(scrubRowIndex, displayModel) {
+    LaunchedEffect(scrubLetter) {
+        if (scrubLetter == SCRUBBER_STAR) {
+            listState.scrollToItem(0)
+        }
+    }
+
+    LaunchedEffect(scrubRowIndex, model) {
         if (scrubRowIndex < 0) return@LaunchedEffect
         listState.scrollToItem(scrubRowIndex)
         // The next letter's header ends this section. Walking the rows to find it copied the
         // whole tail of the list on every one of the ~26 letter changes in a gesture.
-        val end = displayModel.letterIndex.firstOrNull { it.second > scrubRowIndex }?.second ?: displayModel.rows.size
+        val end = model.letterIndex.firstOrNull { it.second > scrubRowIndex }?.second ?: model.rows.size
         highlightRange = scrubRowIndex until end
         // This placement is fresh, so the next drag is the one that retires it.
         userDragged = false
@@ -367,7 +331,7 @@ fun AppListScreen(
 
     val scope = rememberCoroutineScope()
 
-    val listConnection = remember(dismissPullPx, maxPullPx, maxStretchPx, fastDragPx, nearEndPx, viewportHeightPx, listState) {
+    val listConnection = remember(dismissPullPx, maxPullPx, maxStretchPx, viewportHeightPx, listState) {
         object : NestedScrollConnection {
             /** True between the first drag of a gesture and the fling that ends it. */
             private var dragging = false
@@ -379,52 +343,10 @@ fun AppListScreen(
             private var topPullEligible = false
             private var bottomPullEligible = false
 
-            /**
-             * Whether this gesture may collapse the overlay.
-             *
-             * Requiring it to *begin* against the end meant scrolling back to the top and
-             * pushing on did nothing, and a collapse only answered on a second, separate
-             * drag. What actually needs guarding against is a flick slamming into the end and
-             * shrinking the overlay mid-scroll — so a gesture arms if it barely scrolled the
-             * list at all, or if it is travelling slowly by the time it gets there. A long
-             * fast flick satisfies neither.
-             */
-            private var pullArmed = false
-
-            /** How far this gesture has scrolled the list, to tell a pull from a flick. */
-            private var scrolledInGesture = 0f
-
-            /** The edge spring, held so a finger arriving mid-settle can take it over. */
-            private var settleJob: Job? = null
-
             private fun stretch(delta: Float) {
                 // Rubber band: the further it goes, the less each pixel counts.
                 val resistance = 1f - (abs(stretchPx) / maxStretchPx).coerceIn(0f, 0.9f)
                 stretchPx = (stretchPx + delta * resistance).coerceIn(-maxStretchPx, maxStretchPx)
-            }
-
-            /**
-             * Runs the edge spring without making the fling wait for it.
-             *
-             * Awaited inside onPostFling it held the connection in its settling state for the
-             * spring's whole duration, and every guard below turns a drag away while that is
-             * true — so a flick that coasted into the end swallowed the next pull entirely and
-             * the collapse only answered on the swipe after. Launched separately it can simply
-             * be cancelled the moment a finger comes back down.
-             */
-            private fun startSettle(velocity: Float) {
-                settleJob?.cancel()
-                settleJob = scope.launch { settleStretch(velocity) }
-            }
-
-            /** Ends a settle in progress and hands its position back to the finger. */
-            private fun takeOverSettle() {
-                settleJob?.cancel()
-                settleJob = null
-                if (stretchSettling) {
-                    stretchPx = stretchAnim.value.coerceIn(-maxStretchPx, maxStretchPx)
-                    stretchSettling = false
-                }
             }
 
             private suspend fun settleStretch(velocity: Float) {
@@ -459,9 +381,6 @@ fun AppListScreen(
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (source == NestedScrollSource.Drag && !dragging) {
                     dragging = true
-                    // Cancellation is not instant, so the state is handed over here and now
-                    // rather than a frame later when the coroutine notices.
-                    takeOverSettle()
                     // A finger on the list, as opposed to a programmatic scrub scroll.
                     userDragged = true
                     // Collapsing has to be a deliberate pull from rest. Letting a scroll that
@@ -469,8 +388,6 @@ fun AppListScreen(
                     // shrink and fade the whole list halfway through the gesture.
                     topPullEligible = !listState.canScrollBackward
                     bottomPullEligible = !listState.canScrollForward
-                    pullArmed = false
-                    scrolledInGesture = 0f
                 }
                 if (collapsing || stretchSettling) return Offset.Zero
                 // Spend whatever is outstanding before the list is allowed to move again, so
@@ -508,11 +425,8 @@ fun AppListScreen(
                 if (collapsing || stretchSettling || source != NestedScrollSource.Drag) {
                     return Offset.Zero
                 }
-                scrolledInGesture += abs(consumed.y)
                 if (available.y == 0f) return Offset.Zero
-                if (scrolledInGesture <= nearEndPx || abs(available.y) <= fastDragPx) pullArmed = true
-                val startedAtThisEnd = if (available.y > 0f) topPullEligible else bottomPullEligible
-                val pulling = startedAtThisEnd || pullArmed
+                val pulling = if (available.y > 0f) topPullEligible else bottomPullEligible
                 if (pulling) {
                     // Signed: pulled down off the top is positive, pulled up off the bottom is
                     // negative, and every reader below works off the sign rather than a
@@ -527,16 +441,14 @@ fun AppListScreen(
 
             override suspend fun onPreFling(available: Velocity): Velocity {
                 dragging = false
-                pullArmed = false
-                scrolledInGesture = 0f
                 if (collapsing || stretchSettling) return Velocity.Zero
                 if (overPull != 0f) {
                     val pulled = overPull
                     val away = if (pulled > 0f) 1f else -1f
                     // Flung on past the threshold counts even when the pull itself is short.
                     val flungAway = available.y * away > 800f
-                    val dismissing = abs(pulled) > dismissCommitPx ||
-                        (flungAway && abs(pulled) > dismissCommitPx * 0.4f)
+                    val dismissing = abs(pulled) > dismissPullPx ||
+                        (flungAway && abs(pulled) > dismissPullPx / 3f)
                     collapsing = true
                     try {
                         collapseAnim.snapTo(pulled)
@@ -558,7 +470,7 @@ fun AppListScreen(
                             )
                         }
                     } finally {
-                        // Also on the way out of a canceled fling — the next gesture landing
+                        // Also on the way out of a cancelled fling — the next gesture landing
                         // on top of this one — or the overlay stays parked halfway down the
                         // screen for good. Nothing of it is on screen by then either way,
                         // because a hidden overlay is measured but never placed.
@@ -567,7 +479,7 @@ fun AppListScreen(
                     return available
                 }
                 if (stretchPx != 0f) {
-                    startSettle(available.y)
+                    settleStretch(available.y)
                     return available
                 }
                 return Velocity.Zero
@@ -575,7 +487,7 @@ fun AppListScreen(
 
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
                 if (collapsing || stretchSettling || available.y == 0f) return Velocity.Zero
-                startSettle(available.y)
+                settleStretch(available.y)
                 return available
             }
         }
@@ -602,7 +514,7 @@ fun AppListScreen(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(listConnection)
-            .pointerInput(listState) {
+            .pointerInput(doubleTapToLock, listState) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
                     val start = down.position
@@ -620,12 +532,27 @@ fun AppListScreen(
 
                     // A tap no row, letter or scroll claimed, landing clear of the list
                     // itself = a tap on the wallpaper.
-                    // Taps are in overlay space and the list is in its own; only a field above it
-                    // shifts the two apart.
-                    val listOffset = if (searchEnabled && !searchAtBottom) searchHeightPx else 0
-                    if (claimed || moved || isOnListContent(start.y - listOffset)) return@awaitEachGesture
+                    if (claimed || moved || isOnListContent(start.y)) return@awaitEachGesture
 
-                    currentDismiss()
+                    val pending = pendingDismiss
+                    when {
+                        pending != null -> {
+                            pending.cancel()
+                            pendingDismiss = null
+                            currentDoubleTapLock(start)
+                        }
+
+                        doubleTapToLock -> {
+                            pendingDismiss = scope.launch {
+                                delay(DOUBLE_TAP_WINDOW_MS)
+                                pendingDismiss = null
+                                currentDismiss()
+                            }
+                        }
+
+                        // Off by default, so the common case keeps dismissing instantly.
+                        else -> currentDismiss()
+                    }
                 }
             },
     ) {
@@ -639,25 +566,11 @@ fun AppListScreen(
                   val scale = 1f - 0.12f * progress
                   scaleX = scale
                   scaleY = scale
-                  alpha = 1f - 0.85f * progress
+                  val starAlpha = if (scrubLetter == SCRUBBER_STAR) 0f else 1f
+                  alpha = (1f - 0.85f * progress) * starAlpha
               }
               .background(Color.Black.copy(alpha = dimAlpha)),
       ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-        if (searchEnabled && !searchAtBottom) {
-            // Pinned above the list rather than scrolling with it as a first item: every row
-            // index the scrub placement works from would shift by one, and the field would
-            // disappear the moment you scrolled.
-            SearchField(
-                query = query,
-                onQueryChange = onQueryChange,
-                contentColor = contentColor,
-                activeSide = activeSide,
-                showAlphabet = showAlphabet,
-                modifier = Modifier.onSizeChanged { searchHeightPx = it.height },
-            )
-        }
-        Box(modifier = Modifier.weight(1f)) {
         CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
         LazyColumn(
             state = listState,
@@ -678,20 +591,11 @@ fun AppListScreen(
                 } else {
                     IDLE_TOP_PADDING
                 }
-                // The strip is drawn over this list, not beside it, so the side it occupies
-                // has to be held clear. Only that side: with both edges enabled the strip is
-                // still only ever on the one you opened from, and insetting the other leaves
-                // a margin against nothing.
-                PaddingValues(
-                    start = if (showAlphabet && activeSide == EdgeSide.LEFT) STRIP_INSET else 0.dp,
-                    end = if (showAlphabet && activeSide == EdgeSide.RIGHT) STRIP_INSET else 0.dp,
-                    top = top,
-                    bottom = IDLE_BOTTOM_PADDING,
-                )
+                PaddingValues(top = top, bottom = IDLE_BOTTOM_PADDING)
             },
         ) {
             itemsIndexed(
-                items = displayModel.rows,
+                items = model.rows,
                 key = { _, row ->
                     when (row) {
                         is AppListRow.Header -> "header:${row.text}"
@@ -710,28 +614,30 @@ fun AppListScreen(
                     },
                 ) {
                 when (row) {
-                    is AppListRow.Header -> SectionHeader(row.text, labelSizeSp, contentColor, alignment)
+                    is AppListRow.Header -> SectionHeader(row.text, labelSizeSp, contentColor, alignRight)
                     is AppListRow.Entry -> {
-                        val notifList = if (showAppNotifications) notificationsByPackage[row.app.packageName] else null
-                        val topNotif = notifList?.firstOrNull()
+                        val appNotifications = if (showAppNotifications) {
+                            notificationsByPackage[row.app.packageName].orEmpty()
+                        } else emptyList()
+                        val latestNotification = appNotifications.firstOrNull()
+
                         AppRow(
                             contentColor = contentColor,
-                            alignment = alignment,
-                            iconSide = iconSide,
+                            alignRight = alignRight,
                             app = row.app,
                             label = displayName(row.app),
                             iconSizeDp = iconSizeDp,
                             labelSizeSp = labelSizeSp,
                             isFavorite = favoriteKeys.contains(row.app.key),
-                            menuExpanded = menuForKey == row.app.key,
+                            notification = latestNotification,
+                            onNotificationClick = { notif ->
+                                activeDialogNotification = notif to row.app
+                            },
+                            menuExpanded = false,
                             menuOffset = menuOffset,
                             touchPosition = touchPosition,
-                            notification = topNotif,
-                            onNotificationClick = { clickedNotif ->
-                                activeDialogNotification = clickedNotif to row.app
-                            },
                             onLaunch = { onLaunch(row.app) },
-                            onLongPress = { offset -> menuOffset = offset; menuForKey = row.app.key },
+                            onLongPress = { _ -> appMenuFor = row.app },
                             onDismissMenu = { menuForKey = null },
                             onSetFavorite = { onSetFavorite(row.app, it) },
                             onEdit = { editDialogFor = row.app },
@@ -754,13 +660,9 @@ fun AppListScreen(
                         .heightIn(min = MIN_ROW_HEIGHT)
                         .padding(horizontal = 28.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = when (alignment) {
-                        HomeAlignment.LEFT -> Arrangement.Start
-                        HomeAlignment.CENTER -> Arrangement.Center
-                        HomeAlignment.RIGHT -> Arrangement.End
-                    },
+                    horizontalArrangement = if (alignRight) Arrangement.End else Arrangement.Start,
                 ) {
-                    if (alignment == HomeAlignment.RIGHT) {
+                    if (alignRight) {
                         Text(
                             stringResource(R.string.action_open_settings),
                             color = contentColor.copy(alpha = 0.8f),
@@ -782,49 +684,22 @@ fun AppListScreen(
         }
         }
 
-        // Fade the list out as it scrolls off the top. Inside the list's own box, so it
-        // shades the rows rather than the search field pinned above them.
+        // Fade the list out as it scrolls off the top.
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(28.dp)
+                .height(56.dp)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Black.copy(alpha = 0.35f), Color.Transparent),
-                    ),
+                        listOf(Color.Black.copy(alpha = 0.75f), Color.Transparent),
+                    )
                 ),
         )
 
-        // And off the bottom, so rows don't crash into the nav bar or the bottom search field.
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(28.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f)),
-                    ),
-                ),
-        )
-        }
-        if (searchEnabled && searchAtBottom) {
-            SearchField(
-                query = query,
-                onQueryChange = onQueryChange,
-                contentColor = contentColor,
-                activeSide = activeSide,
-                showAlphabet = showAlphabet,
-                atBottom = true,
-                modifier = Modifier.onSizeChanged { searchHeightPx = it.height },
-            )
-        }
-        }
-
-        if (showAlphabet && !searching) {
+        if (showAlphabet) {
             EdgeScrubber(
-                letters = displayModel.letters,
+                letters = model.letters,
                 scrubY = scrubY,
                 pullPx = pullPx,
                 band = band,
@@ -835,27 +710,81 @@ fun AppListScreen(
             )
         }
 
+        appMenuFor?.let { app ->
+            val isFavorite = favoriteKeys.contains(app.key)
+            val menuItems = listOf(
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(if (isFavorite) R.string.applist_remove_favorite else R.string.applist_add_favorite),
+                    icon = if (isFavorite) Icons.Filled.StarBorder else Icons.Filled.Star,
+                    onClick = { onSetFavorite(app, !isFavorite) },
+                ),
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(R.string.action_edit_icon_and_name),
+                    icon = Icons.Filled.Tune,
+                    onClick = { editDialogFor = app },
+                ),
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(R.string.action_app_info),
+                    icon = Icons.Filled.Info,
+                    onClick = { onAppInfo(app) },
+                ),
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(R.string.action_move_to_folder),
+                    icon = Icons.Filled.Folder,
+                    onClick = { onMoveToFolder(app) },
+                ),
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(R.string.applist_hide),
+                    icon = Icons.Filled.VisibilityOff,
+                    onClick = { onHideApp(app) },
+                    isDestructive = true,
+                ),
+            )
+
+            dev.victorialauncher.ui.common.AppMenuDialog(
+                app = app,
+                displayName = displayName(app),
+                onDismissRequest = { appMenuFor = null },
+                items = menuItems,
+            )
+        }
+
         editDialogFor?.let { target ->
             EditAppDialog(
                 currentName = displayName(target),
                 onConfirmName = { name -> onSetName(target, name); editDialogFor = null },
-                onChangeIcon = { name ->
-                    if (name.trim() != displayName(target)) onSetName(target, name.trim())
-                    onChangeIcon(target)
-                    editDialogFor = null
-                },
+                onChangeIcon = { onChangeIcon(target); editDialogFor = null },
                 onDismiss = { editDialogFor = null },
             )
         }
 
         activeDialogNotification?.let { (notif, app) ->
-            dev.victorialauncher.notification.NotificationDetailDialog(
-                notification = notif,
-                app = app,
-                onDismiss = { activeDialogNotification = null },
-                onNotificationClick = { item ->
+            val appNotifications = notificationsByPackage[app.packageName].orEmpty()
+            val context = LocalContext.current
+            dev.victorialauncher.ui.notification.NotificationDetailDialog(
+                item = notif,
+                allNotifications = appNotifications,
+                appInfo = app,
+                appName = displayName(app),
+                onDismissRequest = { activeDialogNotification = null },
+                onOpen = { targetNotif ->
                     activeDialogNotification = null
-                    onNotificationClick(item)
+                    dev.victorialauncher.notification.NotificationBus.launchNotification(
+                        context = context,
+                        item = targetNotif,
+                        appInfo = app,
+                        onLaunchFallback = { onLaunch(app) },
+                    )
+                    currentDismiss()
+                },
+                onDismissNotification = { targetNotif ->
+                    dev.victorialauncher.notification.NotificationBus.dismissNotification(targetNotif.key)
+                    val remaining = notificationsByPackage[app.packageName].orEmpty().filter { it.key != targetNotif.key }
+                    if (remaining.isEmpty()) {
+                        activeDialogNotification = null
+                    } else {
+                        activeDialogNotification = remaining.first() to app
+                    }
                 },
             )
         }
@@ -880,12 +809,21 @@ fun AppListScreen(
                     .size(bubble),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        scrubLetter.toString(),
-                        color = Color.White,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    if (scrubLetter == SCRUBBER_STAR) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp),
+                        )
+                    } else {
+                        Text(
+                            scrubLetter.toString(),
+                            color = Color.White,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             }
         }
@@ -894,14 +832,10 @@ fun AppListScreen(
 }
 
 @Composable
-private fun SectionHeader(text: String, labelSizeSp: Int, contentColor: Color, alignment: HomeAlignment) {
+private fun SectionHeader(text: String, labelSizeSp: Int, contentColor: Color, alignRight: Boolean) {
     Box(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
-        contentAlignment = when (alignment) {
-            HomeAlignment.LEFT -> Alignment.CenterStart
-            HomeAlignment.CENTER -> Alignment.Center
-            HomeAlignment.RIGHT -> Alignment.CenterEnd
-        },
+        contentAlignment = if (alignRight) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
         Text(
             text = text,
@@ -916,8 +850,7 @@ private fun SectionHeader(text: String, labelSizeSp: Int, contentColor: Color, a
 @Composable
 private fun AppRow(
     contentColor: Color,
-    alignment: HomeAlignment,
-    iconSide: IconSide,
+    alignRight: Boolean,
     touchPosition: MutableState<Offset>,
     app: AppInfo,
     label: String,
@@ -972,14 +905,7 @@ private fun AppRow(
                 .heightIn(min = MIN_ROW_HEIGHT)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = when (alignment) {
-                HomeAlignment.LEFT -> Arrangement.Start
-                HomeAlignment.CENTER -> Arrangement.Center
-                HomeAlignment.RIGHT -> Arrangement.End
-            },
         ) {
-            val gap = if (LocalIconConfig.current.showIcons) 16.dp else 0.dp
-            val labelModifier = Modifier.weight(1f, fill = false)
             val notificationContent: @Composable () -> Unit = {
                 if (notification != null) {
                     val notifText = if (notification.messages.isNotEmpty()) {
@@ -1001,12 +927,9 @@ private fun AppRow(
                         fontSize = (labelSizeSp - 3).coerceAtLeast(11).sp,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        textAlign = when (alignment) {
-                            HomeAlignment.LEFT -> TextAlign.Start
-                            HomeAlignment.CENTER -> TextAlign.Center
-                            HomeAlignment.RIGHT -> TextAlign.End
-                        },
+                        textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
                         modifier = Modifier
+                            .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -1015,46 +938,40 @@ private fun AppRow(
                     )
                 }
             }
-            val text: @Composable () -> Unit = {
+
+            if (alignRight) {
                 Column(
-                    modifier = labelModifier,
-                    horizontalAlignment = when (alignment) {
-                        HomeAlignment.LEFT -> Alignment.Start
-                        HomeAlignment.CENTER -> Alignment.CenterHorizontally
-                        HomeAlignment.RIGHT -> Alignment.End
-                    },
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End,
                 ) {
                     Text(
                         label,
                         color = contentColor,
                         fontSize = labelSizeSp.sp,
-                        textAlign = when (alignment) {
-                            HomeAlignment.LEFT -> TextAlign.Start
-                            HomeAlignment.CENTER -> TextAlign.Center
-                            HomeAlignment.RIGHT -> TextAlign.End
-                        },
+                        textAlign = TextAlign.End,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                     notificationContent()
                 }
-            }
-            // Centred rows balance the icon with a spacer on the label's far side, so the
-            // text lands on the screen's centre line rather than the pair straddling it.
-            val showIcons = LocalIconConfig.current.showIcons
-            val balance: @Composable () -> Unit = {
-                if (alignment == HomeAlignment.CENTER && showIcons) {
-                    Spacer(Modifier.width(iconSizeDp.dp + gap))
-                }
-            }
-            if (iconSide == IconSide.RIGHT) {
-                balance()
-                text()
-                Spacer(Modifier.width(gap))
+                Spacer(Modifier.width(16.dp))
                 AppIcon(app = app, sizeDp = iconSizeDp)
             } else {
                 AppIcon(app = app, sizeDp = iconSizeDp)
-                Spacer(Modifier.width(gap))
-                text()
-                balance()
+                Spacer(Modifier.width(16.dp))
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    Text(
+                        label,
+                        color = contentColor,
+                        fontSize = labelSizeSp.sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                    notificationContent()
+                }
             }
         }
 
@@ -1091,60 +1008,4 @@ private fun AppRow(
             )
         }
     }
-}
-
-/** The app list's own search box, styled against the wallpaper rather than a surface. */
-@Composable
-private fun SearchField(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    contentColor: Color,
-    activeSide: EdgeSide,
-    showAlphabet: Boolean,
-    atBottom: Boolean = false,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        singleLine = true,
-        placeholder = { Text(stringResource(R.string.applist_search), color = contentColor.copy(alpha = 0.6f)) },
-        leadingIcon = {
-            Icon(Icons.Filled.Search, contentDescription = null, tint = contentColor.copy(alpha = 0.7f))
-        },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.icon_picker_clear_search),
-                        tint = contentColor.copy(alpha = 0.7f),
-                    )
-                }
-            }
-        },
-        shape = RoundedCornerShape(28.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = contentColor,
-            unfocusedTextColor = contentColor,
-            cursorColor = contentColor,
-            focusedBorderColor = contentColor.copy(alpha = 0.45f),
-            unfocusedBorderColor = contentColor.copy(alpha = 0.2f),
-            focusedContainerColor = Color.Black.copy(alpha = 0.25f),
-            unfocusedContainerColor = Color.Black.copy(alpha = 0.25f),
-        ),
-        modifier = modifier
-            // The overlay draws under both system bars, so without this the field sits behind
-            // the clock at the top, or the gesture pill at the bottom.
-            .then(if (atBottom) Modifier.navigationBarsPadding() else Modifier.statusBarsPadding())
-            .fillMaxWidth()
-            .padding(
-                // Lines up with the rows' own inset instead of hugging the screen edge, and
-                // clears the A-Z strip on whichever side it occupies.
-                start = (if (showAlphabet && activeSide == EdgeSide.LEFT) STRIP_INSET else 0.dp) + 20.dp,
-                end = (if (showAlphabet && activeSide == EdgeSide.RIGHT) STRIP_INSET else 0.dp) + 20.dp,
-                top = if (atBottom) 8.dp else 12.dp,
-                bottom = if (atBottom) 12.dp else 8.dp,
-            ),
-    )
 }

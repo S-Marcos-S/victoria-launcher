@@ -18,13 +18,10 @@ class VictoriaApp : Application() {
     lateinit var widgetHost: VictoriaAppWidgetHost
         private set
 
-    /** Outlives any screen, for work that must finish even as the launcher is left behind. */
-    private val appScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
-
     override fun onCreate() {
         super.onCreate()
         prefs = Prefs(this)
-        appRepository = AppRepository(this, prefs, appScope)
+        appRepository = AppRepository(this)
         iconPackRepository = IconPackRepository(this)
         widgetHost = VictoriaAppWidgetHost(this, HOST_ID)
     }
