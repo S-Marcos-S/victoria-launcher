@@ -86,10 +86,13 @@ fun EdgeTouchZone(
                         report(change.position.x, change.position.y)
                         change.consume()
                     }
-                    if (letters.getOrNull(lastIndex) == SCRUBBER_STAR) {
-                        onDismiss()
+                    val releasedOnStar = letters.getOrNull(lastIndex) == SCRUBBER_STAR
+                    scope.launch {
+                        state.release()
+                        if (releasedOnStar) {
+                            onDismiss()
+                        }
                     }
-                    scope.launch { state.release() }
                 }
             },
     )

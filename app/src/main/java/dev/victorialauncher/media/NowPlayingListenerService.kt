@@ -218,6 +218,7 @@ class NowPlayingListenerService : NotificationListenerService() {
     private fun attachTo(controllers: List<MediaController>?) {
         val next = controllers?.firstOrNull { isLive(it.playbackState) }
             ?: controllers?.firstOrNull { it.playbackState != null }
+            ?: controllers?.firstOrNull()
 
         if (next?.sessionToken != watched?.sessionToken) {
             detach()

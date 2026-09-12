@@ -161,12 +161,14 @@ fun NowPlayingWidget(
     }
 
     // Null unless something is actually playing, paused or buffering — see the listener
-    // service. Nothing to show means nothing is drawn and no space is taken.
+    // service. In edit mode, show a placeholder if nothing is currently playing.
     val nowPlaying by NowPlayingBus.state.collectAsState()
-    val current = nowPlaying ?: return
+    val current = nowPlaying
+
+    val isEditModePlaceholder = current == null
 
     val scope = rememberCoroutineScope()
-    val dismissX = remember(current.controller.sessionToken) { Animatable(0f) }
+    val dismissX = remember(current?.controller?.sessionToken) { Animatable(0f) }
     val dismissThresholdPx = with(LocalDensity.current) { 120.dp.toPx() }
 
     // Everything inside scales with the card's height, so resizing it in edit mode grows
@@ -175,6 +177,61 @@ fun NowPlayingWidget(
     val titleSp = (heightDp * 0.22f).coerceIn(11f, 30f).sp
     val artistSp = (heightDp * 0.17f).coerceIn(9f, 24f).sp
     val controlSize = (heightDp * 0.42f).coerceIn(18f, 64f).dp
+
+    if (isEditModePlaceholder) {
+        Surface(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(heightDp.dp),
+            color = contentColor.copy(alpha = 0.08f),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier.size(artSize),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.MusicNote,
+                        contentDescription = null,
+                        tint = contentColor.copy(alpha = 0.7f),
+                        modifier = Modifier.size(artSize * 0.75f),
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.settings_section_now_playing),
+                        color = contentColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = titleSp,
+                    )
+                    Text(
+                        stringResource(R.string.settings_now_playing_show),
+                        color = contentColor.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = artistSp,
+                    )
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy((heightDp * 0.10f).coerceIn(6f, 24f).dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TransportButton(Icons.Filled.SkipPrevious, stringResource(R.string.now_playing_previous), controlSize, contentColor) {}
+                    TransportButton(Icons.Filled.PlayArrow, stringResource(R.string.now_playing_play_pause), controlSize, contentColor) {}
+                    TransportButton(Icons.Filled.SkipNext, stringResource(R.string.now_playing_next), controlSize, contentColor) {}
+                }
+            }
+        }
+        return
+    }
 
     Surface(
         modifier = modifier

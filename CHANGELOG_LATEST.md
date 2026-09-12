@@ -1,5 +1,15 @@
 ### 🚀 Novidades e Melhorias
 
+- **Correção do Player de Música (Em Reprodução):**
+  - Corrigido o problema em que o player de música não aparecia na tela inicial mesmo quando ativado nas configurações caso um widget estivesse configurado.
+  - O bloco de controle de mídia agora é posicionado de forma consistente abaixo do relógio ou do widget e acima dos favoritos.
+  - Adicionada pré-visualização completa do player no modo de edição de layout mesmo quando nenhuma música estiver tocando, permitindo ajustar a altura do player e os espaçamentos facilmente.
+  - Aprimorada a detecção e reconexão de sessões ativas de mídia pelo serviço de notificações.
+
+- **Animação Contínua e Ininterrupta do Alfabeto na Tela Inicial:**
+  - Corrigido o desaparecimento da barra do alfabeto e interrupção da deformação elástica ao passar pelo ícone de estrela (`★`) ou estar com a tela inicial visível: a curvatura e as letras agora continuam 100% ativas e responsivas ao dedo sem sumir.
+  - O encerramento do gesto agora aguarda a suavização da mola elástica antes de fixar a tela inicial, garantindo uma transição orgânica e contínua.
+
 - **Menu de Opções do Aplicativo com Quinas Arredondadas e Blur:**
   - Modernização completa da janela de configuração e opções que se abre ao tocar e segurar em qualquer aplicativo (tanto na tela inicial / favoritos quanto na lista de todos os aplicativos).
   - Novo design translúcido em estilo *frosted glass* com quinas bem arredondadas (28dp), borda sutil iluminada e efeito de desfoque de fundo do sistema (*blur behind*).

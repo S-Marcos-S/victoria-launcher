@@ -486,9 +486,8 @@ fun HomeScreen(
                 )
             }
 
-            // With no widget on screen there is nothing above the favorites, so Now Playing
-            // takes that slot instead.
-            if (!hasWidget && nowPlayingHasContent) {
+            // Now Playing widget block: rendered below clock / widget and above favorites
+            if (nowPlayingHasContent || (editMode && nowPlayingEnabled)) {
                 NowPlayingBlock(
                     editMode = editMode,
                     heightDp = nowPlayingHeightDp,
@@ -693,28 +692,6 @@ fun HomeScreen(
                         current = { padOf(PaddingSlot.WIDGET_BOTTOM) },
                         onCommit = { onCommitPadding(PaddingSlot.WIDGET_BOTTOM, it); liveSlot = null },
                     )
-                    // Now Playing sits between the widget and the favorites.
-                    if (nowPlayingHasContent) {
-                        NowPlayingBlock(
-                            editMode = editMode,
-                            heightDp = nowPlayingHeightDp,
-                            contentColor = contentColor,
-                            sidePaddingDp = sidePaddingDp,
-                            padTop = padOf(PaddingSlot.NOW_PLAYING_TOP),
-                            padBottom = padOf(PaddingSlot.NOW_PLAYING_BOTTOM),
-                            touchPosition = touchPosition,
-                            menuExpanded = nowPlayingMenu,
-                            menuOffset = nowPlayingMenuOffset,
-                            onOpenMenu = { offset -> nowPlayingMenuOffset = offset; nowPlayingMenu = true },
-                            onDismissMenu = { nowPlayingMenu = false },
-                            onEditLayout = { nowPlayingMenu = false; onEditModeChange(true) },
-                            onOpenSettings = { nowPlayingMenu = false; onOpenSettings() },
-                            onResize = onResizeNowPlaying,
-                            onDragPadding = { slot, v -> liveSlot = slot; liveValue = v },
-                            currentPadding = { slot -> padOf(slot) },
-                            onCommitPadding = { slot, v -> onCommitPadding(slot, v); liveSlot = null },
-                        )
-                    }
                 } else if (index == lastRowIndex) {
                     PaddingHandle(
                         editMode = editMode,

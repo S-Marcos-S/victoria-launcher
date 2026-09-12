@@ -267,7 +267,7 @@ fun HomeRoute(
                 .then(
                     // Hidden, but still laid out: an AppWidgetHostView that is never placed
                     // loses its layout and comes back with its text collapsed.
-                    if (appListVisible) {
+                    if (appListVisible && !scrub.active) {
                         Modifier.pointerInput(Unit) {
                             awaitEachGesture {
                                 while (true) {
@@ -423,8 +423,8 @@ fun HomeRoute(
         if (settings.alwaysShowAz && !appListVisible && !showHomeOptions) {
             EdgeScrubber(
                 letters = listModel.letters,
-                scrubY = { null },
-                pullPx = { 0f },
+                scrubY = remember(scrub) { scrub::currentY },
+                pullPx = remember(scrub) { scrub::currentPull },
                 band = band,
                 side = scrub.side,
                 modifier = Modifier.align(
