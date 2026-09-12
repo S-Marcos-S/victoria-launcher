@@ -70,6 +70,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -718,18 +719,32 @@ fun AppListScreen(
         }
 
         activeDialogNotification?.let { (notif, app) ->
+            val appNotifications = notificationsByPackage[app.packageName].orEmpty()
+            val context = LocalContext.current
             dev.victorialauncher.ui.notification.NotificationDetailDialog(
                 item = notif,
+                allNotifications = appNotifications,
                 appInfo = app,
                 appName = displayName(app),
                 onDismissRequest = { activeDialogNotification = null },
-                onOpen = {
+                onOpen = { targetNotif ->
                     activeDialogNotification = null
-                    runCatching { notif.contentIntent?.send() }
+                    dev.victorialauncher.notification.NotificationBus.launchNotification(
+                        context = context,
+                        item = targetNotif,
+                        appInfo = app,
+                        onLaunchFallback = { onLaunch(app) },
+                    )
+                    currentDismiss()
                 },
-                onDismissNotification = {
-                    activeDialogNotification = null
-                    dev.victorialauncher.notification.NotificationBus.dismissNotification(notif.key)
+                onDismissNotification = { targetNotif ->
+                    dev.victorialauncher.notification.NotificationBus.dismissNotification(targetNotif.key)
+                    val remaining = notificationsByPackage[app.packageName].orEmpty().filter { it.key != targetNotif.key }
+                    if (remaining.isEmpty()) {
+                        activeDialogNotification = null
+                    } else {
+                        activeDialogNotification = remaining.first() to app
+                    }
                 },
             )
         }
@@ -853,7 +868,15 @@ private fun AppRow(
         ) {
             val notificationContent: @Composable () -> Unit = {
                 if (notification != null) {
-                    val notifText = if (notification.text.isNotBlank()) {
+                    val notifText = if (notification.messages.isNotEmpty()) {
+                        val lastMsg = notification.messages.last()
+                        val countSuffix = if (notification.messages.size > 1) " (${notification.messages.size})" else ""
+                        if (notification.title.isNotBlank()) {
+                            "${notification.title}: ${lastMsg.text}$countSuffix"
+                        } else {
+                            "${lastMsg.text}$countSuffix"
+                        }
+                    } else if (notification.text.isNotBlank()) {
                         "${notification.title}: ${notification.text}"
                     } else {
                         notification.title

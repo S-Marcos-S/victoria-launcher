@@ -9,8 +9,11 @@ import android.media.session.PlaybackState
 import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.os.Build
+import android.os.Bundle
 import dev.victorialauncher.notification.AppNotificationItem
 import dev.victorialauncher.notification.NotificationBus
+import dev.victorialauncher.notification.NotificationMessage
 
 class NowPlayingListenerService : NotificationListenerService() {
 
@@ -82,6 +85,8 @@ class NowPlayingListenerService : NotificationListenerService() {
                 // If both title and text are blank, it's not useful to show
                 if (title.isBlank() && text.isBlank()) return@mapNotNull null
 
+                val messages = extractMessages(extras)
+
                 AppNotificationItem(
                     key = sbn.key,
                     packageName = sbn.packageName,
@@ -91,10 +96,98 @@ class NowPlayingListenerService : NotificationListenerService() {
                     postTime = sbn.postTime,
                     contentIntent = notification.contentIntent,
                     isClearable = sbn.isClearable,
+                    messages = messages,
                 )
             }
             NotificationBus.updateNotifications(list)
         }
+    }
+
+    private fun extractMessages(extras: Bundle): List<NotificationMessage> {
+        val messages = mutableListOf<NotificationMessage>()
+
+        // 1. Historic messages (if any)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val historic = runCatching {
+                extras.getParcelableArray(Notification.EXTRA_HISTORIC_MESSAGES)
+            }.getOrNull()
+            if (historic != null) {
+                for (item in historic) {
+                    if (item is Bundle) {
+                        parseMessageBundle(item)?.let { messages.add(it) }
+                    }
+                }
+            }
+        }
+
+        // 2. EXTRA_MESSAGES (MessagingStyle)
+        val rawMessages = runCatching {
+            extras.getParcelableArray(Notification.EXTRA_MESSAGES)
+        }.getOrNull()
+        if (rawMessages != null && rawMessages.isNotEmpty()) {
+            for (item in rawMessages) {
+                if (item is Bundle) {
+                    parseMessageBundle(item)?.let { messages.add(it) }
+                }
+            }
+        }
+
+        // 3. EXTRA_TEXT_LINES (InboxStyle)
+        if (messages.isEmpty()) {
+            val lines = runCatching {
+                extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+            }.getOrNull()
+            if (lines != null && lines.isNotEmpty()) {
+                for (line in lines) {
+                    val str = line?.toString()?.trim().orEmpty()
+                    if (str.isNotBlank()) {
+                        val colonIdx = str.indexOf(':')
+                        if (colonIdx in 1..30) {
+                            val sender = str.substring(0, colonIdx).trim()
+                            val msgText = str.substring(colonIdx + 1).trim()
+                            messages.add(NotificationMessage(sender = sender, text = msgText))
+                        } else {
+                            messages.add(NotificationMessage(text = str))
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Multi-line big text
+        if (messages.isEmpty()) {
+            val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim().orEmpty()
+            if (bigText.contains('\n')) {
+                val lines = bigText.split('\n').map { it.trim() }.filter { it.isNotBlank() }
+                if (lines.size > 1) {
+                    for (str in lines) {
+                        val colonIdx = str.indexOf(':')
+                        if (colonIdx in 1..30) {
+                            val sender = str.substring(0, colonIdx).trim()
+                            val msgText = str.substring(colonIdx + 1).trim()
+                            messages.add(NotificationMessage(sender = sender, text = msgText))
+                        } else {
+                            messages.add(NotificationMessage(text = str))
+                        }
+                    }
+                }
+            }
+        }
+
+        return messages
+    }
+
+    private fun parseMessageBundle(bundle: Bundle): NotificationMessage? {
+        val text = bundle.getCharSequence("text")?.toString()?.trim().orEmpty()
+        if (text.isBlank()) return null
+        val time = bundle.getLong("time", 0L)
+        val sender = bundle.getCharSequence("sender")?.toString()?.trim()
+            ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                runCatching {
+                    bundle.getParcelable<android.app.Person>("sender_person")?.name?.toString()
+                }.getOrNull()
+            } else null
+        return NotificationMessage(sender = sender, text = text, timestamp = time)
     }
 
     private fun refresh() {
