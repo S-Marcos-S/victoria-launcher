@@ -71,11 +71,8 @@ fun EdgeTouchZone(
                         return letter
                     }
 
-                    val initialLetter = report(down.position.x, down.position.y)
-                    var opened = (initialLetter != SCRUBBER_STAR)
-                    if (opened) {
-                        onOpen()
-                    }
+                    report(down.position.x, down.position.y)
+                    onOpen()
 
                     while (true) {
                         val event = awaitPointerEvent()
@@ -86,18 +83,7 @@ fun EdgeTouchZone(
                         if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                             state.markScrubbing()
                         }
-                        val letter = report(change.position.x, change.position.y)
-                        if (letter == SCRUBBER_STAR) {
-                            if (opened) {
-                                opened = false
-                                onDismiss()
-                            }
-                        } else if (letter != null) {
-                            if (!opened) {
-                                opened = true
-                                onOpen()
-                            }
-                        }
+                        report(change.position.x, change.position.y)
                         change.consume()
                     }
                     if (letters.getOrNull(lastIndex) == SCRUBBER_STAR) {

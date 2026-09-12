@@ -16,10 +16,10 @@
   - O launcher agora extrai e formata o número de versão padrão a partir das informações de release e do aplicativo.
   - No balão de novidades ("O que há de novo"), a versão é exibida em destaque no cabeçalho acompanhada do identificador de compilação.
 
-- **Visualização Imediata da Tela Inicial ao Rolar até a Estrela (`★`):**
-  - Ao rolar o alfabeto lateral até a estrela, a gaveta de aplicativos fica invisível e a tela inicial (com os aplicativos favoritos e widgets) é exibida em primeiro plano imediatamente durante a rolagem.
-  - Ao continuar rolando para baixo para qualquer letra (ex: 'A'), a lista de aplicativos ressurge suavemente.
-  - Ao soltar o dedo na estrela, a gaveta é fechada e o usuário permanece na tela inicial.
+- **Visualização Imediata da Tela Inicial e Correção da Rolagem na Estrela (`★`):**
+  - Corrigido o bug que interrompia/fechava a rolagem do alfabeto ao passar o dedo sobre o ícone da estrela (`★`): a rolagem pelo alfabeto agora permanece 100% contínua e ativa enquanto o dedo estiver na tela.
+  - Ao passar pela estrela, a tela inicial é revelada imediatamente, e ao continuar deslizando para baixo para as letras do alfabeto (como 'A', 'B'), os aplicativos ressurgem suavemente sem interrupção.
+  - Ao soltar o dedo na estrela, a gaveta fecha e o usuário permanece na tela inicial com seus favoritos e widgets.
 
 - **Correção de Duplicação de Contatos/Conversas nas Notificações (ex: WhatsApp):**
   - Corrigida a duplicação do nome da pessoa / card no topo do balão de notificação quando múltiplos alertas chegam para a mesma conversa.
