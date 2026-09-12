@@ -40,6 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -186,52 +187,86 @@ fun NowPlayingWidget(
             color = contentColor.copy(alpha = 0.08f),
             shape = RoundedCornerShape(16.dp),
         ) {
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.Center,
             ) {
-                Box(
-                    modifier = Modifier.size(artSize),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Filled.MusicNote,
-                        contentDescription = null,
-                        tint = contentColor.copy(alpha = 0.7f),
-                        modifier = Modifier.size(artSize * 0.75f),
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        stringResource(R.string.settings_section_now_playing),
-                        color = contentColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = titleSp,
-                    )
-                    Text(
-                        stringResource(R.string.settings_now_playing_show),
-                        color = contentColor.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = artistSp,
-                    )
-                }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy((heightDp * 0.10f).coerceIn(6f, 24f).dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TransportButton(Icons.Filled.SkipPrevious, stringResource(R.string.now_playing_previous), controlSize, contentColor) {}
-                    TransportButton(Icons.Filled.PlayArrow, stringResource(R.string.now_playing_play_pause), controlSize, contentColor) {}
-                    TransportButton(Icons.Filled.SkipNext, stringResource(R.string.now_playing_next), controlSize, contentColor) {}
+                    Box(
+                        modifier = Modifier.size(artSize),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Filled.MusicNote,
+                            contentDescription = null,
+                            tint = contentColor.copy(alpha = 0.7f),
+                            modifier = Modifier.size(artSize * 0.75f),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.settings_section_now_playing),
+                            color = contentColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontSize = titleSp,
+                        )
+                        Text(
+                            stringResource(R.string.settings_now_playing_show),
+                            color = contentColor.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontSize = artistSp,
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TransportButton(Icons.Filled.SkipPrevious, stringResource(R.string.now_playing_previous), controlSize, contentColor) {}
+                        TransportButton(Icons.Filled.PlayArrow, stringResource(R.string.now_playing_play_pause), controlSize, contentColor) {}
+                        TransportButton(Icons.Filled.SkipNext, stringResource(R.string.now_playing_next), controlSize, contentColor) {}
+                    }
                 }
+                Spacer(Modifier.height(6.dp))
+                androidx.compose.material3.LinearProgressIndicator(
+                    progress = { 0.45f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = contentColor.copy(alpha = 0.85f),
+                    trackColor = contentColor.copy(alpha = 0.15f),
+                )
             }
         }
         return
     }
+
+    var currentPosition by remember(current.controller.sessionToken, current.positionMs, current.lastUpdateTime) {
+        mutableStateOf(current.positionMs)
+    }
+
+    // Advance position locally while playing
+    LaunchedEffect(current.isPlaying, current.positionMs, current.lastUpdateTime, current.speed) {
+        if (!current.isPlaying || current.durationMs <= 0L) return@LaunchedEffect
+        while (true) {
+            val elapsed = System.currentTimeMillis() - current.lastUpdateTime
+            val calculated = current.positionMs + (elapsed * current.speed).toLong()
+            currentPosition = calculated.coerceIn(0L, current.durationMs)
+            kotlinx.coroutines.delay(500L)
+        }
+    }
+
+    val progressFraction = if (current.durationMs > 0L) {
+        (currentPosition.toFloat() / current.durationMs.toFloat()).coerceIn(0f, 1f)
+    } else 0f
 
     Surface(
         modifier = modifier
@@ -247,8 +282,6 @@ fun NowPlayingWidget(
                 onDragStopped = { velocity ->
                     if (dismissX.value > dismissThresholdPx || velocity > 1200f) {
                         dismissX.animateTo(dismissThresholdPx * 6f, tween(180))
-                        // Stopping the session is as far as an ordinary app can go: playback
-                        // ends and the session drops, which collapses this block away.
                         runCatching { current.controller.transportControls.stop() }
                         NowPlayingBus.update(null)
                     } else {
@@ -256,91 +289,104 @@ fun NowPlayingWidget(
                     }
                 },
             ),
-        // No scrim: the block sits on the wallpaper like the favourites above it do, so the
-        // only thing separating it from them is its own spacing.
         color = Color.Transparent,
         shape = RoundedCornerShape(16.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxHeight()
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .fillMaxSize()
+                .padding(horizontal = 14.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.Center,
         ) {
-            Box(
-                modifier = Modifier.size(artSize),
-                contentAlignment = Alignment.Center,
-            ) {
-                val art = current.art
-                if (art != null) {
-                    Image(
-                        bitmap = art.asImageBitmap(),
-                        contentDescription = null,
-                        // Cropped, not fitted: album art that isn't square used to letterbox
-                        // inside its box and sit visibly smaller than the square it was given.
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(8.dp)),
-                    )
-                } else {
-                    Icon(
-                        Icons.Filled.MusicNote,
-                        contentDescription = null,
-                        tint = contentColor.copy(alpha = 0.7f),
-                        modifier = Modifier.size(artSize * 0.75f),
-                    )
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    current.title.ifBlank { stringResource(R.string.now_playing_unknown_title) },
-                    color = contentColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = titleSp,
-                )
-                Text(
-                    current.artist,
-                    color = contentColor.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = artistSp,
-                )
-            }
             Row(
-                horizontalArrangement = Arrangement.spacedBy((heightDp * 0.10f).coerceIn(6f, 24f).dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TransportButton(
-                    Icons.Filled.SkipPrevious,
-                    stringResource(R.string.now_playing_previous),
-                    controlSize,
-                    contentColor,
+                Box(
+                    modifier = Modifier.size(artSize),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    current.controller.transportControls.skipToPrevious()
-                }
-                TransportButton(
-                    if (current.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    stringResource(R.string.now_playing_play_pause),
-                    controlSize,
-                    contentColor,
-                ) {
-                    if (current.isPlaying) {
-                        current.controller.transportControls.pause()
+                    val art = current.art
+                    if (art != null) {
+                        Image(
+                            bitmap = art.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(8.dp)),
+                        )
                     } else {
-                        current.controller.transportControls.play()
+                        Icon(
+                            Icons.Filled.MusicNote,
+                            contentDescription = null,
+                            tint = contentColor.copy(alpha = 0.7f),
+                            modifier = Modifier.size(artSize * 0.75f),
+                        )
                     }
                 }
-                TransportButton(
-                    Icons.Filled.SkipNext,
-                    stringResource(R.string.now_playing_next),
-                    controlSize,
-                    contentColor,
-                ) {
-                    current.controller.transportControls.skipToNext()
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        current.title.ifBlank { stringResource(R.string.now_playing_unknown_title) },
+                        color = contentColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = titleSp,
+                    )
+                    Text(
+                        current.artist,
+                        color = contentColor.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = artistSp,
+                    )
                 }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy((heightDp * 0.06f).coerceIn(4f, 16f).dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TransportButton(
+                        Icons.Filled.SkipPrevious,
+                        stringResource(R.string.now_playing_previous),
+                        controlSize,
+                        contentColor,
+                    ) {
+                        current.controller.transportControls.skipToPrevious()
+                    }
+                    TransportButton(
+                        if (current.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        stringResource(R.string.now_playing_play_pause),
+                        controlSize,
+                        contentColor,
+                    ) {
+                        if (current.isPlaying) {
+                            current.controller.transportControls.pause()
+                        } else {
+                            current.controller.transportControls.play()
+                        }
+                    }
+                    TransportButton(
+                        Icons.Filled.SkipNext,
+                        stringResource(R.string.now_playing_next),
+                        controlSize,
+                        contentColor,
+                    ) {
+                        current.controller.transportControls.skipToNext()
+                    }
+                }
+            }
+            if (current.durationMs > 0L) {
+                Spacer(Modifier.height(6.dp))
+                androidx.compose.material3.LinearProgressIndicator(
+                    progress = { progressFraction },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = contentColor.copy(alpha = 0.85f),
+                    trackColor = contentColor.copy(alpha = 0.15f),
+                )
             }
         }
     }

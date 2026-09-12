@@ -249,6 +249,11 @@ class NowPlayingListenerService : NotificationListenerService() {
             return
         }
 
+        val durationMs = metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L
+        val positionMs = state?.position ?: 0L
+        val speed = state?.playbackSpeed ?: 1f
+        val lastUpdateTime = state?.lastPositionUpdateTime ?: System.currentTimeMillis()
+
         NowPlayingBus.update(
             NowPlaying(
                 title = title,
@@ -257,6 +262,10 @@ class NowPlayingListenerService : NotificationListenerService() {
                 art = metadata?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
                     ?: metadata?.getBitmap(MediaMetadata.METADATA_KEY_ART),
                 controller = controller,
+                durationMs = durationMs,
+                positionMs = positionMs,
+                speed = speed,
+                lastUpdateTime = lastUpdateTime,
             )
         )
     }

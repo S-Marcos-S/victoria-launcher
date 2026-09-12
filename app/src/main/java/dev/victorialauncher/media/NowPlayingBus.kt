@@ -17,6 +17,10 @@ data class NowPlaying(
     val isPlaying: Boolean,
     val art: Bitmap?,
     val controller: MediaController,
+    val durationMs: Long = 0L,
+    val positionMs: Long = 0L,
+    val speed: Float = 1f,
+    val lastUpdateTime: Long = 0L,
 )
 
 /**

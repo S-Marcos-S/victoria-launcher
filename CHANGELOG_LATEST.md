@@ -1,8 +1,10 @@
 ### 🚀 Novidades e Melhorias
 
-- **Correção do Player de Música (Em Reprodução):**
+- **Player de Música (Em Reprodução) com Barra de Progresso e Ajuste de Layout:**
+  - A capa do álbum e o título da música agora acompanham exatamente as dimensões configuradas pelo usuário para os ícones e rótulos dos aplicativos (`iconSizeDp` e `labelSizeSp`), mantendo total harmonia e consistência visual na tela inicial.
+  - Adicionada barra de progresso dinâmica em tempo real no estilo Material Design (Material 3 `LinearProgressIndicator` arredondado com trilha suave) exibindo o avanço da faixa musical.
+  - Afastados os botões de controle de mídia em relação à barra lateral do alfabeto: o bloco agora respeita a margem de respiro de 48dp no lado do alfabeto e possui espaçamento compacto otimizado para evitar toques acidentais na rolagem A-Z.
   - Corrigido o problema em que o player de música não aparecia na tela inicial mesmo quando ativado nas configurações caso um widget estivesse configurado.
-  - O bloco de controle de mídia agora é posicionado de forma consistente abaixo do relógio ou do widget e acima dos favoritos.
   - Adicionada pré-visualização completa do player no modo de edição de layout mesmo quando nenhuma música estiver tocando, permitindo ajustar a altura do player e os espaçamentos facilmente.
   - Aprimorada a detecção e reconexão de sessões ativas de mídia pelo serviço de notificações.
 

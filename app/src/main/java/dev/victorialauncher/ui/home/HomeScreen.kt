@@ -491,8 +491,11 @@ fun HomeScreen(
                 NowPlayingBlock(
                     editMode = editMode,
                     heightDp = nowPlayingHeightDp,
+                    iconSizeDp = iconSizeDp,
+                    labelSizeSp = labelSizeSp,
                     contentColor = contentColor,
                     sidePaddingDp = sidePaddingDp,
+                    alignRight = alignRight,
                     padTop = padOf(PaddingSlot.NOW_PLAYING_TOP),
                     padBottom = padOf(PaddingSlot.NOW_PLAYING_BOTTOM),
                     touchPosition = touchPosition,
@@ -1162,8 +1165,11 @@ private fun FolderRow(
 private fun NowPlayingBlock(
     editMode: Boolean,
     heightDp: Int,
+    iconSizeDp: Int,
+    labelSizeSp: Int,
     contentColor: Color,
     sidePaddingDp: Int,
+    alignRight: Boolean,
     padTop: Int,
     padBottom: Int,
     touchPosition: MutableState<Offset>,
@@ -1181,6 +1187,9 @@ private fun NowPlayingBlock(
     val density = LocalDensity.current
     val context = LocalContext.current
 
+    val npStart = if (!alignRight) sidePaddingDp.dp else maxOf(sidePaddingDp, 48).dp
+    val npEnd = if (!alignRight) maxOf(sidePaddingDp, 48).dp else sidePaddingDp.dp
+
     PaddingHandle(
         editMode = editMode,
         label = R.string.handle_now_playing_top,
@@ -1192,10 +1201,12 @@ private fun NowPlayingBlock(
     Box {
         NowPlayingWidget(
             heightDp = heightDp,
+            iconSizeDp = iconSizeDp,
+            labelSizeSp = labelSizeSp,
             contentColor = contentColor,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = sidePaddingDp.dp)
+                .padding(start = npStart, end = npEnd)
                 .recordTouchPosition(touchPosition)
                 .combinedClickable(
                     // The transport buttons consume their own taps, so this is only ever the
