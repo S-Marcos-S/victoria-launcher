@@ -1,25 +1,51 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.common
 
+import android.os.Build
+import android.view.WindowManager
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import dev.victorialauncher.R
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import dev.victorialauncher.R
 
-/** Rename an app or swap its icon. Shared by the home screen and the A-Z list. */
+/**
+ * Rename an app or swap its icon in a modern frosted-glass dialog with blur and rounded corners.
+ */
 @Composable
 fun EditAppDialog(
     currentName: String,
@@ -28,22 +54,142 @@ fun EditAppDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf(currentName) }
-    AlertDialog(
+    val view = LocalView.current
+
+    DisposableEffect(view) {
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dialogWindow != null) {
+            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = dialogWindow.attributes
+            params.blurBehindRadius = 32
+            dialogWindow.attributes = params
+        }
+        onDispose {}
+    }
+
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.action_edit_icon_and_name)) },
-        text = {
-            Column {
-                OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text(stringResource(R.string.home_display_name_label)) })
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onChangeIcon) { Text(stringResource(R.string.action_change_icon)) }
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false,
+        ),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.90f)
+                    .clip(RoundedCornerShape(28.dp))
+                    .border(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.20f),
+                        shape = RoundedCornerShape(28.dp),
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                    ),
+                color = Color(0xDD1E232A),
+                shape = RoundedCornerShape(28.dp),
+                tonalElevation = 8.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_edit_icon_and_name),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                    )
+
+                    Spacer(Modifier.height(18.dp))
+
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        label = { Text(stringResource(R.string.home_display_name_label)) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+
+                    Spacer(Modifier.height(14.dp))
+
+                    TextButton(
+                        onClick = onChangeIcon,
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.action_change_icon),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(
+                            onClick = { onConfirmName(null) },
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.action_reset),
+                                color = Color.White.copy(alpha = 0.7f),
+                            )
+                        }
+
+                        TextButton(
+                            onClick = onDismiss,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.action_cancel),
+                                color = Color.White.copy(alpha = 0.7f),
+                            )
+                        }
+
+                        TextButton(
+                            onClick = { onConfirmName(text.trim()) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.action_save),
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
             }
-        },
-        confirmButton = { TextButton(onClick = { onConfirmName(text) }) { Text(stringResource(R.string.action_save)) } },
-        dismissButton = {
-            Row {
-                TextButton(onClick = { onConfirmName(null) }) { Text(stringResource(R.string.action_reset)) }
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-            }
-        },
-    )
+        }
+    }
 }

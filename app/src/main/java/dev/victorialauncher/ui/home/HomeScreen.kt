@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.home
 
+import android.os.Build
+import android.view.WindowManager
 import android.widget.Toast
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.calculateTargetValue
@@ -193,6 +196,7 @@ fun HomeScreen(
 
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var floatingFolderDialog by remember { mutableStateOf<Folder?>(null) }
+    var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
     var menuForKey by remember { mutableStateOf<String?>(null) }
     var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     var renameDialogFor by remember { mutableStateOf<AppInfo?>(null) }
@@ -649,11 +653,11 @@ fun HomeScreen(
                                 onNotificationClick = { notif ->
                                     activeDialogNotification = notif to item.app
                                 },
-                                menuExpanded = menuForKey == item.app.key,
+                                menuExpanded = false,
                                 menuOffset = menuOffset,
                                 touchPosition = touchPosition,
                                 onLaunch = { onLaunch(item.app) },
-                                onOpenMenu = { offset -> menuOffset = offset; menuForKey = item.app.key },
+                                onOpenMenu = { _ -> appMenuFor = item.app },
                                 onDismissMenu = { menuForKey = null },
                                 onMoveToFolder = { menuForKey = null; onMoveToFolder(item.app) },
                                 onEditLayout = { menuForKey = null; onEditModeChange(true) },
@@ -760,6 +764,50 @@ fun HomeScreen(
             onOpenApp = onOpenFolderApp,
             onManageFolder = { onManageFolder(folder) },
             onDismissRequest = { floatingFolderDialog = null },
+        )
+    }
+
+    appMenuFor?.let { app ->
+        val isFavorite = favorites.any { it is FavoriteEntry.App && it.app.key == app.key }
+        val menuItems = listOf(
+            dev.victorialauncher.ui.common.AppMenuItem(
+                title = stringResource(R.string.action_move_to_folder),
+                icon = Icons.Filled.Folder,
+                onClick = { onMoveToFolder(app) },
+            ),
+            dev.victorialauncher.ui.common.AppMenuItem(
+                title = stringResource(R.string.action_edit_layout),
+                icon = Icons.Filled.Edit,
+                onClick = { onEditModeChange(true) },
+            ),
+            dev.victorialauncher.ui.common.AppMenuItem(
+                title = stringResource(R.string.action_app_info),
+                icon = Icons.Filled.Info,
+                onClick = { onAppInfo(app) },
+            ),
+            dev.victorialauncher.ui.common.AppMenuItem(
+                title = stringResource(R.string.action_edit_icon_and_name),
+                icon = Icons.Filled.Tune,
+                onClick = { renameDialogFor = app },
+            ),
+            dev.victorialauncher.ui.common.AppMenuItem(
+                title = stringResource(R.string.action_open_settings),
+                icon = Icons.Filled.Settings,
+                onClick = onOpenSettings,
+            ),
+            dev.victorialauncher.ui.common.AppMenuItem(
+                title = stringResource(R.string.action_remove),
+                icon = Icons.Filled.Delete,
+                onClick = { onRemoveFavorite(app) },
+                isDestructive = true,
+            ),
+        )
+
+        dev.victorialauncher.ui.common.AppMenuDialog(
+            app = app,
+            displayName = displayName(app),
+            onDismissRequest = { appMenuFor = null },
+            items = menuItems,
         )
     }
 
@@ -1271,24 +1319,147 @@ private fun FolderEditDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf(currentName) }
-    AlertDialog(
+    val view = LocalView.current
+
+    DisposableEffect(view) {
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dialogWindow != null) {
+            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = dialogWindow.attributes
+            params.blurBehindRadius = 32
+            dialogWindow.attributes = params
+        }
+        onDispose {}
+    }
+
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.action_edit_icon_and_name)) },
-        text = {
-            Column {
-                OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text(stringResource(R.string.home_folder_name_label)) })
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onChangeIcon) { Text(stringResource(R.string.action_change_icon)) }
-                if (hasCustomIcon) {
-                    TextButton(onClick = onResetIcon) { Text(stringResource(R.string.home_folder_use_previews)) }
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false,
+        ),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.90f)
+                    .clip(RoundedCornerShape(28.dp))
+                    .border(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.20f),
+                        shape = RoundedCornerShape(28.dp),
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                    ),
+                color = Color(0xDD1E232A),
+                shape = RoundedCornerShape(28.dp),
+                tonalElevation = 8.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_edit_icon_and_name),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                    )
+
+                    Spacer(Modifier.height(18.dp))
+
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        label = { Text(stringResource(R.string.home_folder_name_label)) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+
+                    Spacer(Modifier.height(14.dp))
+
+                    TextButton(
+                        onClick = onChangeIcon,
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.action_change_icon),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+
+                    if (hasCustomIcon) {
+                        TextButton(
+                            onClick = onResetIcon,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.home_folder_use_previews),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(
+                            onClick = onDismiss,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.action_cancel),
+                                color = Color.White.copy(alpha = 0.7f),
+                            )
+                        }
+
+                        TextButton(
+                            onClick = { if (text.isNotBlank()) onConfirm(text.trim()) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.action_save),
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { if (text.isNotBlank()) onConfirm(text.trim()) }) { Text(stringResource(R.string.action_save)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-    )
+        }
+    }
 }
 
 /** Drag sideways to inset every home element equally from the screen edges. */

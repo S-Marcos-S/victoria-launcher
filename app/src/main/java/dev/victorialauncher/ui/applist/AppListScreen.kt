@@ -146,6 +146,7 @@ fun AppListScreen(
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
 ) {
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
+    var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     // The gesture handlers below outlive the composition that created them, so they must not
@@ -632,11 +633,11 @@ fun AppListScreen(
                             onNotificationClick = { notif ->
                                 activeDialogNotification = notif to row.app
                             },
-                            menuExpanded = menuForKey == row.app.key,
+                            menuExpanded = false,
                             menuOffset = menuOffset,
                             touchPosition = touchPosition,
                             onLaunch = { onLaunch(row.app) },
-                            onLongPress = { offset -> menuOffset = offset; menuForKey = row.app.key },
+                            onLongPress = { _ -> appMenuFor = row.app },
                             onDismissMenu = { menuForKey = null },
                             onSetFavorite = { onSetFavorite(row.app, it) },
                             onEdit = { editDialogFor = row.app },
@@ -706,6 +707,45 @@ fun AppListScreen(
                 modifier = Modifier.align(
                     if (activeSide == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd
                 ),
+            )
+        }
+
+        appMenuFor?.let { app ->
+            val isFavorite = favoriteKeys.contains(app.key)
+            val menuItems = listOf(
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(if (isFavorite) R.string.applist_remove_favorite else R.string.applist_add_favorite),
+                    icon = if (isFavorite) Icons.Filled.StarBorder else Icons.Filled.Star,
+                    onClick = { onSetFavorite(app, !isFavorite) },
+                ),
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(R.string.action_edit_icon_and_name),
+                    icon = Icons.Filled.Tune,
+                    onClick = { editDialogFor = app },
+                ),
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(R.string.action_app_info),
+                    icon = Icons.Filled.Info,
+                    onClick = { onAppInfo(app) },
+                ),
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(R.string.action_move_to_folder),
+                    icon = Icons.Filled.Folder,
+                    onClick = { onMoveToFolder(app) },
+                ),
+                dev.victorialauncher.ui.common.AppMenuItem(
+                    title = stringResource(R.string.applist_hide),
+                    icon = Icons.Filled.VisibilityOff,
+                    onClick = { onHideApp(app) },
+                    isDestructive = true,
+                ),
+            )
+
+            dev.victorialauncher.ui.common.AppMenuDialog(
+                app = app,
+                displayName = displayName(app),
+                onDismissRequest = { appMenuFor = null },
+                items = menuItems,
             )
         }
 

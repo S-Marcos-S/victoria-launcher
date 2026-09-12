@@ -1,5 +1,12 @@
 ### 🚀 Novidades e Melhorias
 
+- **Menu de Opções do Aplicativo com Quinas Arredondadas e Blur:**
+  - Modernização completa da janela de configuração e opções que se abre ao tocar e segurar em qualquer aplicativo (tanto na tela inicial / favoritos quanto na lista de todos os aplicativos).
+  - Novo design translúcido em estilo *frosted glass* com quinas bem arredondadas (28dp), borda sutil iluminada e efeito de desfoque de fundo do sistema (*blur behind*).
+  - Cabeçalho aprimorado com ícone do aplicativo em tamanho ampliado, nome em destaque e identificador do pacote.
+  - Botões de ação arredondados com ícones elegantes, divisórias sutis e destaque em vermelho para opções de remoção/desinstalação.
+  - Janelas de renomear/editar aplicativo e criar/editar pasta atualizadas com o mesmo padrão visual de quinas arredondadas e blur.
+
 - **Janela Flutuante para Pastas de Aplicativos:**
   - Adicionada opção nas configurações ("Janela flutuante para pastas") para abrir os aplicativos contidos em uma pasta dentro de uma janela flutuante com visual translúcido, blur (*frosted glass*), grade organizada de ícones, título da pasta e atalhos rápidos.
   - Ativada por padrão para uma experiência moderna e limpa ao navegar em pastas; caso o usuário desative, as pastas voltam a se expandir em lista diretamente na tela de favoritos.
