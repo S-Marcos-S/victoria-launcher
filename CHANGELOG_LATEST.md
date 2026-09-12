@@ -1,6 +1,5 @@
 ### 2026-09-12 - Finalização
 - Ported upstream features: multiple profiles, widget pagination, A‑Z band editor, search bar, usage sorting, alignment settings, support screens, Portuguese translations.
-- Fixed missing BuildConfig import in SettingsScreen (credit to upstream).
 - Integrated notification handling and custom Now Playing widget across HomeScreen → HomeRoute → VictoriaNavHost.
 - Updated UI to ensure music cover art and title match `iconSizeDp` and `labelSizeSp`.
 - Credits: original upstream work by @adelmonte (https://github.com/adelmonte/victoria-launcher).

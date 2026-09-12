@@ -43,7 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
-
+import dev.victorialauncher.BuildConfig
 import dev.victorialauncher.data.AppFont
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.EdgeSide
@@ -443,7 +443,7 @@ fun SettingsScreen(
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         Text(
-                            stringResource(R.string.settings_version, dev.victorialauncher.BuildConfig.VERSION_NAME),
+                            stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         )
