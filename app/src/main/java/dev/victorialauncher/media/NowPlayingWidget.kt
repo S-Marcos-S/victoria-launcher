@@ -105,6 +105,8 @@ fun openNowPlayingApp(context: Context): Boolean {
 @Composable
 fun NowPlayingWidget(
     heightDp: Int = 64,
+    iconSizeDp: Int = 48,
+    labelSizeSp: Int = 14,
     contentColor: Color = Color.White,
     modifier: Modifier = Modifier,
 ) {
@@ -172,11 +174,10 @@ fun NowPlayingWidget(
     val dismissX = remember(current?.controller?.sessionToken) { Animatable(0f) }
     val dismissThresholdPx = with(LocalDensity.current) { 120.dp.toPx() }
 
-    // Everything inside scales with the card's height, so resizing it in edit mode grows
-    // the artwork, text and controls together.
-    val artSize = (heightDp * 0.62f).dp
-    val titleSp = (heightDp * 0.22f).coerceIn(11f, 30f).sp
-    val artistSp = (heightDp * 0.17f).coerceIn(9f, 24f).sp
+    // Artwork size matches the app icon size, title text matches the app label text size
+    val artSize = iconSizeDp.dp
+    val titleSp = labelSizeSp.sp
+    val artistSp = (labelSizeSp - 2).coerceAtLeast(10).sp
     val controlSize = (heightDp * 0.42f).coerceIn(18f, 64f).dp
 
     if (isEditModePlaceholder) {
