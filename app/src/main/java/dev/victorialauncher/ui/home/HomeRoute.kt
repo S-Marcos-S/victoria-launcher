@@ -475,6 +475,7 @@ fun HomeRoute(
                     hapticsEnabled = settings.hapticsEnabled,
                     state = scrub,
                     onOpen = { appListVisible = true },
+                    onDismiss = { closeAppList() },
                     modifier = Modifier.align(
                         if (side == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd
                     ),

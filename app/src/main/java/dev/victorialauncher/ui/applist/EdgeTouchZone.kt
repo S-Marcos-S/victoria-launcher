@@ -37,6 +37,7 @@ fun EdgeTouchZone(
     hapticsEnabled: Boolean,
     state: ScrubState,
     onOpen: () -> Unit,
+    onDismiss: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val view = LocalView.current
@@ -53,20 +54,36 @@ fun EdgeTouchZone(
                     val down = awaitFirstDown(requireUnconsumed = false)
                     down.consume()
                     state.begin(side)
-                    onOpen()
 
-                    var lastIndex = -1
+                    val initialIndex = ScrubberGeometry.indexForY(down.position.y, band.topPx, band.heightPx, letters.size)
+                    val initialLetter = letters.getOrNull(initialIndex)
+                    var opened = (initialLetter != SCRUBBER_STAR)
+                    if (opened) {
+                        onOpen()
+                    } else {
+                        onDismiss()
+                    }
+
+                    var lastIndex = initialIndex
                     fun report(x: Float, y: Float) {
                         // Same geometry the visible strip uses, so the letter under the
                         // fingertip is the one that swells.
                         val index = ScrubberGeometry.indexForY(y, band.topPx, band.heightPx, letters.size)
+                        val letter = letters.getOrNull(index)
                         if (index != lastIndex) {
                             lastIndex = index
                             HapticUtil.tick(view, hapticsEnabled)
+                            if (letter == SCRUBBER_STAR) {
+                                onDismiss()
+                                opened = false
+                            } else if (!opened) {
+                                onOpen()
+                                opened = true
+                            }
                         }
                         // How far the finger has pulled in toward the middle of the screen.
                         val inward = if (fromLeft) x else (size.width - x)
-                        state.update(y, inward.coerceIn(0f, MAX_PULL_DP * density), letters.getOrNull(index))
+                        state.update(y, inward.coerceIn(0f, MAX_PULL_DP * density), letter)
                     }
 
                     report(down.position.x, down.position.y)
@@ -81,6 +98,9 @@ fun EdgeTouchZone(
                         }
                         report(change.position.x, change.position.y)
                         change.consume()
+                    }
+                    if (letters.getOrNull(lastIndex) == SCRUBBER_STAR) {
+                        onDismiss()
                     }
                     scope.launch { state.release() }
                 }

@@ -310,6 +310,13 @@ fun AppListScreen(
         if (compensate > 0f) listState.dispatchRawDelta(-compensate)
     }
 
+    LaunchedEffect(scrubLetter) {
+        if (scrubLetter == SCRUBBER_STAR) {
+            listState.scrollToItem(0)
+            currentDismiss()
+        }
+    }
+
     LaunchedEffect(scrubRowIndex, model) {
         if (scrubRowIndex < 0) return@LaunchedEffect
         listState.scrollToItem(scrubRowIndex)
@@ -747,12 +754,21 @@ fun AppListScreen(
                     .size(bubble),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        scrubLetter.toString(),
-                        color = Color.White,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    if (scrubLetter == SCRUBBER_STAR) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp),
+                        )
+                    } else {
+                        Text(
+                            scrubLetter.toString(),
+                            color = Color.White,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             }
         }
