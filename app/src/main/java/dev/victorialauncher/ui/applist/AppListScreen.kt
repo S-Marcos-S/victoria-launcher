@@ -314,7 +314,6 @@ fun AppListScreen(
     LaunchedEffect(scrubLetter) {
         if (scrubLetter == SCRUBBER_STAR) {
             listState.scrollToItem(0)
-            currentDismiss()
         }
     }
 

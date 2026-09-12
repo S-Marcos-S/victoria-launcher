@@ -55,17 +55,8 @@ fun EdgeTouchZone(
                     down.consume()
                     state.begin(side)
 
-                    val initialIndex = ScrubberGeometry.indexForY(down.position.y, band.topPx, band.heightPx, letters.size)
-                    val initialLetter = letters.getOrNull(initialIndex)
-                    var opened = (initialLetter != SCRUBBER_STAR)
-                    if (opened) {
-                        onOpen()
-                    } else {
-                        onDismiss()
-                    }
-
-                    var lastIndex = initialIndex
-                    fun report(x: Float, y: Float) {
+                    var lastIndex = -1
+                    fun report(x: Float, y: Float): Char? {
                         // Same geometry the visible strip uses, so the letter under the
                         // fingertip is the one that swells.
                         val index = ScrubberGeometry.indexForY(y, band.topPx, band.heightPx, letters.size)
@@ -73,20 +64,19 @@ fun EdgeTouchZone(
                         if (index != lastIndex) {
                             lastIndex = index
                             HapticUtil.tick(view, hapticsEnabled)
-                            if (letter == SCRUBBER_STAR) {
-                                onDismiss()
-                                opened = false
-                            } else if (!opened) {
-                                onOpen()
-                                opened = true
-                            }
                         }
                         // How far the finger has pulled in toward the middle of the screen.
                         val inward = if (fromLeft) x else (size.width - x)
                         state.update(y, inward.coerceIn(0f, MAX_PULL_DP * density), letter)
+                        return letter
                     }
 
-                    report(down.position.x, down.position.y)
+                    val initialLetter = report(down.position.x, down.position.y)
+                    var opened = (initialLetter != SCRUBBER_STAR)
+                    if (opened) {
+                        onOpen()
+                    }
+
                     while (true) {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == down.id } ?: break
@@ -96,7 +86,11 @@ fun EdgeTouchZone(
                         if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                             state.markScrubbing()
                         }
-                        report(change.position.x, change.position.y)
+                        val letter = report(change.position.x, change.position.y)
+                        if (!opened && letter != null && letter != SCRUBBER_STAR) {
+                            opened = true
+                            onOpen()
+                        }
                         change.consume()
                     }
                     if (letters.getOrNull(lastIndex) == SCRUBBER_STAR) {
