@@ -164,6 +164,56 @@
     <string name="icon_picker_not_browsable">Este pacote não disponibiliza uma lista navegável de ícones.</string>
     <string name="icon_picker_no_matches">Nenhum ícone corresponde a “%1$s”.</string>
 
+    <!-- Novos recursos upstream v0.50.1 -->
+    <string name="handle_widget_side_padding">Espaçamento lateral do widget</string>
+    <string name="handle_az_range">Alcance da barra A-Z</string>
+    <string name="applist_band_hint">Arraste a faixa para movê-la, ou as alças para redimensioná-la</string>
+    <string name="applist_band_top">Topo da barra A-Z</string>
+    <string name="applist_band_bottom">Base da barra A-Z</string>
+    <string name="applist_search">Pesquisar aplicativos</string>
+    <string name="settings_icon_pack_no_icons">Nenhum</string>
+    <string name="settings_status_bar_timeout">Barra de status visível por</string>
+    <string name="settings_lock_needs_accessibility">Requer o Victoria Launcher ativado em Acessibilidade. Se a opção estiver desativada, abra Informações do app e permita configurações restritas no menu ⋮ primeiro.</string>
+    <string name="settings_show_alphabet">Exibir letras na lista de aplicativos</string>
+    <string name="settings_edge_zone_width">Largura do gesto de borda</string>
+    <string name="settings_swipe_up_list">Deslizar para cima para abrir apps</string>
+    <string name="settings_swipe_up_list_detail">Deslize para cima além do final da tela inicial</string>
+    <string name="settings_quick_launch_left">Deslizar para a esquerda abaixo dos favoritos</string>
+    <string name="settings_quick_launch_right">Deslizar para a direita abaixo dos favoritos</string>
+    <string name="settings_quick_launch_none">Nenhum</string>
+    <string name="settings_search_bar">Barra de pesquisa na lista de apps</string>
+    <string name="settings_search_bar_detail">Caixa para filtrar os aplicativos por nome</string>
+    <string name="settings_search_bar_bottom">Barra de pesquisa no rodapé</string>
+    <string name="settings_sort_by_usage">Ordenar por frequência de uso</string>
+    <string name="settings_sort_by_usage_detail">Dentro de cada letra, os mais usados aparecem primeiro</string>
+    <string name="settings_alignment_favorites">Alinhamento dos favoritos</string>
+    <string name="settings_alignment_applist">Alinhamento da lista de apps</string>
+    <string name="settings_icon_side">Lado dos ícones</string>
+    <string name="settings_app_info">Informações do app</string>
+    <string name="settings_hidden">Aplicativos ocultos</string>
+    <string name="settings_hidden_detail">Aplicativos removidos da lista A-Z</string>
+    <string name="settings_folders">Pastas</string>
+    <string name="settings_folders_detail">Agrupar favoritos em pastas expansíveis</string>
+    <string name="settings_edit_layout">Editar layout</string>
+    <string name="settings_edit_layout_detail">Ajustar altura do widget e espaçamentos</string>
+    <string name="alignment_left">Esquerda</string>
+    <string name="alignment_center">Centro</string>
+    <string name="alignment_right">Direita</string>
+    <string name="favorites_picker_title">Favoritos</string>
+    <string name="hidden_picker_title">Aplicativos ocultos</string>
+    <string name="hidden_picker_empty">Nenhum app oculto ainda. Pressione e segure qualquer app na lista para ocultá-lo.</string>
+    <string name="folders_title">Pastas</string>
+    <string name="folders_empty">Nenhuma pasta ainda. Pressione e segure um favorito para mover para uma pasta ou crie uma abaixo.</string>
+    <string name="folders_create">Criar pasta</string>
+    <string name="welcome_title">Bem-vindo ao Victoria</string>
+    <string name="welcome_favorites">Pressione e segure o papel de parede para adicionar favoritos, widgets ou abrir configurações.</string>
+    <string name="welcome_widget">Deslize a partir de qualquer borda da tela para ver todos os apps e deslize na barra A-Z para pular para uma letra.</string>
+    <string name="welcome_layout">Editar layout permite reorganizar itens e definir espaçamentos.</string>
+    <string name="welcome_got_it">Entendi</string>
+    <string name="widget_add_another">Adicionar outro widget</string>
+    <string name="widget_remove_this">Remover este widget</string>
+    <string name="widget_unavailable">Este widget não está mais disponível</string>
+
     <!-- Widgets -->
     <string name="widget_add">Adicionar widget</string>
     <string name="widget_add_custom">Adicionar widget personalizado</string>
