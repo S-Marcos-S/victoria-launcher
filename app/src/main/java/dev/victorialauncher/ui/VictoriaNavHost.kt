@@ -417,7 +417,7 @@ fun VictoriaNavHost(
                 onSetIconSide = { scope.launch { app.prefs.setIconSide(it) } },
                 onSetNowPlayingEnabled = { scope.launch { app.prefs.setNowPlayingEnabled(it) } },
                 shadeGestureReady = remember(homeIntentTick) { SystemUi.canExpandShade() },
-                lockGestureReady = remember(homeIntentTick) { SystemUi.lockScreen() },
+                lockGestureReady = remember(homeIntentTick) { SystemUi.canLockScreen() },
                 onOpenAccessibilitySettings = {
                     context.startActivity(
                         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

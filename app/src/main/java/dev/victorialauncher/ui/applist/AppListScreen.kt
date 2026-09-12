@@ -103,8 +103,6 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import dev.victorialauncher.R
 import androidx.compose.ui.res.stringResource
-import dev.victorialauncher.ui.notification.NotificationDetailDialog
-import dev.victorialauncher.notification.AppNotificationItem
 
 /** Where the selected letter's section sits, as a fraction down the screen. */
 private const val SECTION_TOP_FRACTION = 0.26f
@@ -851,7 +849,7 @@ fun AppListScreen(
         }
 
         activeDialogNotification?.let { (notif, app) ->
-            NotificationDetailDialog(
+            dev.victorialauncher.notification.NotificationDetailDialog(
                 notification = notif,
                 app = app,
                 onDismiss = { activeDialogNotification = null },

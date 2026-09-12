@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.Dp
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.service.HapticUtil
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberUpdatedState
 
 /** How far the strip may be dragged inward before the pull stops growing. */
 private const val MAX_PULL_DP = 400f
