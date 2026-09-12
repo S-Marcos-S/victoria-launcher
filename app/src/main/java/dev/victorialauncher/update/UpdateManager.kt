@@ -40,11 +40,24 @@ data class UpdateInfo(
     val tagName: String,
     val releaseName: String,
     val commitSha: String?,
+    val versionName: String? = null,
     val changelog: String,
     val apkDownloadUrl: String,
     val apkSize: Long,
     val publishedAtMs: Long,
-)
+) {
+    val displayVersion: String
+        get() {
+            val v = versionName?.trim()
+            return when {
+                !v.isNullOrBlank() -> if (v.startsWith("v", ignoreCase = true)) v else "v$v"
+                tagName.isNotBlank() && !tagName.equals("latest", ignoreCase = true) -> {
+                    if (tagName.startsWith("v", ignoreCase = true)) tagName else "v$tagName"
+                }
+                else -> "v${BuildConfig.VERSION_NAME}"
+            }
+        }
+}
 
 object UpdateManager {
     private const val GITHUB_REPO = "S-Marcos-S/victoria-launcher"
@@ -173,11 +186,19 @@ object UpdateManager {
                             changelog = "Nova versão compilada automaticamente via GitHub Actions."
                         }
 
+                        // Extrai a versão se estiver indicada no nome da release, tag ou no changelog
+                        val versionRegex = Regex("""v?(\d+\.\d+(?:\.\d+)?)""")
+                        val extractedVersion = versionRegex.find(releaseName)?.value
+                            ?: versionRegex.find(tagName)?.value
+                            ?: versionRegex.find(body)?.value
+                            ?: BuildConfig.VERSION_NAME
+
                         _updateAvailable.value = UpdateInfo(
                             hasUpdate = true,
                             tagName = tagName,
                             releaseName = releaseName,
                             commitSha = remoteSha,
+                            versionName = extractedVersion,
                             changelog = changelog,
                             apkDownloadUrl = apkUrl,
                             apkSize = apkSize,

@@ -147,14 +147,17 @@ fun UpdateChangelogDialog(
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White,
                             )
-                            update.commitSha?.let { sha ->
-                                Text(
-                                    text = stringResource(R.string.update_build_prefix, sha.take(7)),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF81C784),
-                                    fontWeight = FontWeight.Medium,
-                                )
+                            val versionSubtitle = if (!update.commitSha.isNullOrBlank()) {
+                                "${update.displayVersion} (${update.commitSha.take(7)})"
+                            } else {
+                                update.displayVersion
                             }
+                            Text(
+                                text = versionSubtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF81C784),
+                                fontWeight = FontWeight.Medium,
+                            )
                         }
 
                         if (update.apkSize > 0) {

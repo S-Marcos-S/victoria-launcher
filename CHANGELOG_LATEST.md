@@ -1,5 +1,10 @@
 ### 🚀 Novidades e Melhorias
 
+- **Formato Padrão de Versão no Menu de Opções ("Nova versão disponível"):**
+  - Substituído o hash/código de commit (`7e69a5d`) no badge verde ao lado de "Nova versão disponível" pelo número padrão de versão (ex: `v0.48.4`).
+  - O launcher agora extrai e formata o número de versão padrão a partir das informações de release e do aplicativo.
+  - No balão de novidades ("O que há de novo"), a versão é exibida em destaque no cabeçalho acompanhada do identificador de compilação.
+
 - **Visualização Imediata da Tela Inicial ao Rolar até a Estrela (`★`):**
   - Ao rolar o alfabeto lateral até a estrela, a gaveta de aplicativos fica invisível e a tela inicial (com os aplicativos favoritos e widgets) é exibida em primeiro plano imediatamente durante a rolagem.
   - Ao continuar rolando para baixo para qualquer letra (ex: 'A'), a lista de aplicativos ressurge suavemente.

@@ -228,20 +228,18 @@ fun HomeOptionsBottomSheet(
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.weight(1f),
                             )
-                            update.commitSha?.let { sha ->
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(Color(0xFF2E7D32))
-                                        .padding(horizontal = 7.dp, vertical = 3.dp),
-                                ) {
-                                    Text(
-                                        text = sha.take(7),
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                }
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFF2E7D32))
+                                    .padding(horizontal = 7.dp, vertical = 3.dp),
+                            ) {
+                                Text(
+                                    text = update.displayVersion,
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
                             }
                         }
 
