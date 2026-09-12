@@ -52,7 +52,7 @@ import java.util.Locale
 /**
  * A frosted-glass popup dialog with transparency and blur displaying the full notification content.
  * When a notification contains multiple messages (e.g. from MessagingStyle or InboxStyle),
- * they are presented as a clean vertical message list.
+ * they are presented as a clean vertical message list without duplicate headers or chips.
  */
 @Composable
 fun NotificationDetailDialog(
@@ -64,9 +64,18 @@ fun NotificationDetailDialog(
     onDismissNotification: (AppNotificationItem) -> Unit,
     allNotifications: List<AppNotificationItem> = emptyList(),
 ) {
-    var currentKey by remember(item.key) { mutableStateOf(item.key) }
-    val effectiveList = if (allNotifications.any { it.key == item.key }) allNotifications else (listOf(item) + allNotifications)
-    val selectedItem = effectiveList.find { it.key == currentKey } ?: item
+    val allList = if (allNotifications.any { it.key == item.key }) allNotifications else (listOf(item) + allNotifications)
+
+    // Deduplicate by title to ensure the same person/conversation is never duplicated
+    val distinctList = allList
+        .groupBy { it.title.trim().lowercase() }
+        .map { (_, group) ->
+            // Pick the notification with the most extracted messages, or the most recent
+            group.maxByOrNull { it.messages.size } ?: group.first()
+        }
+
+    var currentKey by remember(item.key) { mutableStateOf(distinctList.firstOrNull { it.key == item.key }?.key ?: distinctList.firstOrNull()?.key ?: item.key) }
+    val selectedItem = distinctList.find { it.key == currentKey } ?: distinctList.firstOrNull() ?: item
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -106,15 +115,15 @@ fun NotificationDetailDialog(
                         .fillMaxWidth()
                         .padding(20.dp)
                 ) {
-                    // If multiple conversations / notifications exist for this app, display selection chips
-                    if (effectiveList.size > 1) {
+                    // Only show conversation switcher chips when there are 2 or more DISTINCT contacts/conversations
+                    if (distinctList.size > 1) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            effectiveList.forEach { notif ->
+                            distinctList.forEach { notif ->
                                 val isSelected = notif.key == selectedItem.key
                                 val countSuffix = if (notif.messages.size > 1) " (${notif.messages.size})" else ""
                                 val chipTitle = (if (notif.title.isNotBlank()) notif.title else appName) + countSuffix
@@ -140,7 +149,15 @@ fun NotificationDetailDialog(
                         Spacer(Modifier.height(14.dp))
                     }
 
-                    // Header: App icon, App name, subtext and timestamp
+                    // Header: App icon, Title (Contact name or App name), Subtitle and Timestamp
+                    val hasPersonTitle = selectedItem.title.isNotBlank() && !selectedItem.title.equals(appName, ignoreCase = true)
+                    val headerTitle = if (hasPersonTitle) selectedItem.title else appName
+                    val headerSubtitle = if (hasPersonTitle) {
+                        if (!selectedItem.subText.isNullOrBlank()) "${selectedItem.subText} • $appName" else appName
+                    } else {
+                        selectedItem.subText.orEmpty()
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -151,16 +168,20 @@ fun NotificationDetailDialog(
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = appName,
+                                text = headerTitle,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             )
-                            if (!selectedItem.subText.isNullOrBlank()) {
+                            if (headerSubtitle.isNotBlank()) {
                                 Text(
-                                    text = selectedItem.subText,
+                                    text = headerSubtitle,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.White.copy(alpha = 0.7f),
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 )
                             }
                         }
@@ -182,16 +203,6 @@ fun NotificationDetailDialog(
                             .verticalScroll(rememberScrollState())
                     ) {
                         if (selectedItem.messages.isNotEmpty()) {
-                            if (selectedItem.title.isNotBlank()) {
-                                Text(
-                                    text = selectedItem.title,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                )
-                                Spacer(Modifier.height(8.dp))
-                            }
-
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -207,7 +218,7 @@ fun NotificationDetailDialog(
                                                 .fillMaxWidth()
                                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                                         ) {
-                                            if (!msg.sender.isNullOrBlank() && msg.sender != selectedItem.title) {
+                                            if (!msg.sender.isNullOrBlank() && !msg.sender.equals(headerTitle, ignoreCase = true)) {
                                                 Text(
                                                     text = msg.sender,
                                                     style = MaterialTheme.typography.labelMedium,
@@ -237,15 +248,6 @@ fun NotificationDetailDialog(
                                 }
                             }
                         } else {
-                            if (selectedItem.title.isNotBlank()) {
-                                Text(
-                                    text = selectedItem.title,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                )
-                                Spacer(Modifier.height(6.dp))
-                            }
                             if (selectedItem.text.isNotBlank()) {
                                 Text(
                                     text = selectedItem.text,

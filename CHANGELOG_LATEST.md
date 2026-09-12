@@ -1,7 +1,11 @@
 ### 🚀 Novidades e Melhorias
 
+- **Correção de Duplicação de Contatos/Conversas nas Notificações (ex: WhatsApp):**
+  - Corrigida a duplicação do nome da pessoa / card no topo do balão de notificação quando múltiplos alertas chegam para a mesma conversa.
+  - O serviço de notificações agora filtra resumos de grupo (`FLAG_GROUP_SUMMARY`) redundantes quando notificações individuais da conversa já estão ativas.
+  - O balão de detalhes de notificação agora agrupa e deduplica automaticamente conversas com o mesmo título, exibindo os chips de alternância apenas quando existirem múltiplos contatos distintos.
+
 - **Atualização da Documentação (README.md):**
-  - Removidas referências legadas exclusivas do repositório upstream (como selo do F-Droid e notas de assinatura de chave antigas).
   - Atualizadas as instruções de download e releases apontando diretamente para as versões deste repositório, com descrição completa das novas funcionalidades.
 
 - **Animação Fluida e Contínua de Rolagem no Alfabeto:**

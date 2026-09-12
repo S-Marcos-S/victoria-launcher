@@ -73,8 +73,26 @@ class NowPlayingListenerService : NotificationListenerService() {
     private fun refreshNotifications() {
         runCatching {
             val active = activeNotifications ?: return@runCatching
+
+            // Identify packages that have non-summary notifications
+            val packagesWithChildren = active.filter { sbn ->
+                val notif = sbn.notification ?: return@filter false
+                (notif.flags and Notification.FLAG_GROUP_SUMMARY) == 0
+            }.map { it.packageName }.toSet()
+
             val list = active.mapNotNull { sbn ->
                 val notification = sbn.notification ?: return@mapNotNull null
+                val isGroupSummary = (notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0
+
+                // If this package already has non-summary notifications, ignore the redundant group summary
+                if (isGroupSummary && sbn.packageName in packagesWithChildren) {
+                    val hasOtherNotifs = active.any { other ->
+                        other.packageName == sbn.packageName && other.key != sbn.key &&
+                            (other.notification.flags and Notification.FLAG_GROUP_SUMMARY) == 0
+                    }
+                    if (hasOtherNotifs) return@mapNotNull null
+                }
+
                 val extras = notification.extras ?: return@mapNotNull null
                 val title = (extras.getCharSequence(Notification.EXTRA_TITLE)
                     ?: extras.getCharSequence(Notification.EXTRA_TITLE_BIG))?.toString().orEmpty().trim()
