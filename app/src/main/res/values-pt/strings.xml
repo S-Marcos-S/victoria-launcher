@@ -144,6 +144,8 @@
     <!-- Seletores de favoritos / ocultos / pastas -->
     <string name="favorites_title">Favoritos</string>
     <string name="favorites_count">%1$d na sua tela inicial</string>
+    <string name="settings_folder_window_popup">Janela flutuante para pastas</string>
+    <string name="settings_folder_window_popup_detail">Abre os apps da pasta em uma janela flutuante em vez de expandir na lista de favoritos</string>
     <string name="folder_title_fallback">Pasta</string>
     <string name="folder_gone">Esta pasta não existe mais.</string>
     <string name="folder_member_count">%1$d nesta pasta</string>

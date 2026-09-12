@@ -1,5 +1,9 @@
 ### 🚀 Novidades e Melhorias
 
+- **Janela Flutuante para Pastas de Aplicativos:**
+  - Adicionada opção nas configurações ("Janela flutuante para pastas") para abrir os aplicativos contidos em uma pasta dentro de uma janela flutuante com visual translúcido, blur (*frosted glass*), grade organizada de ícones, título da pasta e atalhos rápidos.
+  - Ativada por padrão para uma experiência moderna e limpa ao navegar em pastas; caso o usuário desative, as pastas voltam a se expandir em lista diretamente na tela de favoritos.
+
 - **Formato Padrão de Versão no Menu de Opções ("Nova versão disponível"):**
   - Substituído o hash/código de commit (`7e69a5d`) no badge verde ao lado de "Nova versão disponível" pelo número padrão de versão (ex: `v0.48.4`).
   - O launcher agora extrai e formata o número de versão padrão a partir das informações de release e do aplicativo.

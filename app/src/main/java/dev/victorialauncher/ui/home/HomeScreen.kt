@@ -185,12 +185,14 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenHomeOptions: () -> Unit = {},
     showAppNotifications: Boolean = false,
+    folderWindowPopup: Boolean = true,
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
     doubleTapToLock: Boolean = false,
     onDoubleTapLock: (Offset) -> Unit = {},
 ) {    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
+    var floatingFolderDialog by remember { mutableStateOf<Folder?>(null) }
     var menuForKey by remember { mutableStateOf<String?>(null) }
     var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     var renameDialogFor by remember { mutableStateOf<AppInfo?>(null) }
@@ -607,10 +609,14 @@ fun HomeScreen(
                             touchPosition = touchPosition,
                             displayName = { displayName(it) },
                             onToggleExpanded = {
-                                expandedFolders = if (item.folder.id in expandedFolders) {
-                                    expandedFolders - item.folder.id
+                                if (folderWindowPopup) {
+                                    floatingFolderDialog = item.folder
                                 } else {
-                                    expandedFolders + item.folder.id
+                                    expandedFolders = if (item.folder.id in expandedFolders) {
+                                        expandedFolders - item.folder.id
+                                    } else {
+                                        expandedFolders + item.folder.id
+                                    }
                                 }
                             },
                             onOpenMenu = { offset -> menuOffset = offset; folderMenuFor = item.folder.id },
@@ -741,6 +747,19 @@ fun HomeScreen(
             onChangeIcon = { onChangeFolderIcon(folder); folderRenameFor = null },
             onResetIcon = { onResetFolderIcon(folder); folderRenameFor = null },
             onDismiss = { folderRenameFor = null },
+        )
+    }
+
+    floatingFolderDialog?.let { folder ->
+        FolderFloatingDialog(
+            folder = folder,
+            members = folder.apps.mapNotNull { appsByKey[it] },
+            iconSizeDp = iconSizeDp,
+            labelSizeSp = labelSizeSp,
+            displayName = { displayName(it) },
+            onOpenApp = onOpenFolderApp,
+            onManageFolder = { onManageFolder(folder) },
+            onDismissRequest = { floatingFolderDialog = null },
         )
     }
 

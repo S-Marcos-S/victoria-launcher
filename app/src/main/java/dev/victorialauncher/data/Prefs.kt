@@ -58,6 +58,7 @@ class Prefs(private val context: Context) {
         val ICON_PACK_PACKAGE = stringPreferencesKey("icon_pack_package")
         val NOW_PLAYING_ENABLED = booleanPreferencesKey("now_playing_enabled")
         val SHOW_APP_NOTIFICATIONS = booleanPreferencesKey("show_app_notifications")
+        val FOLDER_WINDOW_POPUP = booleanPreferencesKey("folder_window_popup")
         val WIDGET_ID = intPreferencesKey("widget_id")
         val WIDGET_POSITION = intPreferencesKey("widget_position")
         val WIDGET_HEIGHT_DP = intPreferencesKey("widget_height_dp")
@@ -152,6 +153,7 @@ class Prefs(private val context: Context) {
 
     val nowPlayingEnabled: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_ENABLED] ?: false }.distinctUntilChanged()
     val showAppNotifications: Flow<Boolean> = data.map { it[Keys.SHOW_APP_NOTIFICATIONS] ?: true }.distinctUntilChanged()
+    val folderWindowPopup: Flow<Boolean> = data.map { it[Keys.FOLDER_WINDOW_POPUP] ?: true }.distinctUntilChanged()
 
     val widgetId: Flow<Int> = data.map { it[Keys.WIDGET_ID] ?: -1 }.distinctUntilChanged()
     /** Index into the merged (favorites + widget) home list where the widget sits. 0 = top. */
@@ -358,6 +360,10 @@ class Prefs(private val context: Context) {
 
     suspend fun setShowAppNotifications(v: Boolean) {
         context.dataStore.edit { it[Keys.SHOW_APP_NOTIFICATIONS] = v }
+    }
+
+    suspend fun setFolderWindowPopup(v: Boolean) {
+        context.dataStore.edit { it[Keys.FOLDER_WINDOW_POPUP] = v }
     }
 
     suspend fun setWidgetPosition(v: Int) {

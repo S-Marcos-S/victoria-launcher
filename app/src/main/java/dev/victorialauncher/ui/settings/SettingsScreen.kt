@@ -95,6 +95,8 @@ fun SettingsScreen(
     onSetNowPlayingEnabled: (Boolean) -> Unit,
     showAppNotifications: Boolean,
     onSetShowAppNotifications: (Boolean) -> Unit,
+    folderWindowPopup: Boolean,
+    onSetFolderWindowPopup: (Boolean) -> Unit,
     shadeGestureReady: Boolean,
     onOpenAccessibilitySettings: () -> Unit,
     onOpenHiddenApps: () -> Unit,
@@ -350,6 +352,13 @@ fun SettingsScreen(
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         )
                     }
+                    RowDivider()
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_folder_window_popup),
+                        detail = stringResource(R.string.settings_folder_window_popup_detail),
+                        checked = folderWindowPopup,
+                        onCheckedChange = onSetFolderWindowPopup,
+                    )
                   }
                 }
             }

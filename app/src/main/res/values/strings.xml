@@ -143,6 +143,8 @@
     <!-- Favorites / hidden / folder pickers -->
     <string name="favorites_title">Favorites</string>
     <string name="favorites_count">%1$d on your home screen</string>
+    <string name="settings_folder_window_popup">Floating window for folders</string>
+    <string name="settings_folder_window_popup_detail">Opens folder apps in a floating window instead of expanding in the favorites list</string>
     <string name="folder_title_fallback">Folder</string>
     <string name="folder_gone">This folder no longer exists.</string>
     <string name="folder_member_count">%1$d in this folder</string>

@@ -358,6 +358,7 @@ fun HomeRoute(
                 onOpenSettings = { onNavigate("settings") },
                 onOpenHomeOptions = { showHomeOptions = true },
                 showAppNotifications = settings.showAppNotifications,
+                folderWindowPopup = settings.folderWindowPopup,
                 notificationsByPackage = notificationsByPackage,
                 doubleTapToLock = settings.doubleTapToLock,
                 onDoubleTapLock = handleDoubleTapLock,
@@ -534,4 +535,5 @@ data class HomeSettings(
     val doubleTapToLock: Boolean,
     val contentColor: Color,
     val showAppNotifications: Boolean = false,
+    val folderWindowPopup: Boolean = true,
 )
