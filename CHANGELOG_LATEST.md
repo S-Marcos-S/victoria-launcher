@@ -1,5 +1,9 @@
 ### 🚀 Novidades e Melhorias
 
+- **Atualização da Documentação (README.md):**
+  - Removidas referências legadas exclusivas do repositório upstream (como selo do F-Droid e notas de assinatura de chave antigas).
+  - Atualizadas as instruções de download e releases apontando diretamente para as versões deste repositório, com descrição completa das novas funcionalidades.
+
 - **Animação Fluida e Contínua de Rolagem no Alfabeto:**
   - Corrigida a interrupção da animação de rolagem ao passar pelo ícone de estrela (`★`): o gesto agora preserva a deformação elástica e a curva gaussiana de forma 100% contínua e suave, mesmo ao rolar sobre a estrela e continuar rolando para baixo.
   - O retorno para a tela inicial com os favoritos agora ocorre no momento da liberação do toque (ao soltar o dedo ou dar um toque sobre a estrela), eliminando qualquer travamento ou perda de animação durante o arraste.

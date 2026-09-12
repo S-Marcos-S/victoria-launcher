@@ -1,33 +1,55 @@
 # Victoria Launcher
 
-An open source alternative to [Niagara Launcher](https://niagaralauncher.app) — a
-minimal, list-based Android home screen.
+Um launcher minimalista e elegante para Android baseado em lista — uma alternativa de código aberto inspirada no [Niagara Launcher](https://niagaralauncher.app).
 
 ![Victoria Launcher](docs/banner.png)
 
-## Install
+---
 
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="70">](https://f-droid.org/packages/dev.victorialauncher/)
+## 📱 Funcionalidades / Features
 
-Or grab the APK from [Releases](../../releases). Both carry the same signature,
-so you can move between them without uninstalling.
+- **Design Minimalista & Eficiente:** Lista vertical de aplicativos com foco em usabilidade com uma mão.
+- **Barra Alfabética com Estrela para Favoritos (Scrubber):** Navegação rápida com curva de onda elástica e atalho de estrela (`★`) no topo para retornar instantaneamente à tela inicial e aos favoritos.
+- **Notificações Integradas com Lista de Mensagens:**
+  - Exibição de prévias de notificações diretamente abaixo dos nomes dos aplicativos.
+  - Diálogo expansível translúcido com desfoque nativo (*frosted glass*), exibindo todo o histórico de mensagens agrupadas (WhatsApp, Telegram, etc.) e abas para múltiplas conversas.
+  - Ação de abertura direta e opção para dispensar.
+- **Atualizador Integrado Direto pelo App:** Download de novas versões e atualizações com indicador de progresso em tempo real diretamente via GitHub Releases.
+- **Widgets & Now Playing:** Suporte a widgets do Android e controle de mídia integrado em tempo real.
+- **Customização Completa:** Suporte a pacotes de ícones, alteração de nomes de apps, ocultação de aplicativos e pastas.
+- **Totalmente Localizado:** Suporte completo para Português (Brasil - pt-BR / pt) e Inglês.
 
-Once it is installed, pick Victoria Launcher under
-**Settings → Apps → Default apps → Home app**.
+---
 
-Requires Android 8.0 (API 26) or newer.
+## 📥 Instalação / Download
 
-## Build
+Baixe a versão mais recente em formato APK diretamente na seção de **[Releases](https://github.com/S-Marcos-S/victoria-launcher/releases)** deste repositório.
 
-You need JDK 17 and an Android SDK with platform 35.
+Após instalar, defina o Victoria Launcher como inicializador padrão:
+**Configurações → Aplicativos → Aplicativos padrão → App de início (Home)**.
+
+> **Requisitos:** Android 8.0 (API 26) ou superior.
+
+---
+
+## 🛠️ Compilação / Build
+
+Para compilar o projeto localmente, são necessários o JDK 17 e o Android SDK com a plataforma 35 instalada.
 
 ```sh
+# Compilar APK Debug
 ./gradlew assembleDebug
+
+# Compilar APK Release
+./gradlew assembleRelease
 ```
 
-See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for the full build and contribution
-notes, and [ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the code fits together.
+O arquivo gerado estará disponível em `app/build/outputs/apk/`.
 
-## Licence
+Para notas detalhadas sobre contribuição e arquitetura, consulte [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-[GPL-3.0-or-later](LICENSE)
+---
+
+## 📄 Licença / License
+
+Distribuído sob a licença [GPL-3.0-or-later](LICENSE).
