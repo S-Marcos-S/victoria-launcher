@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Widgets
@@ -83,6 +84,7 @@ fun HomeOptionsBottomSheet(
     onOpenSettings: () -> Unit,
     onManageFavorites: () -> Unit,
     onAddWidget: () -> Unit,
+    onOpenClockStyle: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -372,6 +374,12 @@ fun HomeOptionsBottomSheet(
                     icon = Icons.Filled.Widgets,
                     label = stringResource(R.string.widget_add),
                     onClick = { onDismiss(); onAddWidget() },
+                )
+
+                OptionItem(
+                    icon = Icons.Filled.Schedule,
+                    label = stringResource(R.string.settings_clock_style),
+                    onClick = { onDismiss(); onOpenClockStyle() },
                 )
 
                 Spacer(Modifier.height(8.dp))

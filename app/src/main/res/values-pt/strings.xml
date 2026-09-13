@@ -93,6 +93,14 @@
     <string name="settings_right_handed">Layout para destros</string>
     <string name="settings_right_handed_detail">Alinha os ícones e nomes junto à borda direita</string>
     <string name="settings_show_names">Mostrar nomes sob os favoritos</string>
+    <string name="settings_clock_style">Estilo do relógio</string>
+    <string name="settings_clock_style_detail">Personalize o visual do relógio na tela inicial</string>
+    <string name="clock_style_classic">Clássico</string>
+    <string name="clock_style_stacked">Empilhado</string>
+    <string name="clock_style_minimal">Minimalista</string>
+    <string name="clock_style_analog">Analógico</string>
+    <string name="clock_style_digital_card">Cartão Digital</string>
+    <string name="clock_style_day_focus">Dia em Destaque</string>
     <string name="settings_hide_status_bar">Ocultar barra de status</string>
     <string name="settings_dim_home">Escurecer papel de parede na tela inicial</string>
     <string name="settings_dim_applist">Escurecer papel de parede na lista de apps</string>

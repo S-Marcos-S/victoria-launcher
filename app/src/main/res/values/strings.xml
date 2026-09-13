@@ -92,6 +92,14 @@
     <string name="settings_right_handed">Right-handed layout</string>
     <string name="settings_right_handed_detail">Lines icons and names up against the right edge</string>
     <string name="settings_show_names">Show names under favorites</string>
+    <string name="settings_clock_style">Clock style</string>
+    <string name="settings_clock_style_detail">Customize the look of the home screen clock</string>
+    <string name="clock_style_classic">Classic</string>
+    <string name="clock_style_stacked">Stacked</string>
+    <string name="clock_style_minimal">Minimal</string>
+    <string name="clock_style_analog">Analog</string>
+    <string name="clock_style_digital_card">Digital Card</string>
+    <string name="clock_style_day_focus">Day Focus</string>
     <string name="settings_hide_status_bar">Hide status bar</string>
     <string name="settings_dim_home">Dim wallpaper on home screen</string>
     <string name="settings_dim_applist">Dim wallpaper behind app list</string>

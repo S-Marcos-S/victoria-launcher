@@ -1,5 +1,17 @@
 ### 🚀 Novidades e Melhorias
 
+- **Novos Estilos de Relógio para a Tela Inicial e Tela de Seleção (Grade de 2 Colunas):**
+  - Implementada uma nova tela dedicada de seleção de estilos de relógio (`ClockStylePickerScreen`), organizada em grade moderna de 2 colunas com cartões arredondados e pré-visualização em tempo real de cada modelo.
+  - Adicionados 6 estilos de relógio elegantes e minimalistas para a tela inicial:
+    - **Clássico:** Formato tradicional com hora grande e data detalhada por extenso logo abaixo.
+    - **Empilhado (Stacked / Pixel style):** Horas em destaque no topo e minutos alinhados logo abaixo em duas linhas, acompanhado de data compacta.
+    - **Minimalista:** Linha única limpa e discreta com tipografia fina e elegante.
+    - **Analógico Moderno:** Mostrador circular com ponteiros desenhados em Canvas, marcadores de 12 horas e data.
+    - **Cartão Digital:** Horário e data encapsulados em um cartão translúcido arredondado no estilo *frosted glass*.
+    - **Dia em Destaque:** Dia da semana e data em destaque superior em caixa alta, com o horário grande posicionado logo abaixo.
+  - O seletor pode ser acessado tanto pelo menu de **Opções da tela inicial** (ao segurar em qualquer espaço vazio) quanto pela tela de **Configurações → Aparência**.
+  - Mantida a funcionalidade de toque interativo em todos os estilos: tocar nas horas abre o despertador/relógio do dispositivo e tocar na data abre o calendário.
+
 - **Player de Música (Em Reprodução) com Barra de Progresso e Ajuste de Layout:**
   - A capa do álbum e o título da música agora acompanham exatamente as dimensões configuradas pelo usuário para os ícones e rótulos dos aplicativos (`iconSizeDp` e `labelSizeSp`), mantendo total harmonia e consistência visual na tela inicial.
   - Adicionada barra de progresso dinâmica em tempo real no estilo Material Design (Material 3 `LinearProgressIndicator` arredondado com trilha suave) exibindo o avanço da faixa musical.

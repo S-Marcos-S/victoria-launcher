@@ -42,6 +42,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import dev.victorialauncher.VictoriaApp
 import dev.victorialauncher.data.AppInfo
+import dev.victorialauncher.data.ClockStyle
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.data.Folder
 import dev.victorialauncher.data.HomePaddings
@@ -360,6 +361,7 @@ fun HomeRoute(
                 showAppNotifications = settings.showAppNotifications,
                 folderWindowPopup = settings.folderWindowPopup,
                 notificationsByPackage = notificationsByPackage,
+                clockStyle = settings.clockStyle,
                 doubleTapToLock = settings.doubleTapToLock,
                 onDoubleTapLock = handleDoubleTapLock,
             )
@@ -492,6 +494,7 @@ fun HomeRoute(
             onOpenSettings = { showHomeOptions = false; onNavigate("settings") },
             onManageFavorites = { showHomeOptions = false; onNavigate("favorites") },
             onAddWidget = { showHomeOptions = false; widgetActions.onAddWidget() },
+            onOpenClockStyle = { showHomeOptions = false; onNavigate("settings/clock") },
         )
 
         lockTargetOffset?.let { target ->
@@ -534,6 +537,7 @@ data class HomeSettings(
     val showFavoriteLabels: Boolean,
     val doubleTapToLock: Boolean,
     val contentColor: Color,
+    val clockStyle: ClockStyle = ClockStyle.CLASSIC,
     val showAppNotifications: Boolean = false,
     val folderWindowPopup: Boolean = true,
 )

@@ -91,6 +91,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.victorialauncher.data.AppInfo
+import dev.victorialauncher.data.ClockStyle
 import dev.victorialauncher.data.Folder
 import dev.victorialauncher.data.HomePaddings
 import dev.victorialauncher.data.folderToken
@@ -195,6 +196,7 @@ fun HomeScreen(
     showAppNotifications: Boolean = false,
     folderWindowPopup: Boolean = true,
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
+    clockStyle: ClockStyle = ClockStyle.CLASSIC,
     doubleTapToLock: Boolean = false,
     onDoubleTapLock: (Offset) -> Unit = {},
 ) {    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
@@ -441,6 +443,7 @@ fun HomeScreen(
                 )
 
                 NiagaraClockWidget(
+                    clockStyle = clockStyle,
                     contentColor = contentColor,
                     sidePaddingDp = sidePaddingDp,
                     alignRight = alignRight,

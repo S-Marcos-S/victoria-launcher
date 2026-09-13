@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import dev.victorialauncher.BuildConfig
 import dev.victorialauncher.data.AppFont
 import dev.victorialauncher.data.AppInfo
+import dev.victorialauncher.data.ClockStyle
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.data.IconPackRepository
 import dev.victorialauncher.data.TextColorMode
@@ -98,6 +99,8 @@ fun SettingsScreen(
     folderWindowPopup: Boolean,
     onSetFolderWindowPopup: (Boolean) -> Unit,
     shadeGestureReady: Boolean,
+    clockStyle: ClockStyle = ClockStyle.CLASSIC,
+    onOpenClockStyle: () -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit,
     onOpenHiddenApps: () -> Unit,
     onOpenFavorites: () -> Unit,
@@ -162,6 +165,12 @@ fun SettingsScreen(
                     FontRow(font, onSetFont)
                     RowDivider()
                     TextColorRow(textColorMode, onSetTextColorMode)
+                    RowDivider()
+                    NavigationRow(
+                        label = stringResource(R.string.settings_clock_style),
+                        detail = stringResource(clockStyle.labelRes()),
+                        onClick = onOpenClockStyle,
+                    )
                     RowDivider()
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_right_handed),
@@ -634,6 +643,38 @@ private fun FilledChip(
             style = MaterialTheme.typography.labelLarge,
             fontFamily = fontFamily,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
+}
+
+@Composable
+private fun NavigationRow(
+    label: String,
+    detail: String? = null,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium)
+            if (!detail.isNullOrBlank()) {
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.ArrowForwardIos,
+            contentDescription = null,
+            modifier = Modifier.padding(4.dp),
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
         )
     }
 }

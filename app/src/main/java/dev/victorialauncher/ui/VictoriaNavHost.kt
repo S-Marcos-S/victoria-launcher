@@ -30,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import dev.victorialauncher.VictoriaApp
 import dev.victorialauncher.data.AppFont
 import dev.victorialauncher.data.AppInfo
+import dev.victorialauncher.data.ClockStyle
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.data.HomePaddings
 import dev.victorialauncher.data.TextColorMode
@@ -43,6 +44,7 @@ import dev.victorialauncher.ui.common.warmIconCache
 import dev.victorialauncher.ui.home.FavoriteEntry
 import dev.victorialauncher.ui.home.HomeRoute
 import dev.victorialauncher.ui.home.HomeSettings
+import dev.victorialauncher.ui.settings.ClockStylePickerScreen
 import dev.victorialauncher.ui.settings.FolderAppsScreen
 import dev.victorialauncher.ui.settings.HiddenAppsScreen
 import dev.victorialauncher.ui.settings.ManageFavoritesScreen
@@ -129,6 +131,7 @@ fun VictoriaNavHost(
     val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = false)
     val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
     val folderWindowPopup by app.prefs.folderWindowPopup.collectAsState(initial = true)
+    val clockStyle by app.prefs.clockStyle.collectAsState(initial = ClockStyle.CLASSIC)
     val folders by app.prefs.folders.collectAsState(initial = emptyList())
     val contentColor = rememberContentColor(textColorMode)
 
@@ -174,6 +177,7 @@ fun VictoriaNavHost(
         showFavoriteLabels = showFavoriteLabels,
         doubleTapToLock = doubleTapToLock,
         contentColor = contentColor,
+        clockStyle = clockStyle,
         showAppNotifications = showAppNotifications,
         folderWindowPopup = folderWindowPopup,
     )
@@ -317,6 +321,8 @@ fun VictoriaNavHost(
                 onSetAlignRight = { scope.launch { app.prefs.setAlignRight(it) } },
                 onSetNowPlayingEnabled = { scope.launch { app.prefs.setNowPlayingEnabled(it) } },
                 shadeGestureReady = remember(homeIntentTick) { SystemUi.canExpandShade() },
+                clockStyle = clockStyle,
+                onOpenClockStyle = { navController.navigate("settings/clock") },
                 onOpenAccessibilitySettings = {
                     context.startActivity(
                         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -329,6 +335,17 @@ fun VictoriaNavHost(
                         Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     )
+                },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable("settings/clock") {
+            ClockStylePickerScreen(
+                currentStyle = clockStyle,
+                hapticsEnabled = hapticsEnabled,
+                onSelectStyle = { selected ->
+                    scope.launch { app.prefs.setClockStyle(selected) }
                 },
                 onBack = { navController.popBackStack() },
             )
