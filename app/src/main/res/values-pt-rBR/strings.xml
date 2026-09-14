@@ -202,4 +202,6 @@
     <string name="settings_dynamic_button_pick_title">Escolher app para %1$s</string>
     <string name="settings_dynamic_button_search_hint">Buscar apps instalados…</string>
     <string name="settings_dynamic_button_clear">Limpar ação</string>
+    <string name="dynamic_button_swipe_up_hint">Puxar para cima</string>
+    <string name="dynamic_button_swipe_down_hint">Puxar para baixo</string>
 </resources>

@@ -201,4 +201,6 @@
     <string name="settings_dynamic_button_pick_title">Choose app for %1$s</string>
     <string name="settings_dynamic_button_search_hint">Search installed apps…</string>
     <string name="settings_dynamic_button_clear">Clear action</string>
+    <string name="dynamic_button_swipe_up_hint">Pull up</string>
+    <string name="dynamic_button_swipe_down_hint">Pull down</string>
 </resources>

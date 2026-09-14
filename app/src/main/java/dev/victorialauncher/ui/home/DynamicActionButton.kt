@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.home
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,15 +48,15 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import dev.victorialauncher.R
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.service.HapticUtil
-import dev.victorialauncher.ui.common.AppIcon
 import dev.victorialauncher.ui.common.ThemedAppIcon
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -142,14 +146,16 @@ fun DynamicActionButton(
 
         if (fireAction && crossed) {
             HapticUtil.tick(view, hapticsEnabled)
-            when (gesture) {
-                DynamicGesture.SWIPE_UP -> {
-                    if (swipeUpApp != null) onLaunch(swipeUpApp) else onOpenSettings()
+            if (!isInteractiveDemo) {
+                when (gesture) {
+                    DynamicGesture.SWIPE_UP -> {
+                        if (swipeUpApp != null) onLaunch(swipeUpApp) else onOpenSettings()
+                    }
+                    DynamicGesture.SWIPE_DOWN -> {
+                        if (swipeDownApp != null) onLaunch(swipeDownApp) else onOpenSettings()
+                    }
+                    else -> Unit
                 }
-                DynamicGesture.SWIPE_DOWN -> {
-                    if (swipeDownApp != null) onLaunch(swipeDownApp) else onOpenSettings()
-                }
-                else -> Unit
             }
         }
 
@@ -158,8 +164,114 @@ fun DynamicActionButton(
         currentGesture = DynamicGesture.NONE
     }
 
+    // Outer container has fixed size to guarantee zero horizontal shift when drag starts/ends
     Box(
-        modifier = modifier,
+        modifier = modifier
+            .size(buttonSizeDp)
+            .pointerInput(clickApp, swipeUpApp, swipeDownApp, hapticsEnabled) {
+                val touchSlop = viewConfig.touchSlop.toFloat()
+                awaitEachGesture {
+                    val down: PointerInputChange = awaitFirstDown(requireUnconsumed = false)
+                    down.consume()
+
+                    var dragged = false
+                    var longPressTriggered = false
+                    thresholdCrossed = false
+                    currentGesture = DynamicGesture.NONE
+
+                    // Animação de compressão elástica ao tocar
+                    scope.launch {
+                        pressScale.animateTo(0.88f, pressSpring)
+                    }
+
+                    // Long press detector job
+                    var longPressJob: Job? = scope.launch {
+                        delay(viewConfig.longPressTimeoutMillis)
+                        if (!dragged) {
+                            longPressTriggered = true
+                            HapticUtil.tick(view, hapticsEnabled)
+                            onOpenSettings()
+                        }
+                    }
+
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!change.pressed) break
+
+                        val deltaY = change.position.y - down.position.y
+
+                        if (!dragged && abs(deltaY) > touchSlop) {
+                            dragged = true
+                            isDragging = true
+                            longPressJob?.cancel()
+                            longPressJob = null
+                        }
+
+                        if (dragged) {
+                            change.consume()
+                            // Resistência hiperbólica real de borracha (tanh dampening)
+                            val dampedY = sign(deltaY) * maxStretchPx * tanh(abs(deltaY) / (maxStretchPx * 1.35f))
+                            val ratio = (abs(dampedY) / maxStretchPx).coerceIn(0f, 1f)
+
+                            // Deformação Squash & Stretch de volume conservado
+                            val sy = 1.0f + 0.38f * ratio
+                            val sx = 1.0f - 0.16f * ratio
+
+                            val gesture = if (dampedY < -8f) {
+                                DynamicGesture.SWIPE_UP
+                            } else if (dampedY > 8f) {
+                                DynamicGesture.SWIPE_DOWN
+                            } else {
+                                DynamicGesture.NONE
+                            }
+                            currentGesture = gesture
+
+                            val reachedThreshold = abs(dampedY) >= thresholdPx
+                            if (reachedThreshold && !thresholdCrossed) {
+                                thresholdCrossed = true
+                                HapticUtil.tick(view, hapticsEnabled)
+                            } else if (!reachedThreshold && thresholdCrossed) {
+                                thresholdCrossed = false
+                            }
+
+                            scope.launch {
+                                dragOffsetY.snapTo(dampedY)
+                                stretchScaleY.snapTo(sy)
+                                stretchScaleX.snapTo(sx)
+                            }
+                        }
+                    }
+
+                    longPressJob?.cancel()
+                    longPressJob = null
+
+                    if (!dragged && !longPressTriggered) {
+                        // Tap / Click rápido
+                        HapticUtil.tick(view, hapticsEnabled)
+                        scope.launch {
+                            pressScale.animateTo(1.08f, pressSpring)
+                            pressScale.animateTo(1.0f, pressSpring)
+                        }
+                        if (clickApp != null) {
+                            onLaunch(clickApp)
+                        } else if (!isInteractiveDemo) {
+                            onOpenSettings()
+                        }
+                        isDragging = false
+                        thresholdCrossed = false
+                        currentGesture = DynamicGesture.NONE
+                    } else if (dragged) {
+                        releaseRubber(fireAction = true)
+                    } else {
+                        // Long press já cuidou
+                        scope.launch { pressScale.animateTo(1.0f, pressSpring) }
+                        isDragging = false
+                        thresholdCrossed = false
+                        currentGesture = DynamicGesture.NONE
+                    }
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         // Indicador flutuante para Swipe Up (arraste para cima)
@@ -170,24 +282,24 @@ fun DynamicActionButton(
         if (showUpBubble) {
             Box(
                 modifier = Modifier
+                    .wrapContentSize(align = Alignment.Center, unbounded = true)
                     .offset {
                         IntOffset(
                             x = 0,
-                            y = (dragOffsetY.value - with(density) { 56.dp.toPx() }).roundToInt(),
+                            y = (dragOffsetY.value - with(density) { 52.dp.toPx() }).roundToInt(),
                         )
                     }
                     .graphicsLayer {
                         alpha = upBubbleAlpha
-                        scaleX = 0.75f + 0.25f * upBubbleAlpha
-                        scaleY = 0.75f + 0.25f * upBubbleAlpha
+                        scaleX = 0.8f + 0.2f * upBubbleAlpha
+                        scaleY = 0.8f + 0.2f * upBubbleAlpha
                     },
             ) {
                 ActionTeaserBubble(
                     app = swipeUpApp,
                     isThresholdMet = upThresholdMet,
-                    gestureIcon = Icons.Filled.KeyboardArrowUp,
                     contentColor = contentColor,
-                    fallbackLabel = "Puxar para cima",
+                    fallbackLabel = stringResource(R.string.dynamic_button_swipe_up_hint),
                 )
             }
         }
@@ -200,24 +312,24 @@ fun DynamicActionButton(
         if (showDownBubble) {
             Box(
                 modifier = Modifier
+                    .wrapContentSize(align = Alignment.Center, unbounded = true)
                     .offset {
                         IntOffset(
                             x = 0,
-                            y = (dragOffsetY.value + with(density) { 56.dp.toPx() }).roundToInt(),
+                            y = (dragOffsetY.value + with(density) { 52.dp.toPx() }).roundToInt(),
                         )
                     }
                     .graphicsLayer {
                         alpha = downBubbleAlpha
-                        scaleX = 0.75f + 0.25f * downBubbleAlpha
-                        scaleY = 0.75f + 0.25f * downBubbleAlpha
+                        scaleX = 0.8f + 0.2f * downBubbleAlpha
+                        scaleY = 0.8f + 0.2f * downBubbleAlpha
                     },
             ) {
                 ActionTeaserBubble(
                     app = swipeDownApp,
                     isThresholdMet = downThresholdMet,
-                    gestureIcon = Icons.Filled.KeyboardArrowDown,
                     contentColor = contentColor,
-                    fallbackLabel = "Puxar para baixo",
+                    fallbackLabel = stringResource(R.string.dynamic_button_swipe_down_hint),
                 )
             }
         }
@@ -228,6 +340,12 @@ fun DynamicActionButton(
             MaterialTheme.colorScheme.primary
         } else {
             MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+        }
+
+        val activeTarget = when {
+            isDragging && currentGesture == DynamicGesture.SWIPE_UP -> ActiveButtonTarget.SWIPE_UP
+            isDragging && currentGesture == DynamicGesture.SWIPE_DOWN -> ActiveButtonTarget.SWIPE_DOWN
+            else -> ActiveButtonTarget.CLICK
         }
 
         Box(
@@ -253,143 +371,108 @@ fun DynamicActionButton(
                         color = activeBorderColor,
                     ),
                     shape = RoundedCornerShape(22.dp),
-                )
-                .pointerInput(clickApp, swipeUpApp, swipeDownApp, hapticsEnabled) {
-                    val touchSlop = viewConfig.touchSlop.toFloat()
-                    awaitEachGesture {
-                        val down: PointerInputChange = awaitFirstDown(requireUnconsumed = false)
-                        down.consume()
-
-                        var totalDeltaY = 0f
-                        var dragged = false
-                        var longPressTriggered = false
-                        thresholdCrossed = false
-                        currentGesture = DynamicGesture.NONE
-
-                        // Animação de compressão elástica ao tocar
-                        scope.launch {
-                            pressScale.animateTo(0.88f, pressSpring)
-                        }
-
-                        // Long press detector job
-                        var longPressJob: Job? = scope.launch {
-                            delay(viewConfig.longPressTimeoutMillis)
-                            if (!dragged) {
-                                longPressTriggered = true
-                                HapticUtil.tick(view, hapticsEnabled)
-                                onOpenSettings()
-                            }
-                        }
-
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            if (!change.pressed) break
-
-                            val deltaY = change.position.y - down.position.y
-                            totalDeltaY = deltaY
-
-                            if (!dragged && abs(deltaY) > touchSlop) {
-                                dragged = true
-                                isDragging = true
-                                longPressJob?.cancel()
-                                longPressJob = null
-                            }
-
-                            if (dragged) {
-                                change.consume()
-                                // Resistência hiperbólica real de borracha (tanh dampening)
-                                val dampedY = sign(deltaY) * maxStretchPx * tanh(abs(deltaY) / (maxStretchPx * 1.35f))
-                                val ratio = (abs(dampedY) / maxStretchPx).coerceIn(0f, 1f)
-
-                                // Deformação Squash & Stretch de volume conservado
-                                val sy = 1.0f + 0.38f * ratio
-                                val sx = 1.0f - 0.16f * ratio
-
-                                val gesture = if (dampedY < 0) DynamicGesture.SWIPE_UP else DynamicGesture.SWIPE_DOWN
-                                currentGesture = gesture
-
-                                val reachedThreshold = abs(dampedY) >= thresholdPx
-                                if (reachedThreshold && !thresholdCrossed) {
-                                    thresholdCrossed = true
-                                    HapticUtil.tick(view, hapticsEnabled)
-                                } else if (!reachedThreshold && thresholdCrossed) {
-                                    thresholdCrossed = false
-                                }
-
-                                scope.launch {
-                                    dragOffsetY.snapTo(dampedY)
-                                    stretchScaleY.snapTo(sy)
-                                    stretchScaleX.snapTo(sx)
-                                }
-                            }
-                        }
-
-                        longPressJob?.cancel()
-                        longPressJob = null
-
-                        if (!dragged && !longPressTriggered) {
-                            // Tap / Click rápido
-                            HapticUtil.tick(view, hapticsEnabled)
-                            scope.launch {
-                                pressScale.animateTo(1.08f, pressSpring)
-                                pressScale.animateTo(1.0f, pressSpring)
-                            }
-                            if (clickApp != null) {
-                                onLaunch(clickApp)
-                            } else {
-                                onOpenSettings()
-                            }
-                            isDragging = false
-                            thresholdCrossed = false
-                            currentGesture = DynamicGesture.NONE
-                        } else if (dragged) {
-                            releaseRubber(fireAction = true)
-                        } else {
-                            // Long press já cuidou
-                            scope.launch { pressScale.animateTo(1.0f, pressSpring) }
-                            isDragging = false
-                            thresholdCrossed = false
-                            currentGesture = DynamicGesture.NONE
-                        }
-                    }
-                },
+                ),
             contentAlignment = Alignment.Center,
         ) {
-            // Conteúdo interno do botão: ícone do app estilizado com a cor dinâmica do sistema
-            if (clickApp != null) {
-                ThemedAppIcon(
-                    app = clickApp,
-                    sizeDp = 28,
-                    tintColor = MaterialTheme.colorScheme.primary,
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Filled.TouchApp,
-                    contentDescription = "Dynamic Button",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
-                )
+            AnimatedContent(
+                targetState = activeTarget,
+                transitionSpec = {
+                    val isMovingTowardsUp = (targetState == ActiveButtonTarget.SWIPE_UP) ||
+                            (initialState == ActiveButtonTarget.SWIPE_DOWN && targetState == ActiveButtonTarget.CLICK)
+
+                    val animSpring = spring<IntOffset>(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    )
+                    val fadeSpring = spring<Float>(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    )
+
+                    if (isMovingTowardsUp) {
+                        (slideInVertically(animationSpec = animSpring) { height -> -height } + fadeIn(animationSpec = fadeSpring))
+                            .togetherWith(
+                                slideOutVertically(animationSpec = animSpring) { height -> height } + fadeOut(animationSpec = fadeSpring)
+                            )
+                    } else {
+                        (slideInVertically(animationSpec = animSpring) { height -> height } + fadeIn(animationSpec = fadeSpring))
+                            .togetherWith(
+                                slideOutVertically(animationSpec = animSpring) { height -> -height } + fadeOut(animationSpec = fadeSpring)
+                            )
+                    }
+                },
+                label = "DynamicButtonIconTransition",
+                contentAlignment = Alignment.Center,
+            ) { target ->
+                when (target) {
+                    ActiveButtonTarget.CLICK -> {
+                        if (clickApp != null) {
+                            ThemedAppIcon(
+                                app = clickApp,
+                                sizeDp = 28,
+                                tintColor = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.TouchApp,
+                                contentDescription = "Dynamic Button",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                    }
+                    ActiveButtonTarget.SWIPE_UP -> {
+                        if (swipeUpApp != null) {
+                            ThemedAppIcon(
+                                app = swipeUpApp,
+                                sizeDp = 28,
+                                tintColor = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.KeyboardArrowUp,
+                                contentDescription = "Swipe Up Action",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp),
+                            )
+                        }
+                    }
+                    ActiveButtonTarget.SWIPE_DOWN -> {
+                        if (swipeDownApp != null) {
+                            ThemedAppIcon(
+                                app = swipeDownApp,
+                                sizeDp = 28,
+                                tintColor = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.KeyboardArrowDown,
+                                contentDescription = "Swipe Down Action",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 /**
- * Balão flutuante translúcido elegante que surge com mola durante o gesto de puxão elástico.
+ * Balão flutuante elegante que exibe com clareza o nome do aplicativo de destino do gesto.
  */
 @Composable
 private fun ActionTeaserBubble(
     app: AppInfo?,
     isThresholdMet: Boolean,
-    gestureIcon: androidx.compose.ui.graphics.vector.ImageVector,
     contentColor: Color,
     fallbackLabel: String,
 ) {
     val bubbleColor = if (isThresholdMet) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f)
     } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.88f)
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.90f)
     }
 
     val bubbleBorderColor = if (isThresholdMet) {
@@ -401,45 +484,33 @@ private fun ActionTeaserBubble(
     Surface(
         shape = CircleShape,
         color = bubbleColor,
-        border = BorderStroke(1.5.dp, bubbleBorderColor),
-        shadowElevation = if (isThresholdMet) 8.dp else 4.dp,
+        border = BorderStroke(if (isThresholdMet) 1.5.dp else 1.dp, bubbleBorderColor),
+        shadowElevation = if (isThresholdMet) 8.dp else 3.dp,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            if (app != null) {
-                AppIcon(app = app, sizeDp = 20)
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = app.label,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (isThresholdMet) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isThresholdMet) MaterialTheme.colorScheme.onPrimaryContainer else contentColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            } else {
-                Icon(
-                    imageVector = gestureIcon,
-                    contentDescription = null,
-                    tint = if (isThresholdMet) MaterialTheme.colorScheme.primary else contentColor.copy(alpha = 0.7f),
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = fallbackLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = contentColor.copy(alpha = 0.7f),
-                    maxLines = 1,
-                )
-            }
+            Text(
+                text = app?.label ?: fallbackLabel,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isThresholdMet) FontWeight.Bold else FontWeight.Medium,
+                color = if (isThresholdMet) MaterialTheme.colorScheme.onPrimaryContainer else contentColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
 
 private enum class DynamicGesture {
     NONE,
+    SWIPE_UP,
+    SWIPE_DOWN,
+}
+
+private enum class ActiveButtonTarget {
+    CLICK,
     SWIPE_UP,
     SWIPE_DOWN,
 }

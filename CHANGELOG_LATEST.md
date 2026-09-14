@@ -13,12 +13,15 @@
   - **Puxar para baixo (Swipe Down):** Permite abrir um terceiro aplicativo através do gesto de puxar para baixo.
   - **Toque longo (Pressionar e segurar):** Abre instantaneamente a tela de personalização do botão dinâmico para trocar ou redefinir os aplicativos atribuídos.
 
-- **Animações Profissionais Estilo Borracha (Rubber-Band Physics):**
-  - Física elástica real com resistência não linear hiperbólica (`tanh`), simulando a tensão física de um elástico esticado pelo dedo.
-  - Deformação realista de volume com "Squash & Stretch" (alongamento no eixo do puxão e estreitamento sutil no eixo transversal).
-  - Ancoragem elástica visual na base oposta do botão, criando a ilusão perfeita de borracha esticada a partir do ponto de apoio.
-  - Retorno suave com física de mola elástica oscilante (`Spring.DampingRatioMediumBouncy`) que quica realisticamente ao soltar o botão.
-  - Balões flutuantes translúcidos indicadores de ação surgindo na direção do movimento, destacando com glow e vibração háptica no momento exato em que o limiar de ativação é cruzado.
+- **Animações Profissionais Estilo Borracha & Transições Direcionais de Ícone:**
+  - **Estabilidade de Posição sem Deslocamento Lateral:** O botão dinâmico agora possui dimensões fixas no container raiz e medição desvinculada para os balões, eliminando qualquer salto ou deslocamento horizontal involuntário no momento em que o dedo inicia o arrasto.
+  - **Balão Indicador Focado e Minimalista:** Durante o gesto de puxar para cima ou para baixo, o balão flutuante exibe exclusivamente o nome do aplicativo de destino em um elegante pill translúcido, mantendo a tela limpa.
+  - **Transição de Ícone Estilo Carrossel/Roleta Interna:** Ao puxar o botão, o ícone do aplicativo de destino surge de dentro do botão substituindo o ícone de toque:
+    - *Ao puxar para cima:* O ícone atual desliza para baixo sumindo da vista, enquanto o ícone do app de cima entra rolando de cima para baixo com mola.
+    - *Ao puxar para baixo:* O ícone atual desliza para cima sumindo da vista, enquanto o ícone do app de baixo entra rolando de baixo para cima.
+    - *Ao soltar ou cancelar:* O ícone de toque retorna suavemente na direção oposta ao ponto de repouso.
+  - Todos os ícones exibidos mantêm fidelidade total ao tema dinâmico do sistema (Material You dynamic theming).
+  - Física elástica real com resistência não linear hiperbólica (`tanh`), deformação Squash & Stretch de volume conservado e retorno elástico com `Spring.DampingRatioMediumBouncy`.
 
 - **Tela de Configurações Completa com Demonstração Interativa:**
   - Nova tela dedicada de configurações acessível em Configurações → Botão Dinâmico ou segurando o próprio botão na tela inicial.
