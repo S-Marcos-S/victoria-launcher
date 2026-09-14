@@ -23,10 +23,9 @@
   - Todos os ícones exibidos mantêm fidelidade total ao tema dinâmico do sistema (Material You dynamic theming).
   - Física elástica real com resistência não linear hiperbólica (`tanh`), deformação Squash & Stretch de volume conservado e retorno elástico com `Spring.DampingRatioMediumBouncy`.
 
-- **Tela de Configurações Completa com Demonstração Interativa:**
-  - Nova tela dedicada de configurações acessível em Configurações → Botão Dinâmico ou segurando o próprio botão na tela inicial.
-  - **Prévia Interativa ao vivo:** Permite testar os gestos e sentir as animações de borracha em tempo real diretamente na tela de configurações.
-  - Seletor moderno de aplicativos com pesquisa rápida por nome e opção para limpar ou alterar a ação de cada gesto.
+- **Tela de Configurações Simplificada e Focada:**
+  - Nova tela dedicada acessível em Configurações → Botão Dinâmico ou segurando o próprio botão na tela inicial.
+  - Layout direto e limpo com seletor moderno de aplicativos, pesquisa rápida e opção para redefinir as ações de cada gesto.
   - Chave geral para ativar ou desativar o botão a qualquer momento.
 
 - **Criação Automática de Releases e Detecção Inteligente de Atualizações:**

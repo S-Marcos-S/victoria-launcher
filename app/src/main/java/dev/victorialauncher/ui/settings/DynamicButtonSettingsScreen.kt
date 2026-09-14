@@ -64,7 +64,6 @@ import dev.victorialauncher.R
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.ui.common.AppIcon
-import dev.victorialauncher.ui.home.DynamicActionButton
 import kotlinx.coroutines.launch
 
 private enum class GestureTargetSlot {
@@ -160,56 +159,8 @@ fun DynamicButtonSettingsScreen(
                 }
             }
 
-            // Seção: Prévia Interativa com física de borracha
+            // Seção: Configuração dos 3 gestos
             if (enabled) {
-                item {
-                    Text(
-                        text = stringResource(R.string.settings_dynamic_button_preview).uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_dynamic_button_preview_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            )
-                            Spacer(Modifier.height(30.dp))
-                            Box(
-                                modifier = Modifier
-                                    .height(150.dp)
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                DynamicActionButton(
-                                    clickApp = clickApp,
-                                    swipeUpApp = swipeUpApp,
-                                    swipeDownApp = swipeDownApp,
-                                    side = edgeSide,
-                                    hapticsEnabled = hapticsEnabled,
-                                    contentColor = MaterialTheme.colorScheme.onSurface,
-                                    onLaunch = { /* Demo mode - no real app launch required in settings */ },
-                                    onOpenSettings = { /* Already in settings */ },
-                                    isInteractiveDemo = true,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Seção: Configuração dos 3 gestos
                 item {
                     Text(
                         text = stringResource(R.string.settings_section_behavior).uppercase(),
