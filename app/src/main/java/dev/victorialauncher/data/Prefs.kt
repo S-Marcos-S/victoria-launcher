@@ -312,6 +312,18 @@ class Prefs(private val context: Context) {
         context.dataStore.edit { it[key] = v }
     }
 
+    suspend fun resetHomePaddingsAndSidePadding() {
+        context.dataStore.edit {
+            it[Keys.SIDE_PADDING_DP] = 20
+            it[Keys.NOW_PLAYING_PAD_TOP] = HomePaddings.Default.nowPlayingTop
+            it[Keys.NOW_PLAYING_PAD_BOTTOM] = HomePaddings.Default.nowPlayingBottom
+            it[Keys.WIDGET_PAD_TOP] = HomePaddings.Default.widgetTop
+            it[Keys.WIDGET_PAD_BOTTOM] = HomePaddings.Default.widgetBottom
+            it[Keys.FAVORITES_PAD_TOP] = HomePaddings.Default.favoritesTop
+            it[Keys.FAVORITES_PAD_BOTTOM] = HomePaddings.Default.favoritesBottom
+        }
+    }
+
     suspend fun setFont(f: AppFont) {
         context.dataStore.edit { it[Keys.FONT] = f.name }
     }

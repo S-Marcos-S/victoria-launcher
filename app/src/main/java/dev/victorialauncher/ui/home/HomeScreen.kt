@@ -45,6 +45,7 @@ import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.ui.theme.dynamicBorderColor
 import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AlignHorizontalLeft
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
@@ -186,6 +187,7 @@ fun HomeScreen(
     appsByKey: Map<String, AppInfo>,
     onReorderHome: (newFavoriteKeys: List<String>, newWidgetPosition: Int) -> Unit,
     onCommitPadding: (PaddingSlot, Int) -> Unit,
+    onResetAlignments: () -> Unit = {},
     onFavoritesBoundsChanged: (topPx: Float, bottomPx: Float) -> Unit,
     nowPlayingHasContent: Boolean,
     contentColor: Color,
@@ -245,6 +247,25 @@ fun HomeScreen(
     var liveSlot by remember { mutableStateOf<PaddingSlot?>(null) }
     var liveValue by remember { mutableIntStateOf(0) }
     fun padOf(slot: PaddingSlot): Int = if (liveSlot == slot) liveValue else paddings[slot]
+
+    val colorScheme = MaterialTheme.colorScheme
+    val handleResetAlignments = {
+        HapticUtil.tick(view, hapticsEnabled)
+        onSetSidePadding(20)
+        onCommitPadding(PaddingSlot.NOW_PLAYING_TOP, dev.victorialauncher.data.HomePaddings.Default.nowPlayingTop)
+        onCommitPadding(PaddingSlot.NOW_PLAYING_BOTTOM, dev.victorialauncher.data.HomePaddings.Default.nowPlayingBottom)
+        onCommitPadding(PaddingSlot.WIDGET_TOP, dev.victorialauncher.data.HomePaddings.Default.widgetTop)
+        onCommitPadding(PaddingSlot.WIDGET_BOTTOM, dev.victorialauncher.data.HomePaddings.Default.widgetBottom)
+        onCommitPadding(PaddingSlot.FAVORITES_TOP, dev.victorialauncher.data.HomePaddings.Default.favoritesTop)
+        onCommitPadding(PaddingSlot.FAVORITES_BOTTOM, dev.victorialauncher.data.HomePaddings.Default.favoritesBottom)
+        onResetAlignments()
+        liveSlot = null
+        android.widget.Toast.makeText(
+            context,
+            context.getString(R.string.toast_aligned_elements),
+            android.widget.Toast.LENGTH_SHORT,
+        ).show()
+    }
 
     val hasWidget = widgetId > 0
     val showWidgetSlot = hasWidget || editMode
@@ -425,8 +446,10 @@ fun HomeScreen(
         ) {
             if (editMode) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 72.dp, top = 4.dp, bottom = 4.dp),
-                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 72.dp, top = 4.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -434,11 +457,47 @@ fun HomeScreen(
                         color = contentColor.copy(alpha = 0.7f),
                         fontSize = 11.sp,
                         modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
-                    TextButton(onClick = { onEditModeChange(false) }) {
-                        Icon(Icons.Filled.Done, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.action_done))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(
+                            onClick = handleResetAlignments,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = colorScheme.primary,
+                            ),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Icon(
+                                Icons.Filled.AlignHorizontalLeft,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(R.string.action_align_elements),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        TextButton(
+                            onClick = { onEditModeChange(false) },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = colorScheme.primary,
+                            ),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Icon(Icons.Filled.Done, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(R.string.action_done),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
                 SidePaddingHandle(sidePaddingDp = sidePaddingDp, onSetSidePadding = onSetSidePadding)

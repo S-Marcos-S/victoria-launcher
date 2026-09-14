@@ -16,6 +16,8 @@
     <string name="action_remove">Remove</string>
     <string name="action_app_info">App info</string>
     <string name="action_edit_layout">Edit layout</string>
+    <string name="action_align_elements">Align elements</string>
+    <string name="toast_aligned_elements">All elements aligned based on apps</string>
     <string name="action_resize">Resize</string>
     <string name="action_edit_icon_and_name">Edit icon &amp; name</string>
     <string name="action_move_to_folder">Move to folder…</string>

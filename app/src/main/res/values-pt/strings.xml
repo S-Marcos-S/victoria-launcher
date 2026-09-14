@@ -17,6 +17,8 @@
     <string name="action_remove">Remover</string>
     <string name="action_app_info">Informações do app</string>
     <string name="action_edit_layout">Editar layout</string>
+    <string name="action_align_elements">Alinhar elementos</string>
+    <string name="toast_aligned_elements">Todos os elementos foram alinhados com base nos aplicativos</string>
     <string name="action_resize">Redimensionar</string>
     <string name="action_edit_icon_and_name">Editar ícone e nome</string>
     <string name="action_move_to_folder">Mover para pasta…</string>

@@ -1,5 +1,11 @@
 ### 🚀 Novidades e Melhorias da Versão 0.50.0
 
+- **Botão de Alinhamento Rápido na Tela de Edição do Layout:**
+  - **Restauração de Alinhamento com 1 Toque:** Adicionado o botão *"Alinhar elementos"* na barra de ações superior do modo de edição/ordenação da tela inicial (*Editar layout*).
+  - **Alinhamento com Base nos Aplicativos e na Borda:** Caso o usuário tenha desalinhado os componentes ao arrastar o puxador de espaçamento lateral ou os puxadores verticais, o botão restaura instantaneamente a distância padrão e simétrica dos aplicativos em relação à borda do celular (`sidePaddingDp = 20dp`), alinhando de imediato o alfabeto, os aplicativos, os widgets, o relógio e o reprodutor de mídia.
+  - **Redefinição Harmônica dos Espaçamentos:** O botão redefine com precisão todos os espaçamentos padrão entre os blocos (`HomePaddings.Default`), garantindo simetria perfeita sem folgas excessivas.
+  - **Feedback Háptico e Visual:** Acionamento com vibração háptica agradável e confirmação instantânea em tela (*"Todos os elementos foram alinhados com base nos aplicativos"*).
+
 - **Substituição do Pop-up Automático de Atualização por Notificação do Sistema:**
   - **Experiência Não Intrusiva na Tela Inicial:** O diálogo/balão flutuante de mudanças ("O que há de novo") não surge mais de forma involuntária ou automática cobrindo a tela inicial ao detectar novas versões do aplicativo.
   - **Notificação Discreta e Informativa do Sistema:** Ao identificar que uma nova versão foi compilada ou lançada, o launcher agora emite uma notificação elegante na barra de status do Android informando a versão disponível (*"Victoria Launcher vX.Y.Z disponível"* - *"Toque para ver o que há de novo e atualizar"*).

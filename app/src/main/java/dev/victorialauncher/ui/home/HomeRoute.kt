@@ -339,6 +339,9 @@ fun HomeRoute(
                 onCommitPadding = { slot: PaddingSlot, value: Int ->
                     scope.launch { app.prefs.setHomePadding(slot, value) }
                 },
+                onResetAlignments = {
+                    scope.launch { app.prefs.resetHomePaddingsAndSidePadding() }
+                },
                 onFavoritesBoundsChanged = { _, _ ->
                     // Scrubber band is computed independently to ensure consistent vertical centering
                 },
