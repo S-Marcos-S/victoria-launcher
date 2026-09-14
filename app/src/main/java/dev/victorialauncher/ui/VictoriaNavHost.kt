@@ -33,6 +33,7 @@ import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.ClockStyle
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.data.HomePaddings
+import dev.victorialauncher.data.ThemedIconStyle
 import dev.victorialauncher.data.TextColorMode
 import dev.victorialauncher.data.folderIdFromToken
 import dev.victorialauncher.media.isListenerEnabled
@@ -136,6 +137,9 @@ fun VictoriaNavHost(
     val folders by app.prefs.folders.collectAsState(initial = emptyList())
     val contentColor = rememberContentColor(textColorMode)
 
+    val themedIcons by app.prefs.themedIcons.collectAsState(initial = false)
+    val themedIconStyle by app.prefs.themedIconStyle.collectAsState(initial = ThemedIconStyle.MATERIAL_YOU)
+
     val dynamicButtonEnabled by app.prefs.dynamicButtonEnabled.collectAsState(initial = true)
     val dynamicButtonClickApp by app.prefs.dynamicButtonClickApp.collectAsState(initial = null)
     val dynamicButtonSwipeUpApp by app.prefs.dynamicButtonSwipeUpApp.collectAsState(initial = null)
@@ -162,8 +166,8 @@ fun VictoriaNavHost(
     val priorityKeys = remember(favoriteKeys, folders) {
         favoriteKeys.toSet() + folders.flatMap { it.apps }
     }
-    LaunchedEffect(allApps, iconPackPackage, iconOverrides, listIconPx, priorityKeys) {
-        warmIconCache(context, allApps, iconPackPackage, iconOverrides, listIconPx, priorityKeys)
+    LaunchedEffect(allApps, iconPackPackage, iconOverrides, listIconPx, priorityKeys, themedIcons) {
+        warmIconCache(context, allApps, iconPackPackage, iconOverrides, listIconPx, priorityKeys, themedIcons)
     }
 
     val settings = HomeSettings(
@@ -333,6 +337,10 @@ fun VictoriaNavHost(
                 shadeGestureReady = remember(homeIntentTick) { SystemUi.canExpandShade() },
                 clockStyle = clockStyle,
                 onOpenClockStyle = { navController.navigate("settings/clock") },
+                themedIcons = themedIcons,
+                themedIconStyle = themedIconStyle,
+                onSetThemedIcons = { scope.launch { app.prefs.setThemedIcons(it) } },
+                onSetThemedIconStyle = { scope.launch { app.prefs.setThemedIconStyle(it) } },
                 onOpenAccessibilitySettings = {
                     context.startActivity(
                         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

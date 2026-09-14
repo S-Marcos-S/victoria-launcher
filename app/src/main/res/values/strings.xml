@@ -89,6 +89,11 @@
     <string name="settings_icon_pack">Icon pack</string>
     <string name="settings_icon_pack_default">Default</string>
     <string name="settings_icon_pack_none">No icon pack apps found on this device.</string>
+    <string name="settings_themed_icons">Themed icons</string>
+    <string name="settings_themed_icons_detail">Dynamically colors all app icons using your system\'s Monet wallpaper palette</string>
+    <string name="settings_themed_icons_style">Icon style</string>
+    <string name="settings_themed_icons_style_material_you">Material You</string>
+    <string name="settings_themed_icons_style_minimalist">Minimalist</string>
     <string name="settings_icon_size">Icon size</string>
     <string name="settings_text_size">Text size</string>
     <string name="settings_favorite_spacing">Spacing between favorites</string>

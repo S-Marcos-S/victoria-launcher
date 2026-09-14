@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import dev.victorialauncher.R
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.EdgeSide
+import dev.victorialauncher.data.ThemedIconStyle
 import dev.victorialauncher.service.HapticUtil
 import dev.victorialauncher.ui.common.ThemedAppIcon
 import kotlinx.coroutines.Job
@@ -410,6 +411,7 @@ fun DynamicActionButton(
                             ThemedAppIcon(
                                 app = clickApp,
                                 sizeDp = 28,
+                                style = ThemedIconStyle.MINIMALIST,
                                 tintColor = MaterialTheme.colorScheme.primary,
                             )
                         } else {
@@ -426,6 +428,7 @@ fun DynamicActionButton(
                             ThemedAppIcon(
                                 app = swipeUpApp,
                                 sizeDp = 28,
+                                style = ThemedIconStyle.MINIMALIST,
                                 tintColor = MaterialTheme.colorScheme.primary,
                             )
                         } else {
@@ -442,6 +445,7 @@ fun DynamicActionButton(
                             ThemedAppIcon(
                                 app = swipeDownApp,
                                 sizeDp = 28,
+                                style = ThemedIconStyle.MINIMALIST,
                                 tintColor = MaterialTheme.colorScheme.primary,
                             )
                         } else {

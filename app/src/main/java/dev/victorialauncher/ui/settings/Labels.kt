@@ -46,3 +46,9 @@ fun ClockStyle.labelRes(): Int = when (this) {
     ClockStyle.DIGITAL_CARD -> R.string.clock_style_digital_card
     ClockStyle.DAY_FOCUS -> R.string.clock_style_day_focus
 }
+
+@StringRes
+fun dev.victorialauncher.data.ThemedIconStyle.labelRes(): Int = when (this) {
+    dev.victorialauncher.data.ThemedIconStyle.MATERIAL_YOU -> R.string.settings_themed_icons_style_material_you
+    dev.victorialauncher.data.ThemedIconStyle.MINIMALIST -> R.string.settings_themed_icons_style_minimalist
+}

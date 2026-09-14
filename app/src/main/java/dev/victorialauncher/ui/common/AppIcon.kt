@@ -5,20 +5,26 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.util.LruCache
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -30,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.victorialauncher.VictoriaApp
 import dev.victorialauncher.data.AppInfo
+import dev.victorialauncher.data.ThemedIconStyle
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +87,9 @@ fun clearIconCache() = IconCache.clear()
 private fun iconCacheKey(app: AppInfo, iconPack: String?, override: String?, px: Int) =
     "${app.key}|$iconPack|$override|$px"
 
+private fun themedIconCacheKey(app: AppInfo, iconPack: String?, override: String?, px: Int) =
+    "themed|${app.key}|$iconPack|$override|$px"
+
 /**
  * Decode every app's icon ahead of time, off the main thread. Without this the first open of
  * the A-Z list rasterises a screenful of icons synchronously during composition, which is
@@ -96,16 +106,26 @@ suspend fun warmIconCache(
     overrides: Map<String, String>,
     px: Int,
     priorityKeys: Set<String> = emptySet(),
+    themedIcons: Boolean = false,
 ) {
     if (px <= 0 || apps.isEmpty()) return
     val victoriaApp = context.applicationContext as VictoriaApp
 
     fun warm(app: AppInfo) {
-        val key = iconCacheKey(app, iconPack, overrides[app.key], px)
+        val key = if (themedIcons) {
+            themedIconCacheKey(app, iconPack, overrides[app.key], px)
+        } else {
+            iconCacheKey(app, iconPack, overrides[app.key], px)
+        }
         if (IconCache.get(key) != null) return
         runCatching {
             val drawable = resolveDrawable(context, victoriaApp, app, iconPack, overrides[app.key])
-            IconCache.put(key, drawable.toBitmap(px, px).asImageBitmap())
+            val imageBitmap = if (themedIcons) {
+                generateMonochromeBitmap(drawable, px, app.label).asImageBitmap()
+            } else {
+                drawable.toBitmap(px, px).asImageBitmap()
+            }
+            IconCache.put(key, imageBitmap)
         }
     }
 
@@ -126,51 +146,66 @@ suspend fun warmIconCache(
 private const val CHUNK_SIZE = 16
 
 /**
- * Icon pack and per-app overrides, provided once for the whole tree. Collecting these flows
- * inside AppIcon meant every visible row started two DataStore collections of its own — with
- * a screenful of rows that is dozens of disk-backed collectors spun up the moment the list
- * appears, each resolving its icon twice (once for the initial value, once for the real one).
+ * Icon pack, per-app overrides, and themed icon settings, provided once for the whole tree.
  */
 @Immutable
-data class IconConfig(val pack: String?, val overrides: Map<String, String>)
+data class IconConfig(
+    val pack: String?,
+    val overrides: Map<String, String>,
+    val themedIcons: Boolean = false,
+    val themedIconStyle: ThemedIconStyle = ThemedIconStyle.MATERIAL_YOU,
+)
 
-val LocalIconConfig = staticCompositionLocalOf { IconConfig(null, emptyMap()) }
+val LocalIconConfig = staticCompositionLocalOf {
+    IconConfig(null, emptyMap(), false, ThemedIconStyle.MATERIAL_YOU)
+}
 
 @Composable
 fun AppIcon(app: AppInfo, sizeDp: Int, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val victoriaApp = context.applicationContext as VictoriaApp
     val config = LocalIconConfig.current
-    val iconPackPackage = config.pack
-    val overrideValue = config.overrides[app.key]
-    val px = with(LocalDensity.current) { sizeDp.dp.roundToPx() }.coerceAtLeast(1)
-
-    val cacheKey = iconCacheKey(app, iconPackPackage, overrideValue, px)
-    val bitmap: ImageBitmap? = remember(cacheKey) {
-        IconCache.get(cacheKey) ?: runCatching {
-            val drawable = resolveDrawable(context, victoriaApp, app, iconPackPackage, overrideValue)
-            drawable.toBitmap(px, px).asImageBitmap().also { IconCache.put(cacheKey, it) }
-        }.getOrNull()
-    }
-
-    if (bitmap != null) {
-        Image(bitmap = bitmap, contentDescription = app.label, modifier = modifier.size(sizeDp.dp))
+    if (config.themedIcons) {
+        ThemedAppIcon(
+            app = app,
+            sizeDp = sizeDp,
+            modifier = modifier,
+            style = config.themedIconStyle,
+        )
     } else {
-        Box(modifier = modifier.size(sizeDp.dp))
+        val context = LocalContext.current
+        val victoriaApp = context.applicationContext as VictoriaApp
+        val iconPackPackage = config.pack
+        val overrideValue = config.overrides[app.key]
+        val px = with(LocalDensity.current) { sizeDp.dp.roundToPx() }.coerceAtLeast(1)
+
+        val cacheKey = iconCacheKey(app, iconPackPackage, overrideValue, px)
+        val bitmap: ImageBitmap? = remember(cacheKey) {
+            IconCache.get(cacheKey) ?: runCatching {
+                val drawable = resolveDrawable(context, victoriaApp, app, iconPackPackage, overrideValue)
+                drawable.toBitmap(px, px).asImageBitmap().also { IconCache.put(cacheKey, it) }
+            }.getOrNull()
+        }
+
+        if (bitmap != null) {
+            Image(bitmap = bitmap, contentDescription = app.label, modifier = modifier.size(sizeDp.dp))
+        } else {
+            Box(modifier = modifier.size(sizeDp.dp))
+        }
     }
 }
 
 /**
- * Renders an app icon using the system dynamic color (monochrome / themed style).
- * It extracts the official monochrome layer (on Android 13+) if available, or processes
- * the foreground layer into a high-contrast white alpha-mask tinted via [BlendMode.SrcIn].
+ * Renders an app icon using the system dynamic color (Material You / Monet theme).
+ * Supports both [ThemedIconStyle.MATERIAL_YOU] (adaptive container + glyph) and
+ * [ThemedIconStyle.MINIMALIST] (flat glyph tinted with wallpaper Monet accent color).
  */
 @Composable
 fun ThemedAppIcon(
     app: AppInfo,
     sizeDp: Int,
     modifier: Modifier = Modifier,
-    tintColor: Color = MaterialTheme.colorScheme.primary,
+    style: ThemedIconStyle = LocalIconConfig.current.themedIconStyle,
+    tintColor: Color? = null,
+    containerColor: Color? = null,
 ) {
     val context = LocalContext.current
     val victoriaApp = context.applicationContext as VictoriaApp
@@ -179,27 +214,56 @@ fun ThemedAppIcon(
     val overrideValue = config.overrides[app.key]
     val px = with(LocalDensity.current) { sizeDp.dp.roundToPx() }.coerceAtLeast(1)
 
-    val cacheKey = "mono_" + iconCacheKey(app, iconPackPackage, overrideValue, px)
+    val cacheKey = themedIconCacheKey(app, iconPackPackage, overrideValue, px)
     val bitmap: ImageBitmap? = remember(cacheKey) {
         IconCache.get(cacheKey) ?: runCatching {
             val drawable = resolveDrawable(context, victoriaApp, app, iconPackPackage, overrideValue)
-            generateMonochromeBitmap(drawable, px).asImageBitmap().also { IconCache.put(cacheKey, it) }
+            generateMonochromeBitmap(drawable, px, app.label).asImageBitmap().also { IconCache.put(cacheKey, it) }
         }.getOrNull()
     }
 
-    if (bitmap != null) {
-        Image(
-            bitmap = bitmap,
-            contentDescription = app.label,
-            colorFilter = ColorFilter.tint(tintColor, BlendMode.SrcIn),
-            modifier = modifier.size(sizeDp.dp),
-        )
-    } else {
-        Box(modifier = modifier.size(sizeDp.dp))
+    val effectiveTintColor = tintColor ?: MaterialTheme.colorScheme.primary
+    val effectiveContainerColor = containerColor ?: MaterialTheme.colorScheme.secondaryContainer
+
+    when (style) {
+        ThemedIconStyle.MATERIAL_YOU -> {
+            val squircleShape = remember { RoundedCornerShape(percent = 28) }
+            Box(
+                modifier = modifier
+                    .size(sizeDp.dp)
+                    .clip(squircleShape)
+                    .background(effectiveContainerColor, squircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = app.label,
+                        colorFilter = ColorFilter.tint(effectiveTintColor, BlendMode.SrcIn),
+                        modifier = Modifier.size((sizeDp * 0.58f).dp),
+                    )
+                }
+            }
+        }
+        ThemedIconStyle.MINIMALIST -> {
+            Box(
+                modifier = modifier.size(sizeDp.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = app.label,
+                        colorFilter = ColorFilter.tint(effectiveTintColor, BlendMode.SrcIn),
+                        modifier = Modifier.size((sizeDp * 0.88f).dp),
+                    )
+                }
+            }
+        }
     }
 }
 
-internal fun generateMonochromeBitmap(drawable: Drawable, px: Int): Bitmap {
+internal fun generateMonochromeBitmap(drawable: Drawable, px: Int, label: String = ""): Bitmap {
     val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
 
@@ -208,32 +272,114 @@ internal fun generateMonochromeBitmap(drawable: Drawable, px: Int): Bitmap {
         val mono = drawable.monochrome
         if (mono != null) {
             val layer = mono.mutate()
-            val scale = 1.35f
+            val scale = 1.28f
             val offset = ((px * scale - px) / 2f).toInt()
             layer.setBounds(-offset, -offset, px + offset, px + offset)
             layer.draw(canvas)
             convertToWhiteMask(bitmap)
-            return bitmap
+            if (hasSufficientVisiblePixels(bitmap)) {
+                return bitmap
+            }
         }
     }
 
     // 2. Adaptive icon foreground layer fallback
     if (drawable is AdaptiveIconDrawable) {
         val fg = drawable.foreground.mutate()
-        val scale = 1.35f
+        val scale = 1.28f
         val offset = ((px * scale - px) / 2f).toInt()
         fg.setBounds(-offset, -offset, px + offset, px + offset)
         fg.draw(canvas)
+        stripCornerBackground(bitmap)
         convertToWhiteMask(bitmap)
-        return bitmap
+        if (hasSufficientVisiblePixels(bitmap)) {
+            return bitmap
+        }
     }
 
     // 3. Fallback for non-adaptive drawables (legacy or custom icons)
     val target = drawable.mutate()
     target.setBounds(0, 0, px, px)
     target.draw(canvas)
+    stripCornerBackground(bitmap)
     convertToWhiteMask(bitmap)
-    return bitmap
+    if (hasSufficientVisiblePixels(bitmap)) {
+        return bitmap
+    }
+
+    // 4. Absolute fallback: Monogram with first letter of the app label
+    return generateMonogramBitmap(label, px)
+}
+
+private fun stripCornerBackground(bitmap: Bitmap) {
+    val w = bitmap.width
+    val h = bitmap.height
+    if (w < 8 || h < 8) return
+
+    val margin = 2
+    val c1 = bitmap.getPixel(margin, margin)
+    val c2 = bitmap.getPixel(w - margin - 1, margin)
+    val c3 = bitmap.getPixel(margin, h - margin - 1)
+    val c4 = bitmap.getPixel(w - margin - 1, h - margin - 1)
+
+    val a1 = AndroidColor.alpha(c1)
+    val a2 = AndroidColor.alpha(c2)
+    val a3 = AndroidColor.alpha(c3)
+    val a4 = AndroidColor.alpha(c4)
+
+    val corners = intArrayOf(c1, c2, c3, c4)
+    val alphas = intArrayOf(a1, a2, a3, a4)
+    var opaqueCorners = 0
+    for (a in alphas) {
+        if (a > 180) opaqueCorners++
+    }
+
+    if (opaqueCorners < 3) return
+
+    var totalR = 0
+    var totalG = 0
+    var totalB = 0
+    var count = 0
+    for (i in 0 until 4) {
+        if (alphas[i] > 180) {
+            totalR += AndroidColor.red(corners[i])
+            totalG += AndroidColor.green(corners[i])
+            totalB += AndroidColor.blue(corners[i])
+            count++
+        }
+    }
+    if (count == 0) return
+    val bgR = totalR / count
+    val bgG = totalG / count
+    val bgB = totalB / count
+
+    val pixels = IntArray(w * h)
+    bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+
+    val tolerance = 42.0
+    var strippedCount = 0
+
+    for (i in pixels.indices) {
+        val p = pixels[i]
+        val a = AndroidColor.alpha(p)
+        if (a > 180) {
+            val r = AndroidColor.red(p)
+            val g = AndroidColor.green(p)
+            val b = AndroidColor.blue(p)
+            val dr = r - bgR
+            val dg = g - bgG
+            val db = b - bgB
+            val dist = kotlin.math.sqrt((dr * dr + dg * dg + db * db).toDouble())
+            if (dist <= tolerance) {
+                pixels[i] = 0
+                strippedCount++
+            }
+        }
+    }
+
+    if (strippedCount < (pixels.size * 0.95)) {
+        bitmap.setPixels(pixels, 0, w, 0, 0, w, h)
+    }
 }
 
 private fun convertToWhiteMask(bitmap: Bitmap) {
@@ -264,12 +410,12 @@ private fun convertToWhiteMask(bitmap: Bitmap) {
     if (!hasVisiblePixels) return
 
     val contrast = maxLum - minLum
-    val hasContrast = contrast > 0.30f
+    val hasContrast = contrast > 0.25f
 
     for (i in 0 until count) {
         val pixel = pixels[i]
         val a = AndroidColor.alpha(pixel)
-        if (a == 0) {
+        if (a <= 25) {
             pixels[i] = 0
             continue
         }
@@ -291,6 +437,33 @@ private fun convertToWhiteMask(bitmap: Bitmap) {
     }
 
     bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+}
+
+private fun hasSufficientVisiblePixels(bitmap: Bitmap): Boolean {
+    val count = bitmap.width * bitmap.height
+    val pixels = IntArray(count)
+    bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+    var visible = 0
+    for (p in pixels) {
+        if (AndroidColor.alpha(p) > 30) visible++
+    }
+    return visible >= (count * 0.02)
+}
+
+private fun generateMonogramBitmap(label: String, px: Int): Bitmap {
+    val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val text = label.firstOrNull { it.isLetterOrDigit() }?.uppercase() ?: "A"
+
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = AndroidColor.WHITE
+        textSize = px * 0.55f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textAlign = Paint.Align.CENTER
+    }
+    val yPos = (px / 2f) - ((paint.descent() + paint.ascent()) / 2f)
+    canvas.drawText(text, px / 2f, yPos, paint)
+    return bitmap
 }
 
 /**

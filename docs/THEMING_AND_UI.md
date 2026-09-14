@@ -14,6 +14,7 @@ Este documento detalha as decisões de design, a engenharia de cores dinâmicas 
 6. [Contraste e Modos de Cor de Texto](#6-contraste-e-modos-de-cor-de-texto)
 7. [Sistema Tipográfico](#7-sistema-tipográfico)
 8. [Engenharia Tátil e Micro-interações](#8-engenharia-tátil-e-micro-interações)
+9. [Ícones Temáticos Dinâmicos do Monet (Geração Própria)](#9-ícones-temáticos-dinâmicos-do-monet-geração-própria)
 
 ---
 
@@ -155,3 +156,24 @@ A experiência física do launcher é acentuada por feedback tátil proporcional
 
 - **[`HapticUtil.kt`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/service/HapticUtil.kt):** Utiliza a API `VibrationEffect.createPredefined(EFFECT_TICK)` em dispositivos compatíveis, respeitando a configuração global do sistema e a opção dedicada nas preferências do launcher.
 - **Física de Molas (Spring Physics):** Os elementos utilizam curvas de mola (`Spring.DampingRatioMediumBouncy`) para retornar suavemente à posição original após gestos de arrasto.
+
+---
+
+## 9. Ícones Temáticos Dinâmicos do Monet (Geração Própria)
+
+A Victoria Launcher inclui um motor nativo de geração de ícones temáticos (`ThemedAppIcon`) baseado no Material You / Monet, desenhado para abranger **100% dos aplicativos instalados**:
+
+### Arquitetura de Geração e Extração:
+1. **Camada Monocromática Oficial (Android 13+):** Extrai a camada `AdaptiveIconDrawable.monochrome` quando disponível nativamente.
+2. **Extração Inteligente de Contorno (`stripCornerBackground`):** Para apps sem camada monocromática dedicada, a launcher analisa os cantos do foreground e ícones legados. Se os cantos forem predominantemente opacos, detecta a cor do fundo e remove-a cirurgicamente via cálculo de distância euclidiana, isolando o glifo/emblema central.
+3. **Máscara de Contraste e Luminância (`convertToWhiteMask`):** Processamento em escala de cinza com normalização de luminância e ponderação quadrática de alfa para manter a legibilidade, relevo e detalhes internos de logotipos complexos.
+4. **Monograma Material (Fallback Universal):** Caso um ícone seja plano, monocromático ou corrompido, gera automaticamente um monograma refinado com a inicial do aplicativo em tipografia bold.
+
+### Estilos Visuais Suportados:
+- **`MATERIAL_YOU` (Padrão):** Recipiente adaptativo em formato squircle (arredondamento harmônico a 28%), preenchido com `secondaryContainer` do Monet e glifo centralizado com destaque `primary`.
+- **`MINIMALIST`:** Glifo vazado sem recipiente, tingido na cor `primary` do wallpaper.
+
+### Otimização e Cache GPU:
+- As máscaras monocromáticas são cacheadas em `IconCache` como bitmaps de alfa puros (independentes de cor).
+- O tingimento dinâmico é efetuado pelos shaders da GPU no Compose (`BlendMode.SrcIn`). Mudanças de papel de parede ou alternâncias claro/escuro atualizam todos os ícones instantaneamente em tempo real.
+

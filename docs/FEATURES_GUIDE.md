@@ -16,6 +16,7 @@ Este documento apresenta uma visão técnica e funcional detalhada de todas as c
 8. [Reprodutor de Mídia Integrado (Now Playing)](#8-reprodutor-de-mídia-integrado-now-playing)
 9. [Integração de Notificações do Sistema](#9-integração-de-notificações-do-sistema)
 10. [Gestos Globais e Atalhos de Acessibilidade](#10-gestos-globais-e-atalhos-de-acessibilidade)
+11. [Ícones Temáticos Dinâmicos (Material You / Monet)](#11-ícones-temáticos-dinâmicos-material-you--monet)
 
 ---
 
@@ -214,3 +215,19 @@ O Victoria Launcher monitora notificações ativas de mensagens (WhatsApp, Teleg
 - **Arrastar para Baixo (Pull Down Shade):** Deslizar o dedo verticalmente para baixo em qualquer lugar da tela inicial abre a cortina de notificações do Android (`GLOBAL_ACTION_NOTIFICATIONS`).
 - **Espiar Barra de Status (Peek Status Bar):** Um leve puxão para baixo aciona o [`StatusBarFader`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/service/StatusBarFader.kt) para visualizar a barra de status temporariamente caso ela esteja configurada como oculta.
 - **Deslizar da Borda:** Puxar a partir de qualquer ponto da borda abre a gaveta de aplicativos já filtrada na letra correspondente à altura do toque.
+
+---
+
+## 11. Ícones Temáticos Dinâmicos (Material You / Monet)
+
+Geração automática e inteligente de ícones adaptativos com as cores dinâmicas do papel de parede para **100% dos aplicativos** do usuário:
+
+- **Cobertura Universal (Geração pela Própria Launcher):**
+  - Para aplicativos com camada monocromática oficial (Android 13+), o vetor oficial é extraído e tingido com precisão.
+  - Para aplicativos sem camada monocromática (legados ou adaptativos comuns), um algoritmo especializado de remoção de fundo e contraste analisa as bordas, remove fundos opacos e preserva apenas o emblema central.
+  - Como salvaguarda final para ícones lisos ou corrompidos, um monograma tipográfico elegante é renderizado automaticamente.
+- **Estilos Visuais Selecionáveis:**
+  - *Material You:* Recipiente squircle dinâmico com cantos arredondados a 28% e glifo centralizado.
+  - *Minimalista:* Glifo monocromático vazado com a cor primária de destaque Monet, sem container.
+- **Integração nas Preferências:** Ativação em *Configurações → Aparência → Ícones temáticos* com prévia instantânea em tempo real.
+

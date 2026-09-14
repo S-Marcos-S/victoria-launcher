@@ -48,6 +48,7 @@ import dev.victorialauncher.data.ClockStyle
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.data.IconPackRepository
 import dev.victorialauncher.data.TextColorMode
+import dev.victorialauncher.data.ThemedIconStyle
 import dev.victorialauncher.ui.common.AppIcon
 import dev.victorialauncher.ui.theme.toFontFamily
 import dev.victorialauncher.R
@@ -101,6 +102,10 @@ fun SettingsScreen(
     shadeGestureReady: Boolean,
     clockStyle: ClockStyle = ClockStyle.CLASSIC,
     onOpenClockStyle: () -> Unit = {},
+    themedIcons: Boolean = false,
+    themedIconStyle: ThemedIconStyle = ThemedIconStyle.MATERIAL_YOU,
+    onSetThemedIcons: (Boolean) -> Unit = {},
+    onSetThemedIconStyle: (ThemedIconStyle) -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit,
     onOpenHiddenApps: () -> Unit,
     onOpenFavorites: () -> Unit,
@@ -138,6 +143,17 @@ fun SettingsScreen(
                     RowPreview(previewApp, iconSizeDp, labelSizeSp, font)
                     RowDivider()
                     IconPackRow(iconPacks, iconPackPackage, onSetIconPack)
+                    RowDivider()
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_themed_icons),
+                        detail = stringResource(R.string.settings_themed_icons_detail),
+                        checked = themedIcons,
+                        onCheckedChange = onSetThemedIcons,
+                    )
+                    if (themedIcons) {
+                        RowDivider()
+                        ThemedIconStyleRow(themedIconStyle, onSetThemedIconStyle)
+                    }
                     RowDivider()
                     SliderRow(
                         label = stringResource(R.string.settings_icon_size),
@@ -556,6 +572,23 @@ private fun IconPackRow(packs: List<IconPackRepository.IconPackInfo>, selected: 
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier.padding(top = 8.dp),
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ThemedIconStyleRow(selected: ThemedIconStyle, onSelect: (ThemedIconStyle) -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(stringResource(R.string.settings_themed_icons_style), style = MaterialTheme.typography.bodyMedium)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ThemedIconStyle.entries.forEach { style ->
+                FilledChip(stringResource(style.labelRes()), selected == style) { onSelect(style) }
+            }
         }
     }
 }

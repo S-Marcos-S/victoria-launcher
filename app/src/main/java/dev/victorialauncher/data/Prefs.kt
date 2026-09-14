@@ -24,6 +24,8 @@ enum class ClockStyle { CLASSIC, STACKED, MINIMAL, ANALOG, DIGITAL_CARD, DAY_FOC
 /** AUTO picks light or dark text from the wallpaper's own colours. */
 enum class TextColorMode { AUTO, LIGHT, DARK }
 
+enum class ThemedIconStyle { MATERIAL_YOU, MINIMALIST }
+
 private val Context.dataStore by preferencesDataStore(name = "victoria_prefs")
 
 class Prefs(private val context: Context) {
@@ -58,6 +60,8 @@ class Prefs(private val context: Context) {
         val SHOW_ALPHABET = booleanPreferencesKey("show_alphabet")
         val ALIGN_RIGHT = booleanPreferencesKey("align_right")
         val ICON_PACK_PACKAGE = stringPreferencesKey("icon_pack_package")
+        val THEMED_ICONS = booleanPreferencesKey("themed_icons")
+        val THEMED_ICON_STYLE = stringPreferencesKey("themed_icon_style")
         val NOW_PLAYING_ENABLED = booleanPreferencesKey("now_playing_enabled")
         val SHOW_APP_NOTIFICATIONS = booleanPreferencesKey("show_app_notifications")
         val FOLDER_WINDOW_POPUP = booleanPreferencesKey("folder_window_popup")
@@ -157,6 +161,11 @@ class Prefs(private val context: Context) {
     val alignRight: Flow<Boolean> = data.map { it[Keys.ALIGN_RIGHT] ?: false }.distinctUntilChanged()
 
     val iconPackPackage: Flow<String?> = data.map { it[Keys.ICON_PACK_PACKAGE] }.distinctUntilChanged()
+    val themedIcons: Flow<Boolean> = data.map { it[Keys.THEMED_ICONS] ?: false }.distinctUntilChanged()
+    val themedIconStyle: Flow<ThemedIconStyle> = data.map {
+        runCatching { ThemedIconStyle.valueOf(it[Keys.THEMED_ICON_STYLE] ?: ThemedIconStyle.MATERIAL_YOU.name) }
+            .getOrDefault(ThemedIconStyle.MATERIAL_YOU)
+    }.distinctUntilChanged()
 
     val nowPlayingEnabled: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_ENABLED] ?: false }.distinctUntilChanged()
     val showAppNotifications: Flow<Boolean> = data.map { it[Keys.SHOW_APP_NOTIFICATIONS] ?: true }.distinctUntilChanged()
@@ -376,6 +385,14 @@ class Prefs(private val context: Context) {
         context.dataStore.edit { pref ->
             if (pkg.isNullOrBlank()) pref.remove(Keys.ICON_PACK_PACKAGE) else pref[Keys.ICON_PACK_PACKAGE] = pkg
         }
+    }
+
+    suspend fun setThemedIcons(v: Boolean) {
+        context.dataStore.edit { it[Keys.THEMED_ICONS] = v }
+    }
+
+    suspend fun setThemedIconStyle(v: ThemedIconStyle) {
+        context.dataStore.edit { it[Keys.THEMED_ICON_STYLE] = v.name }
     }
 
     suspend fun setWidgetId(id: Int) {

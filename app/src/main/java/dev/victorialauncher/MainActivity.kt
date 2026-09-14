@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import dev.victorialauncher.data.AppFont
+import dev.victorialauncher.data.ThemedIconStyle
 import dev.victorialauncher.service.StatusBarFader
 import dev.victorialauncher.ui.VictoriaNavHost
 import dev.victorialauncher.ui.common.IconConfig
@@ -60,8 +61,10 @@ class MainActivity : ComponentActivity() {
             val font by app.prefs.font.collectAsState(initial = AppFont.SYSTEM)
             val iconPackPackage by app.prefs.iconPackPackage.collectAsState(initial = null)
             val iconOverrides by app.prefs.iconOverrides.collectAsState(initial = emptyMap())
-            val iconConfig = remember(iconPackPackage, iconOverrides) {
-                IconConfig(iconPackPackage, iconOverrides)
+            val themedIcons by app.prefs.themedIcons.collectAsState(initial = false)
+            val themedIconStyle by app.prefs.themedIconStyle.collectAsState(initial = ThemedIconStyle.MATERIAL_YOU)
+            val iconConfig = remember(iconPackPackage, iconOverrides, themedIcons, themedIconStyle) {
+                IconConfig(iconPackPackage, iconOverrides, themedIcons, themedIconStyle)
             }
 
             VictoriaTheme(font = font) {

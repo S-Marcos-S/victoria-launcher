@@ -90,6 +90,11 @@
     <string name="settings_icon_pack">Pacote de ícones</string>
     <string name="settings_icon_pack_default">Padrão</string>
     <string name="settings_icon_pack_none">Nenhum pacote de ícones encontrado neste dispositivo.</string>
+    <string name="settings_themed_icons">Ícones temáticos</string>
+    <string name="settings_themed_icons_detail">Aplica cores dinâmicas do Monet do papel de parede a todos os aplicativos</string>
+    <string name="settings_themed_icons_style">Estilo dos ícones</string>
+    <string name="settings_themed_icons_style_material_you">Material You</string>
+    <string name="settings_themed_icons_style_minimalist">Minimalista</string>
     <string name="settings_icon_size">Tamanho dos ícones</string>
     <string name="settings_text_size">Tamanho do texto</string>
     <string name="settings_favorite_spacing">Espaçamento entre favoritos</string>
