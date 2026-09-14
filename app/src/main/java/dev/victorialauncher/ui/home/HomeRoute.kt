@@ -11,7 +11,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.zIndex
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -488,6 +493,40 @@ fun HomeRoute(
             }
         }
 
+        if (settings.dynamicButtonEnabled && !appListVisible && !homeEditMode && !showHomeOptions) {
+            val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            val dynamicButtonBottom = maxOf(32.dp, navBarBottom + 16.dp)
+            val isLeft = scrub.side == EdgeSide.LEFT
+            val dynamicBtnAlignment = if (isLeft) Alignment.BottomStart else Alignment.BottomEnd
+
+            val clickApp = settings.dynamicButtonClickApp?.let { appsByKey[it] }
+            val swipeUpApp = settings.dynamicButtonSwipeUpApp?.let { appsByKey[it] }
+            val swipeDownApp = settings.dynamicButtonSwipeDownApp?.let { appsByKey[it] }
+
+            DynamicActionButton(
+                clickApp = clickApp,
+                swipeUpApp = swipeUpApp,
+                swipeDownApp = swipeDownApp,
+                side = scrub.side,
+                hapticsEnabled = settings.hapticsEnabled,
+                contentColor = settings.contentColor,
+                onLaunch = { appInfo ->
+                    app.appRepository.launch(appInfo.componentName)
+                },
+                onOpenSettings = {
+                    onNavigate("settings/dynamic_button")
+                },
+                modifier = Modifier
+                    .align(dynamicBtnAlignment)
+                    .padding(
+                        start = if (isLeft) 58.dp else 0.dp,
+                        end = if (!isLeft) 58.dp else 0.dp,
+                        bottom = dynamicButtonBottom,
+                    )
+                    .zIndex(2f),
+            )
+        }
+
         HomeOptionsBottomSheet(
             visible = showHomeOptions,
             onDismiss = { showHomeOptions = false },
@@ -540,4 +579,8 @@ data class HomeSettings(
     val clockStyle: ClockStyle = ClockStyle.CLASSIC,
     val showAppNotifications: Boolean = false,
     val folderWindowPopup: Boolean = true,
+    val dynamicButtonEnabled: Boolean = true,
+    val dynamicButtonClickApp: String? = null,
+    val dynamicButtonSwipeUpApp: String? = null,
+    val dynamicButtonSwipeDownApp: String? = null,
 )

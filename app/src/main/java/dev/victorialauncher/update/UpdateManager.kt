@@ -61,7 +61,8 @@ data class UpdateInfo(
 
 object UpdateManager {
     private const val GITHUB_REPO = "S-Marcos-S/victoria-launcher"
-    private const val RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases/tags/latest"
+    private const val RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=5"
+    private const val FALLBACK_RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases/tags/latest"
 
     private val _updateAvailable = MutableStateFlow<UpdateInfo?>(null)
     val updateAvailable: StateFlow<UpdateInfo?> = _updateAvailable.asStateFlow()
@@ -82,136 +83,212 @@ object UpdateManager {
 
         coroutineScope.launch(Dispatchers.IO) {
             try {
-                val url = URL(RELEASES_API_URL)
-                val conn = (url.openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 8000
-                    readTimeout = 8000
-                    setRequestProperty("Accept", "application/vnd.github.v3+json")
-                    setRequestProperty("User-Agent", "VictoriaLauncher/${BuildConfig.VERSION_NAME}")
+                var responseText: String? = null
+                // 1. Tenta obter a lista recente de releases
+                try {
+                    val url = URL(RELEASES_API_URL)
+                    val conn = (url.openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 8000
+                        readTimeout = 8000
+                        setRequestProperty("Accept", "application/vnd.github.v3+json")
+                        setRequestProperty("User-Agent", "VictoriaLauncher/${BuildConfig.VERSION_NAME}")
+                    }
+                    if (conn.responseCode == 200) {
+                        responseText = conn.inputStream.bufferedReader().use { it.readText() }
+                    }
+                } catch (_: Exception) {}
+
+                // Fallback para tag latest direta se a lista falhar
+                if (responseText.isNullOrBlank()) {
+                    try {
+                        val fallbackUrl = URL(FALLBACK_RELEASES_API_URL)
+                        val conn = (fallbackUrl.openConnection() as HttpURLConnection).apply {
+                            connectTimeout = 8000
+                            readTimeout = 8000
+                            setRequestProperty("Accept", "application/vnd.github.v3+json")
+                            setRequestProperty("User-Agent", "VictoriaLauncher/${BuildConfig.VERSION_NAME}")
+                        }
+                        if (conn.responseCode == 200) {
+                            responseText = conn.inputStream.bufferedReader().use { it.readText() }
+                        }
+                    } catch (_: Exception) {}
                 }
 
-                if (conn.responseCode == 200) {
-                    val response = conn.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(response)
-                    val tagName = json.optString("tag_name", "latest")
-                    val releaseName = json.optString("name", "")
-                    val body = json.optString("body", "")
+                if (!responseText.isNullOrBlank()) {
+                    val releasesList = mutableListOf<JSONObject>()
+                    val trimmed = responseText.trim()
+                    if (trimmed.startsWith("[")) {
+                        val arr = org.json.JSONArray(trimmed)
+                        for (i in 0 until arr.length()) {
+                            val item = arr.optJSONObject(i)
+                            if (item != null) releasesList.add(item)
+                        }
+                    } else if (trimmed.startsWith("{")) {
+                        releasesList.add(JSONObject(trimmed))
+                    }
 
-                    // Extrai commit SHA da descrição se presente: "Built automatically from commit `...`."
-                    val shaRegex = Regex("""commit [`']?([a-f0-9]{7,40})""", RegexOption.IGNORE_CASE)
-                    val remoteSha = shaRegex.find(body)?.groupValues?.get(1)?.trim()
+                    if (releasesList.isNotEmpty()) {
+                        val currentVersion = BuildConfig.VERSION_NAME
+                        val currentSha = BuildConfig.GIT_SHA.trim()
+                        val currentBuildTime = BuildConfig.BUILD_TIME_MILLIS
 
-                    val assets = json.optJSONArray("assets")
-                    var apkUrl: String? = null
-                    var apkSize: Long = 0L
-                    var updatedAtMs: Long = 0L
+                        // Procura primeiro uma release oficial com versão maior que a atual
+                        var chosenRelease: JSONObject? = null
+                        var chosenVersion: String? = null
 
-                    if (assets != null) {
-                        for (i in 0 until assets.length()) {
-                            val asset = assets.getJSONObject(i)
-                            val name = asset.optString("name", "")
-                            if (name.contains("release") && name.endsWith(".apk")) {
-                                apkUrl = asset.optString("browser_download_url")
-                                apkSize = asset.optLong("size", 0L)
-                                val updatedStr = asset.optString("updated_at", "")
-                                if (updatedStr.isNotBlank()) {
-                                    try {
-                                        updatedAtMs = Instant.parse(updatedStr).toEpochMilli()
-                                    } catch (_: Exception) {}
-                                }
+                        for (rel in releasesList) {
+                            val tag = rel.optString("tag_name", "")
+                            val name = rel.optString("name", "")
+                            val v = extractVersion(tag, name)
+                            if (v != null && isVersionGreater(v, currentVersion)) {
+                                chosenRelease = rel
+                                chosenVersion = v
                                 break
                             }
                         }
-                    }
 
-                    if (apkUrl.isNullOrBlank()) {
-                        apkUrl = "https://github.com/$GITHUB_REPO/releases/download/latest/victoria-launcher-release.apk"
-                    }
-
-                    val currentSha = BuildConfig.GIT_SHA.trim()
-                    val currentBuildTime = BuildConfig.BUILD_TIME_MILLIS
-
-                    val hasNewerBuild = when {
-                        // Se o commit SHA é conhecido nos dois lados, compara diretamente:
-                        !remoteSha.isNullOrBlank() && currentSha.isNotBlank() -> {
-                            val isSameSha = remoteSha.startsWith(currentSha, ignoreCase = true) ||
-                                    currentSha.startsWith(remoteSha, ignoreCase = true)
-                            !isSameSha
-                        }
-                        // Fallback para comparação por timestamp:
-                        updatedAtMs > 0L && currentBuildTime > 0L -> {
-                            updatedAtMs > currentBuildTime + 30_000L
-                        }
-                        else -> false
-                    }
-
-                    lastCheckTimeMs = now
-                    if (hasNewerBuild) {
-                        // Obtém informações detalhadas de mudanças (body do CHANGELOG ou commit message)
-                        var changelog = ""
-                        if (body.isNotBlank()) {
-                            val lines = body.lines().filter {
-                                !it.contains("Direct APK Download") &&
-                                        !it.contains("releases/download") &&
-                                        !it.startsWith("- [Download") &&
-                                        !it.contains("Built automatically from commit")
-                            }
-                            val candidate = lines.joinToString("\n").trim()
-                            if (candidate.isNotBlank() && candidate.lines().size >= 2) {
-                                changelog = candidate
-                            }
+                        // Se nenhuma versão for estritamente maior, pega a primeira release (ou latest) para comparar commit SHA/data
+                        if (chosenRelease == null) {
+                            chosenRelease = releasesList.first()
                         }
 
-                        if (changelog.isBlank() && !remoteSha.isNullOrBlank()) {
-                            try {
-                                val commitUrl = URL("https://api.github.com/repos/$GITHUB_REPO/commits/$remoteSha")
-                                val commitConn = (commitUrl.openConnection() as HttpURLConnection).apply {
-                                    connectTimeout = 5000
-                                    readTimeout = 5000
-                                    setRequestProperty("Accept", "application/vnd.github.v3+json")
-                                    setRequestProperty("User-Agent", "VictoriaLauncher/${BuildConfig.VERSION_NAME}")
-                                }
-                                if (commitConn.responseCode == 200) {
-                                    val commitResp = commitConn.inputStream.bufferedReader().use { it.readText() }
-                                    val commitJson = JSONObject(commitResp)
-                                    val msg = commitJson.optJSONObject("commit")?.optString("message", "")
-                                    if (!msg.isNullOrBlank()) {
-                                        changelog = msg.trim()
+                        val tagName = chosenRelease.optString("tag_name", "latest")
+                        val releaseName = chosenRelease.optString("name", "")
+                        val body = chosenRelease.optString("body", "")
+
+                        // Extrai commit SHA da descrição se presente: "Built automatically from commit `...`."
+                        val shaRegex = Regex("""commit [`']?([a-f0-9]{7,40})""", RegexOption.IGNORE_CASE)
+                        val remoteSha = shaRegex.find(body)?.groupValues?.get(1)?.trim()
+
+                        val assets = chosenRelease.optJSONArray("assets")
+                        var apkUrl: String? = null
+                        var apkSize: Long = 0L
+                        var updatedAtMs: Long = 0L
+
+                        if (assets != null) {
+                            for (i in 0 until assets.length()) {
+                                val asset = assets.getJSONObject(i)
+                                val name = asset.optString("name", "")
+                                if (name.contains("release") && name.endsWith(".apk")) {
+                                    apkUrl = asset.optString("browser_download_url")
+                                    apkSize = asset.optLong("size", 0L)
+                                    val updatedStr = asset.optString("updated_at", "")
+                                    if (updatedStr.isNotBlank()) {
+                                        try {
+                                            updatedAtMs = Instant.parse(updatedStr).toEpochMilli()
+                                        } catch (_: Exception) {}
                                     }
+                                    break
                                 }
-                            } catch (_: Exception) {}
+                            }
                         }
 
-                        if (changelog.isBlank()) {
-                            changelog = "Nova versão compilada automaticamente via GitHub Actions."
+                        if (apkUrl.isNullOrBlank()) {
+                            apkUrl = "https://github.com/$GITHUB_REPO/releases/download/latest/victoria-launcher-release.apk"
                         }
 
-                        // Extrai a versão se estiver indicada no nome da release, tag ou no changelog
-                        val versionRegex = Regex("""v?(\d+\.\d+(?:\.\d+)?)""")
-                        val extractedVersion = versionRegex.find(releaseName)?.value
-                            ?: versionRegex.find(tagName)?.value
-                            ?: versionRegex.find(body)?.value
-                            ?: BuildConfig.VERSION_NAME
+                        val isNewerVersion = chosenVersion != null && isVersionGreater(chosenVersion, currentVersion)
 
-                        _updateAvailable.value = UpdateInfo(
-                            hasUpdate = true,
-                            tagName = tagName,
-                            releaseName = releaseName,
-                            commitSha = remoteSha,
-                            versionName = extractedVersion,
-                            changelog = changelog,
-                            apkDownloadUrl = apkUrl,
-                            apkSize = apkSize,
-                            publishedAtMs = updatedAtMs,
-                        )
-                    } else {
-                        _updateAvailable.value = null
+                        val hasNewerBuild = when {
+                            isNewerVersion -> true
+                            // Se o commit SHA é conhecido nos dois lados, compara diretamente:
+                            !remoteSha.isNullOrBlank() && currentSha.isNotBlank() -> {
+                                val isSameSha = remoteSha.startsWith(currentSha, ignoreCase = true) ||
+                                        currentSha.startsWith(remoteSha, ignoreCase = true)
+                                !isSameSha
+                            }
+                            // Fallback para comparação por timestamp:
+                            updatedAtMs > 0L && currentBuildTime > 0L -> {
+                                updatedAtMs > currentBuildTime + 30_000L
+                            }
+                            else -> false
+                        }
+
+                        lastCheckTimeMs = now
+                        if (hasNewerBuild) {
+                            var changelog = ""
+                            if (body.isNotBlank()) {
+                                val lines = body.lines().filter {
+                                    !it.contains("Direct APK Download") &&
+                                            !it.contains("releases/download") &&
+                                            !it.startsWith("- [Download") &&
+                                            !it.contains("Built automatically from commit")
+                                }
+                                val candidate = lines.joinToString("\n").trim()
+                                if (candidate.isNotBlank() && candidate.lines().size >= 2) {
+                                    changelog = candidate
+                                }
+                            }
+
+                            if (changelog.isBlank() && !remoteSha.isNullOrBlank()) {
+                                try {
+                                    val commitUrl = URL("https://api.github.com/repos/$GITHUB_REPO/commits/$remoteSha")
+                                    val commitConn = (commitUrl.openConnection() as HttpURLConnection).apply {
+                                        connectTimeout = 5000
+                                        readTimeout = 5000
+                                        setRequestProperty("Accept", "application/vnd.github.v3+json")
+                                        setRequestProperty("User-Agent", "VictoriaLauncher/${BuildConfig.VERSION_NAME}")
+                                    }
+                                    if (commitConn.responseCode == 200) {
+                                        val commitResp = commitConn.inputStream.bufferedReader().use { it.readText() }
+                                        val commitJson = JSONObject(commitResp)
+                                        val msg = commitJson.optJSONObject("commit")?.optString("message", "")
+                                        if (!msg.isNullOrBlank()) {
+                                            changelog = msg.trim()
+                                        }
+                                    }
+                                } catch (_: Exception) {}
+                            }
+
+                            if (changelog.isBlank()) {
+                                changelog = "Nova versão compilada automaticamente via GitHub Actions."
+                            }
+
+                            val displayVer = chosenVersion
+                                ?: extractVersion(tagName, releaseName)
+                                ?: BuildConfig.VERSION_NAME
+
+                            _updateAvailable.value = UpdateInfo(
+                                hasUpdate = true,
+                                tagName = tagName,
+                                releaseName = releaseName,
+                                commitSha = remoteSha,
+                                versionName = displayVer,
+                                changelog = changelog,
+                                apkDownloadUrl = apkUrl,
+                                apkSize = apkSize,
+                                publishedAtMs = updatedAtMs,
+                            )
+                        } else {
+                            _updateAvailable.value = null
+                        }
                     }
                 }
             } catch (_: Exception) {
                 // Silencia erros de conexão offline
             }
         }
+    }
+
+    private fun extractVersion(tagName: String, releaseName: String): String? {
+        val versionRegex = Regex("""v?([0-9]+(?:\.[0-9]+)+)""")
+        return versionRegex.find(tagName)?.groupValues?.get(1)
+            ?: versionRegex.find(releaseName)?.groupValues?.get(1)
+    }
+
+    private fun isVersionGreater(remote: String, current: String): Boolean {
+        val cleanRemote = remote.trim().removePrefix("v").removePrefix("V")
+        val cleanCurrent = current.trim().removePrefix("v").removePrefix("V")
+        val remoteParts = cleanRemote.split(".").mapNotNull { it.toIntOrNull() }
+        val currentParts = cleanCurrent.split(".").mapNotNull { it.toIntOrNull() }
+        val maxLen = maxOf(remoteParts.size, currentParts.size)
+        for (i in 0 until maxLen) {
+            val r = remoteParts.getOrElse(i) { 0 }
+            val c = currentParts.getOrElse(i) { 0 }
+            if (r > c) return true
+            if (r < c) return false
+        }
+        return false
     }
 
     fun startDownload(context: Context, update: UpdateInfo) {

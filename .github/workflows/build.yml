@@ -98,6 +98,23 @@ jobs:
           path: artifacts/victoria-launcher-debug.apk
           retention-days: 30
 
+      - name: Detect Version and Check for New Release
+        id: version_check
+        run: |
+          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
+          TAG_NAME="v${VERSION_NAME}"
+          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+
+          # Verifica se a tag já existe no repositório remoto
+          if git ls-remote --tags origin "refs/tags/${TAG_NAME}" | grep -q "${TAG_NAME}"; then
+            echo "Tag ${TAG_NAME} already exists in repository. Skipping version release creation."
+            echo "IS_NEW_VERSION=false" >> $GITHUB_OUTPUT
+          else
+            echo "Tag ${TAG_NAME} does NOT exist yet. A new version release will be created!"
+            echo "IS_NEW_VERSION=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Append download links to changelog
         run: |
           cat >> CHANGELOG_LATEST.md <<EOF
@@ -109,12 +126,26 @@ jobs:
           Built automatically from commit \`${{ github.sha }}\`.
           EOF
 
+      - name: Create New Version Release
+        if: (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && steps.version_check.outputs.IS_NEW_VERSION == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version_check.outputs.TAG_NAME }}
+          name: "Victoria Launcher ${{ steps.version_check.outputs.TAG_NAME }}"
+          body_path: CHANGELOG_LATEST.md
+          prerelease: false
+          files: |
+            artifacts/victoria-launcher-release.apk
+            artifacts/victoria-launcher-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish GitHub Release for direct download
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "Victoria Launcher - Latest APKs"
+          name: "Victoria Launcher - Latest APKs (${{ steps.version_check.outputs.TAG_NAME }})"
           body_path: CHANGELOG_LATEST.md
           prerelease: false
           files: |

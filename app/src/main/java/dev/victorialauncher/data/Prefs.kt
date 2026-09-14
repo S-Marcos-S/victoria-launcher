@@ -65,6 +65,10 @@ class Prefs(private val context: Context) {
         val WIDGET_ID = intPreferencesKey("widget_id")
         val WIDGET_POSITION = intPreferencesKey("widget_position")
         val WIDGET_HEIGHT_DP = intPreferencesKey("widget_height_dp")
+        val DYNAMIC_BUTTON_ENABLED = booleanPreferencesKey("dynamic_button_enabled")
+        val DYNAMIC_BUTTON_CLICK_APP = stringPreferencesKey("dynamic_button_click_app")
+        val DYNAMIC_BUTTON_SWIPE_UP_APP = stringPreferencesKey("dynamic_button_swipe_up_app")
+        val DYNAMIC_BUTTON_SWIPE_DOWN_APP = stringPreferencesKey("dynamic_button_swipe_down_app")
     }
 
     private val data get() = context.dataStore.data
@@ -166,6 +170,11 @@ class Prefs(private val context: Context) {
     /** Index into the merged (favorites + widget) home list where the widget sits. 0 = top. */
     val widgetPosition: Flow<Int> = data.map { it[Keys.WIDGET_POSITION] ?: 0 }.distinctUntilChanged()
     val widgetHeightDp: Flow<Int> = data.map { it[Keys.WIDGET_HEIGHT_DP] ?: 180 }.distinctUntilChanged()
+
+    val dynamicButtonEnabled: Flow<Boolean> = data.map { it[Keys.DYNAMIC_BUTTON_ENABLED] ?: true }.distinctUntilChanged()
+    val dynamicButtonClickApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_CLICK_APP] }.distinctUntilChanged()
+    val dynamicButtonSwipeUpApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_SWIPE_UP_APP] }.distinctUntilChanged()
+    val dynamicButtonSwipeDownApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP] }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->
@@ -383,6 +392,28 @@ class Prefs(private val context: Context) {
 
     suspend fun setWidgetHeightDp(v: Int) {
         context.dataStore.edit { it[Keys.WIDGET_HEIGHT_DP] = v }
+    }
+
+    suspend fun setDynamicButtonEnabled(v: Boolean) {
+        context.dataStore.edit { it[Keys.DYNAMIC_BUTTON_ENABLED] = v }
+    }
+
+    suspend fun setDynamicButtonClickApp(key: String?) {
+        context.dataStore.edit { pref ->
+            if (key.isNullOrBlank()) pref.remove(Keys.DYNAMIC_BUTTON_CLICK_APP) else pref[Keys.DYNAMIC_BUTTON_CLICK_APP] = key
+        }
+    }
+
+    suspend fun setDynamicButtonSwipeUpApp(key: String?) {
+        context.dataStore.edit { pref ->
+            if (key.isNullOrBlank()) pref.remove(Keys.DYNAMIC_BUTTON_SWIPE_UP_APP) else pref[Keys.DYNAMIC_BUTTON_SWIPE_UP_APP] = key
+        }
+    }
+
+    suspend fun setDynamicButtonSwipeDownApp(key: String?) {
+        context.dataStore.edit { pref ->
+            if (key.isNullOrBlank()) pref.remove(Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP) else pref[Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP] = key
+        }
     }
 
     private fun jsonToMap(json: String?): Map<String, String> {

@@ -185,4 +185,21 @@
     <string name="now_playing_previous">Anterior</string>
     <string name="now_playing_play_pause">Reproduzir/Pausar</string>
     <string name="now_playing_next">Próxima</string>
+
+    <!-- Botão Dinâmico -->
+    <string name="settings_dynamic_button">Botão dinâmico</string>
+    <string name="settings_dynamic_button_detail">Botão de atalho com gestos na parte inferior da tela inicial</string>
+    <string name="settings_dynamic_button_title">Botão dinâmico</string>
+    <string name="settings_dynamic_button_enable">Exibir botão dinâmico</string>
+    <string name="settings_dynamic_button_enable_detail">Mostra um botão dinâmico ao lado do alfabeto na tela inicial</string>
+    <string name="settings_dynamic_button_preview">Prévia interativa</string>
+    <string name="settings_dynamic_button_preview_hint">Toque ou puxe para cima/baixo para sentir a animação de borracha</string>
+    <string name="settings_dynamic_button_tap_action">Ação ao tocar</string>
+    <string name="settings_dynamic_button_swipe_up_action">Ação ao puxar para cima</string>
+    <string name="settings_dynamic_button_swipe_down_action">Ação ao puxar para baixo</string>
+    <string name="settings_dynamic_button_none">Nenhum</string>
+    <string name="settings_dynamic_button_select_app">Selecionar app…</string>
+    <string name="settings_dynamic_button_pick_title">Escolher app para %1$s</string>
+    <string name="settings_dynamic_button_search_hint">Buscar apps instalados…</string>
+    <string name="settings_dynamic_button_clear">Limpar ação</string>
 </resources>

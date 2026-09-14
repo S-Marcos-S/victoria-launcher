@@ -184,4 +184,21 @@
     <string name="now_playing_previous">Previous</string>
     <string name="now_playing_play_pause">Play/pause</string>
     <string name="now_playing_next">Next</string>
+
+    <!-- Dynamic Button -->
+    <string name="settings_dynamic_button">Dynamic button</string>
+    <string name="settings_dynamic_button_detail">Quick gesture button at the bottom of the home screen</string>
+    <string name="settings_dynamic_button_title">Dynamic button</string>
+    <string name="settings_dynamic_button_enable">Show dynamic button</string>
+    <string name="settings_dynamic_button_enable_detail">Display a dynamic button next to the alphabet on the home screen</string>
+    <string name="settings_dynamic_button_preview">Interactive preview</string>
+    <string name="settings_dynamic_button_preview_hint">Tap or pull up/down to feel the rubber animation</string>
+    <string name="settings_dynamic_button_tap_action">Tap action</string>
+    <string name="settings_dynamic_button_swipe_up_action">Swipe up action</string>
+    <string name="settings_dynamic_button_swipe_down_action">Swipe down action</string>
+    <string name="settings_dynamic_button_none">None</string>
+    <string name="settings_dynamic_button_select_app">Select app…</string>
+    <string name="settings_dynamic_button_pick_title">Choose app for %1$s</string>
+    <string name="settings_dynamic_button_search_hint">Search installed apps…</string>
+    <string name="settings_dynamic_button_clear">Clear action</string>
 </resources>

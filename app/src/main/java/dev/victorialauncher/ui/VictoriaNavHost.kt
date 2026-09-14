@@ -45,6 +45,7 @@ import dev.victorialauncher.ui.home.FavoriteEntry
 import dev.victorialauncher.ui.home.HomeRoute
 import dev.victorialauncher.ui.home.HomeSettings
 import dev.victorialauncher.ui.settings.ClockStylePickerScreen
+import dev.victorialauncher.ui.settings.DynamicButtonSettingsScreen
 import dev.victorialauncher.ui.settings.FolderAppsScreen
 import dev.victorialauncher.ui.settings.HiddenAppsScreen
 import dev.victorialauncher.ui.settings.ManageFavoritesScreen
@@ -135,6 +136,11 @@ fun VictoriaNavHost(
     val folders by app.prefs.folders.collectAsState(initial = emptyList())
     val contentColor = rememberContentColor(textColorMode)
 
+    val dynamicButtonEnabled by app.prefs.dynamicButtonEnabled.collectAsState(initial = true)
+    val dynamicButtonClickApp by app.prefs.dynamicButtonClickApp.collectAsState(initial = null)
+    val dynamicButtonSwipeUpApp by app.prefs.dynamicButtonSwipeUpApp.collectAsState(initial = null)
+    val dynamicButtonSwipeDownApp by app.prefs.dynamicButtonSwipeDownApp.collectAsState(initial = null)
+
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
     val foldersById = remember(folders) { folders.associateBy { it.id } }
 
@@ -180,6 +186,10 @@ fun VictoriaNavHost(
         clockStyle = clockStyle,
         showAppNotifications = showAppNotifications,
         folderWindowPopup = folderWindowPopup,
+        dynamicButtonEnabled = dynamicButtonEnabled,
+        dynamicButtonClickApp = dynamicButtonClickApp,
+        dynamicButtonSwipeUpApp = dynamicButtonSwipeUpApp,
+        dynamicButtonSwipeDownApp = dynamicButtonSwipeDownApp,
     )
 
     var pendingIconTarget by remember { mutableStateOf<String?>(null) }
@@ -336,6 +346,25 @@ fun VictoriaNavHost(
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     )
                 },
+                onOpenDynamicButtonSettings = { navController.navigate("settings/dynamic_button") },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable("settings/dynamic_button") {
+            DynamicButtonSettingsScreen(
+                allApps = allApps,
+                appsByKey = appsByKey,
+                enabled = dynamicButtonEnabled,
+                clickAppKey = dynamicButtonClickApp,
+                swipeUpAppKey = dynamicButtonSwipeUpApp,
+                swipeDownAppKey = dynamicButtonSwipeDownApp,
+                hapticsEnabled = hapticsEnabled,
+                edgeSide = edgeSide,
+                onSetEnabled = { scope.launch { app.prefs.setDynamicButtonEnabled(it) } },
+                onSetClickApp = { scope.launch { app.prefs.setDynamicButtonClickApp(it) } },
+                onSetSwipeUpApp = { scope.launch { app.prefs.setDynamicButtonSwipeUpApp(it) } },
+                onSetSwipeDownApp = { scope.launch { app.prefs.setDynamicButtonSwipeDownApp(it) } },
                 onBack = { navController.popBackStack() },
             )
         }

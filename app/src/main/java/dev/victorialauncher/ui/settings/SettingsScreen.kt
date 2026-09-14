@@ -105,6 +105,7 @@ fun SettingsScreen(
     onOpenHiddenApps: () -> Unit,
     onOpenFavorites: () -> Unit,
     onOpenNotificationSettings: () -> Unit,
+    onOpenDynamicButtonSettings: () -> Unit,
     onBack: () -> Unit,
 ) {
     val surface = MaterialTheme.colorScheme.surface
@@ -265,6 +266,29 @@ fun SettingsScreen(
                         if (!shadeGestureReady) {
                             FilledChip(stringResource(R.string.settings_enable), selected = false, onClick = onOpenAccessibilitySettings)
                         }
+                    }
+                    RowDivider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onOpenDynamicButtonSettings)
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.settings_dynamic_button), style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                stringResource(R.string.settings_dynamic_button_detail),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            )
+                        }
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            contentDescription = null,
+                            modifier = Modifier.padding(4.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                        )
                     }
                 }
             }
