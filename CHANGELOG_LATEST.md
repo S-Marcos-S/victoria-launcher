@@ -3,6 +3,8 @@
 - **Novo Botão Dinâmico na Tela Inicial:**
   - Implementado um botão de atalhos dinâmico posicionado estrategicamente na parte inferior da tela, ao lado da coluna do alfabeto, facilitando o alcance ergonômico com uma mão.
   - O botão adapta-se automaticamente à mão preferida do usuário (lado esquerdo ou direito), posicionando-se ao lado do alfabeto sem sobrepor as letras e sem interferir na zona de deslizamento da lista A-Z.
+  - **Posicionamento Elevado Otimizado:** O botão foi elevado para ficar com espaçamento confortável acima da barra de navegação do sistema, permitindo realizar o gesto de puxar para baixo com total amplitude sem interferir nos gestos de navegação do sistema.
+  - **Ícone Tematizado com Cor Dinâmica do Sistema:** O botão dinâmico exibe o ícone do aplicativo definido para o clique renderizado com a cor dinâmica do sistema (Material You dynamic theming), aproveitando a camada monocromática oficial do app (Android 13+) ou processamento inteligente de contraste, mantendo perfeita coerência visual com o papel de parede.
   - Totalmente estável e visível com exclusividade na tela inicial (ocultando-se suavemente ao abrir a lista de aplicativos ou entrar em modo de edição).
 
 - **Três Gestos Personalizáveis:**

@@ -2,17 +2,26 @@
 package dev.victorialauncher.ui.common
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color as AndroidColor
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -149,6 +158,139 @@ fun AppIcon(app: AppInfo, sizeDp: Int, modifier: Modifier = Modifier) {
     } else {
         Box(modifier = modifier.size(sizeDp.dp))
     }
+}
+
+/**
+ * Renders an app icon using the system dynamic color (monochrome / themed style).
+ * It extracts the official monochrome layer (on Android 13+) if available, or processes
+ * the foreground layer into a high-contrast white alpha-mask tinted via [BlendMode.SrcIn].
+ */
+@Composable
+fun ThemedAppIcon(
+    app: AppInfo,
+    sizeDp: Int,
+    modifier: Modifier = Modifier,
+    tintColor: Color = MaterialTheme.colorScheme.primary,
+) {
+    val context = LocalContext.current
+    val victoriaApp = context.applicationContext as VictoriaApp
+    val config = LocalIconConfig.current
+    val iconPackPackage = config.pack
+    val overrideValue = config.overrides[app.key]
+    val px = with(LocalDensity.current) { sizeDp.dp.roundToPx() }.coerceAtLeast(1)
+
+    val cacheKey = "mono_" + iconCacheKey(app, iconPackPackage, overrideValue, px)
+    val bitmap: ImageBitmap? = remember(cacheKey) {
+        IconCache.get(cacheKey) ?: runCatching {
+            val drawable = resolveDrawable(context, victoriaApp, app, iconPackPackage, overrideValue)
+            generateMonochromeBitmap(drawable, px).asImageBitmap().also { IconCache.put(cacheKey, it) }
+        }.getOrNull()
+    }
+
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap,
+            contentDescription = app.label,
+            colorFilter = ColorFilter.tint(tintColor, BlendMode.SrcIn),
+            modifier = modifier.size(sizeDp.dp),
+        )
+    } else {
+        Box(modifier = modifier.size(sizeDp.dp))
+    }
+}
+
+internal fun generateMonochromeBitmap(drawable: Drawable, px: Int): Bitmap {
+    val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+
+    // 1. Android 13+ official monochrome adaptive icon layer
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && drawable is AdaptiveIconDrawable) {
+        val mono = drawable.monochrome
+        if (mono != null) {
+            val layer = mono.mutate()
+            val scale = 1.35f
+            val offset = ((px * scale - px) / 2f).toInt()
+            layer.setBounds(-offset, -offset, px + offset, px + offset)
+            layer.draw(canvas)
+            convertToWhiteMask(bitmap)
+            return bitmap
+        }
+    }
+
+    // 2. Adaptive icon foreground layer fallback
+    if (drawable is AdaptiveIconDrawable) {
+        val fg = drawable.foreground.mutate()
+        val scale = 1.35f
+        val offset = ((px * scale - px) / 2f).toInt()
+        fg.setBounds(-offset, -offset, px + offset, px + offset)
+        fg.draw(canvas)
+        convertToWhiteMask(bitmap)
+        return bitmap
+    }
+
+    // 3. Fallback for non-adaptive drawables (legacy or custom icons)
+    val target = drawable.mutate()
+    target.setBounds(0, 0, px, px)
+    target.draw(canvas)
+    convertToWhiteMask(bitmap)
+    return bitmap
+}
+
+private fun convertToWhiteMask(bitmap: Bitmap) {
+    val width = bitmap.width
+    val height = bitmap.height
+    val count = width * height
+    val pixels = IntArray(count)
+    bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+    var minLum = 1.0f
+    var maxLum = 0.0f
+    var hasVisiblePixels = false
+
+    for (i in 0 until count) {
+        val pixel = pixels[i]
+        val a = AndroidColor.alpha(pixel)
+        if (a > 25) {
+            val r = AndroidColor.red(pixel)
+            val g = AndroidColor.green(pixel)
+            val b = AndroidColor.blue(pixel)
+            val lum = (0.299f * r + 0.587f * g + 0.114f * b) / 255f
+            if (lum < minLum) minLum = lum
+            if (lum > maxLum) maxLum = lum
+            hasVisiblePixels = true
+        }
+    }
+
+    if (!hasVisiblePixels) return
+
+    val contrast = maxLum - minLum
+    val hasContrast = contrast > 0.30f
+
+    for (i in 0 until count) {
+        val pixel = pixels[i]
+        val a = AndroidColor.alpha(pixel)
+        if (a == 0) {
+            pixels[i] = 0
+            continue
+        }
+
+        val r = AndroidColor.red(pixel)
+        val g = AndroidColor.green(pixel)
+        val b = AndroidColor.blue(pixel)
+        val lum = (0.299f * r + 0.587f * g + 0.114f * b) / 255f
+
+        val finalAlpha = if (hasContrast) {
+            val normLum = ((lum - minLum) / contrast).coerceIn(0f, 1f)
+            val factor = 0.35f + 0.65f * normLum
+            (a * factor).toInt().coerceIn(0, 255)
+        } else {
+            a
+        }
+
+        pixels[i] = AndroidColor.argb(finalAlpha, 255, 255, 255)
+    }
+
+    bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
 }
 
 /**

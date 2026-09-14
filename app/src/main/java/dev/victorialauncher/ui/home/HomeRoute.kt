@@ -495,7 +495,7 @@ fun HomeRoute(
 
         if (settings.dynamicButtonEnabled && !appListVisible && !homeEditMode && !showHomeOptions) {
             val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            val dynamicButtonBottom = maxOf(32.dp, navBarBottom + 16.dp)
+            val dynamicButtonBottom = maxOf(80.dp, navBarBottom + 68.dp)
             val isLeft = scrub.side == EdgeSide.LEFT
             val dynamicBtnAlignment = if (isLeft) Alignment.BottomStart else Alignment.BottomEnd
 

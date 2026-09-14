@@ -189,7 +189,7 @@ fun DynamicButtonSettingsScreen(
                             Spacer(Modifier.height(30.dp))
                             Box(
                                 modifier = Modifier
-                                    .height(130.dp)
+                                    .height(150.dp)
                                     .fillMaxWidth(),
                                 contentAlignment = Alignment.Center,
                             ) {

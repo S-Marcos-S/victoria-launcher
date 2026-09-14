@@ -53,6 +53,7 @@ import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.service.HapticUtil
 import dev.victorialauncher.ui.common.AppIcon
+import dev.victorialauncher.ui.common.ThemedAppIcon
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -226,7 +227,7 @@ fun DynamicActionButton(
         val activeBorderColor = if (thresholdCrossed) {
             MaterialTheme.colorScheme.primary
         } else {
-            contentColor.copy(alpha = 0.22f)
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
         }
 
         Box(
@@ -355,17 +356,18 @@ fun DynamicActionButton(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            // Conteúdo interno do botão: ícone do app ou ícone de atalho moderno
+            // Conteúdo interno do botão: ícone do app estilizado com a cor dinâmica do sistema
             if (clickApp != null) {
-                AppIcon(
+                ThemedAppIcon(
                     app = clickApp,
-                    sizeDp = 30,
+                    sizeDp = 28,
+                    tintColor = MaterialTheme.colorScheme.primary,
                 )
             } else {
                 Icon(
                     imageVector = Icons.Filled.TouchApp,
                     contentDescription = "Dynamic Button",
-                    tint = contentColor.copy(alpha = 0.85f),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp),
                 )
             }
