@@ -19,6 +19,7 @@
   - **Suporte Abrangente a Versões do Android (8.1+ a 15):**
     - Suporte nativo ao Monet no Android 12+ via `dynamicDarkColorScheme`/`dynamicLightColorScheme`.
     - Extração automática de cores primárias do wallpaper via `WallpaperManager` no Android 8.1 a 11, garantindo que mesmo versões anteriores do sistema desfrutem de janelas tingidas na cor do papel de parede.
+  - **Estabilidade & Compilação:** Correção de imports de dimensionamento de layout (`size`/`width`) no diálogo de edição de aplicativos (`EditAppDialog`).
 
 
 - **Novo Botão Dinâmico na Tela Inicial:**
