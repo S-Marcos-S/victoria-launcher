@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -89,10 +89,10 @@ fun EdgeScrubber(
             ) {
                 if (c == SCRUBBER_STAR) {
                     Icon(
-                        imageVector = Icons.Filled.Star,
+                        imageVector = Icons.Rounded.Star,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(11.dp),
+                        modifier = Modifier.size(13.dp),
                     )
                 } else {
                     Text(

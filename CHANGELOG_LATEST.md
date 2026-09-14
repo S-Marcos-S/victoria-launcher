@@ -33,6 +33,10 @@
   - **Detecção Semântica & Seleção do APK Mais Recente (`UpdateManager`):** O aplicativo agora compara a versão semântica remota e os timestamps de assets mais recentes, identificando imediatamente novas releases ou compilações intermediárias.
   - **Aviso Automático na Tela Inicial ("O que há de novo"):** O balão flutuante translúcido com blur agora aparece automaticamente na tela inicial assim que uma nova versão é detectada, permitindo baixar diretamente ou dispensar ("Lembrar depois"), mantendo persistência de dispensa para evitar interrupções repetitivas.
   - **Máxima Eficiência de Bateria:** Checagem de atualizações otimizada com cache inteligente de 20 minutos, sem processos ou serviços em segundo plano drenando bateria.
+- **Aprimoramento do Ícone de Estrela e Correção da Animação do Alfabeto:**
+  - **Correção da Visibilidade do Alfabeto na Estrela:** Corrigida a falha onde a animação e a visualização do alfabeto (`EdgeScrubber`) desapareciam ao passar o dedo sobre a estrela ou ao iniciar o gesto de rolagem a partir da tela inicial. O alfabeto e a bolha de prévia foram desacoplados da camada de esmaecimento da lista, mantendo a animação elástica e o feedback visual 100% visíveis e estáveis.
+  - **Transição Suave de Retorno:** A alternância entre a lista de aplicativos e a tela inicial ao atingir a estrela agora conta com cross-fade animado suave (`starAlpha`), sem cortes bruscos ou perda do gesto.
+  - **Ícone de Estrela Refinado:** Atualizado para `Icons.Rounded.Star` com pontas arredondadas e proporção óptica equilibrada (13dp na coluna do alfabeto e 38dp na bolha flutuante), integrando-se perfeitamente à tipografia e ao visual moderno do sistema.
   - **Estabilidade & Compilação:** Correção de inferência de tipos e smart-casting no gerenciador de atualizações (`UpdateManager`) e na tela inicial (`HomeRoute`).
 
 

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.DropdownMenu
@@ -556,6 +557,11 @@ fun AppListScreen(
                 }
             },
     ) {
+      val starAlpha by animateFloatAsState(
+          targetValue = if (scrubLetter == SCRUBBER_STAR) 0f else 1f,
+          animationSpec = tween(120),
+          label = "starAlpha",
+      )
       Box(
           modifier = Modifier
               .fillMaxSize()
@@ -566,7 +572,6 @@ fun AppListScreen(
                   val scale = 1f - 0.12f * progress
                   scaleX = scale
                   scaleY = scale
-                  val starAlpha = if (scrubLetter == SCRUBBER_STAR) 0f else 1f
                   alpha = (1f - 0.85f * progress) * starAlpha
               }
               .background(Color.Black.copy(alpha = dimAlpha)),
@@ -696,19 +701,22 @@ fun AppListScreen(
                     )
                 ),
         )
+      }
 
-        if (showAlphabet) {
-            EdgeScrubber(
-                letters = model.letters,
-                scrubY = scrubY,
-                pullPx = pullPx,
-                band = band,
-                side = activeSide,
-                modifier = Modifier.align(
-                    if (activeSide == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd
-                ),
-            )
-        }
+      if (showAlphabet) {
+          val pulled = collapseProvider()
+          val dismissAlpha = 1f - 0.85f * (abs(pulled) / dismissPullPx).coerceIn(0f, 1f)
+          EdgeScrubber(
+              letters = model.letters,
+              scrubY = scrubY,
+              pullPx = pullPx,
+              band = band,
+              side = activeSide,
+              modifier = Modifier
+                  .align(if (activeSide == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd)
+                  .graphicsLayer { alpha = dismissAlpha },
+          )
+      }
 
         appMenuFor?.let { app ->
             val isFavorite = favoriteKeys.contains(app.key)
@@ -811,10 +819,10 @@ fun AppListScreen(
                 Box(contentAlignment = Alignment.Center) {
                     if (scrubLetter == SCRUBBER_STAR) {
                         Icon(
-                            imageVector = Icons.Filled.Star,
+                            imageVector = Icons.Rounded.Star,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(36.dp),
+                            modifier = Modifier.size(38.dp),
                         )
                     } else {
                         Text(
@@ -827,7 +835,6 @@ fun AppListScreen(
                 }
             }
         }
-      }
     }
 }
 
