@@ -46,6 +46,7 @@ fun EdgeScrubber(
     band: ScrubBand,
     side: EdgeSide,
     modifier: Modifier = Modifier,
+    sidePaddingDp: Int = 20,
 ) {
     if (letters.isEmpty() || band.heightPx <= 0f) return
     val density = LocalDensity.current.density
@@ -53,14 +54,15 @@ fun EdgeScrubber(
     // Wide enough that a good stretch of the alphabet takes part in the curve.
     val sigmaPx = 2.6f * spacingPx.coerceAtLeast(1f)
     val bellPx = BELL_AMPLITUDE_DP * density
+    val insetDp = sidePaddingDp.coerceAtLeast(0).dp
 
     Box(
         modifier = modifier
             .width(132.dp)
             .fillMaxHeight()
             .padding(
-                start = if (side == EdgeSide.LEFT) EDGE_INSET_DP.dp else 0.dp,
-                end = if (side != EdgeSide.LEFT) EDGE_INSET_DP.dp else 0.dp,
+                start = if (side == EdgeSide.LEFT) insetDp else 0.dp,
+                end = if (side != EdgeSide.LEFT) insetDp else 0.dp,
             ),
     ) {
         letters.forEachIndexed { index, c ->

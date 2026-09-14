@@ -371,6 +371,8 @@ fun HomeRoute(
                 clockStyle = settings.clockStyle,
                 doubleTapToLock = settings.doubleTapToLock,
                 onDoubleTapLock = handleDoubleTapLock,
+                edgeSide = settings.edgeSide,
+                alwaysShowAz = settings.alwaysShowAz,
             )
         }
 
@@ -426,6 +428,7 @@ fun HomeRoute(
                 showAppNotifications = settings.showAppNotifications,
                 notificationsByPackage = notificationsByPackage,
                 onDoubleTapLock = handleDoubleTapLock,
+                sidePaddingDp = settings.sidePaddingDp,
             )
         }
 
@@ -436,6 +439,7 @@ fun HomeRoute(
                 pullPx = remember(scrub) { scrub::currentPull },
                 band = band,
                 side = scrub.side,
+                sidePaddingDp = settings.sidePaddingDp,
                 modifier = Modifier.align(
                     if (scrub.side == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd
                 ),
@@ -478,10 +482,11 @@ fun HomeRoute(
                     EdgeSide.BOTH -> listOf(EdgeSide.LEFT, EdgeSide.RIGHT)
                 }
             }
+            val edgeZoneWidth = (settings.sidePaddingDp + 32).coerceAtLeast(48).dp
             sides.forEach { side ->
                 EdgeTouchZone(
                     side = side,
-                    widthDp = EDGE_ZONE_WIDTH,
+                    widthDp = edgeZoneWidth,
                     letters = listModel.letters,
                     band = band,
                     hapticsEnabled = settings.hapticsEnabled,
@@ -504,6 +509,7 @@ fun HomeRoute(
             val clickApp = settings.dynamicButtonClickApp?.let { appsByKey[it] }
             val swipeUpApp = settings.dynamicButtonSwipeUpApp?.let { appsByKey[it] }
             val swipeDownApp = settings.dynamicButtonSwipeDownApp?.let { appsByKey[it] }
+            val dynamicBtnSidePadding = (settings.sidePaddingDp + 38).coerceAtLeast(58).dp
 
             DynamicActionButton(
                 clickApp = clickApp,
@@ -521,8 +527,8 @@ fun HomeRoute(
                 modifier = Modifier
                     .align(dynamicBtnAlignment)
                     .padding(
-                        start = if (isLeft) 58.dp else 0.dp,
-                        end = if (!isLeft) 58.dp else 0.dp,
+                        start = if (isLeft) dynamicBtnSidePadding else 0.dp,
+                        end = if (!isLeft) dynamicBtnSidePadding else 0.dp,
                         bottom = dynamicButtonBottom,
                     )
                     .zIndex(2f),

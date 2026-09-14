@@ -1,4 +1,12 @@
-### 🚀 Novidades e Melhorias da Versão 0.49.0
+### 🚀 Novidades e Melhorias da Versão 0.50.0
+
+- **Alinhamento Automático e Harmônico (Alfabeto, Aplicativos, Widgets e Relógio):**
+  - **Grid de Alinhamento Unificado e Automático:** Implementado um sistema de alinhamento harmônico entre a borda do alfabeto (`EdgeScrubber`), a lista de aplicativos favoritos e pastas (`FavoriteRow` e `FolderRow`), os widgets (`WidgetSlot` e `NowPlayingBlock`) e o relógio da tela inicial (`NiagaraClockWidget`).
+  - **Padrão Harmônico por Padrão:** Todos os componentes alinham-se automaticamente às mesmas diretrizes verticais:
+    - *Margem externa da tela:* Relógio, widgets e ícones de aplicativos iniciam no espaçamento padrão do sistema (`sidePaddingDp`), e a coluna do alfabeto espelha exatamente a mesma distância na borda oposta da tela.
+    - *Margem interna do alfabeto:* O relógio, os widgets, o reprodutor de mídia e as linhas de aplicativos respeitam automaticamente um espaçamento calculado com precisão (`sidePaddingDp + 32dp`), impedindo qualquer sobreposição com o alfabeto ou sua zona de toque.
+  - **Sincronização Dinâmica com o Puxador de Ajuste (`SidePaddingHandle`):** Caso o usuário decida personalizar o recuo das bordas nas configurações ou no modo de edição arrastando a barra de ajuste lateral, **todos** os quatro elementos (alfabeto, aplicativos, widgets e relógio) adaptam-se em conjunto de forma automática e em tempo real.
+  - **Suporte Abrangente ao Modo Destro (`alignRight`) e Posição do Alfabeto (`edgeSide`):** Seja com o layout padrão à esquerda, modo destro à direita, alfabeto à esquerda ou em ambos os lados, as margens `contentStart` e `contentEnd` ajustam-se dinamicamente com perfeita harmonia visual.
 
 - **Cores Dinâmicas do Sistema (Material You / Monet) em Todas as Janelas e Diálogos:**
   - **Color Tinting Dinâmico de Superfície (`dynamicSurfaceColor`):** As superfícies das janelas e diálogos não ficam mais em cinza neutro estático. Implementado o algoritmo de mesclagem (`lerp`) que infunde a cor primária dinâmica do wallpaper (Monet) no container de vidro fosco translúcido (`FLAG_BLUR_BEHIND`), garantindo que o fundo translúcido assuma a tonalidade real do papel de parede (azul, verde, roxo, âmbar, etc.).

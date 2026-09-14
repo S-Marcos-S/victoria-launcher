@@ -64,6 +64,8 @@ fun NiagaraClockWidget(
     sidePaddingDp: Int,
     alignRight: Boolean,
     modifier: Modifier = Modifier,
+    startPaddingDp: Int = sidePaddingDp,
+    endPaddingDp: Int = sidePaddingDp,
 ) {
     val context = LocalContext.current
     var currentTime by remember { mutableStateOf(Date()) }
@@ -126,7 +128,7 @@ fun NiagaraClockWidget(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = sidePaddingDp.dp),
+            .padding(start = startPaddingDp.dp, end = endPaddingDp.dp),
         horizontalAlignment = horizontalAlignment,
     ) {
         when (clockStyle) {

@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
@@ -146,6 +147,7 @@ fun AppListScreen(
     onDoubleTapLock: (Offset) -> Unit,
     showAppNotifications: Boolean = false,
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
+    sidePaddingDp: Int = 20,
 ) {
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
@@ -165,6 +167,9 @@ fun AppListScreen(
     val activeSide = scrub.side
     val scrubY = remember(scrub) { scrub::currentY }
     val pullPx = remember(scrub) { scrub::currentPull }
+
+    val rowStart = if (activeSide == EdgeSide.LEFT && showAlphabet) (sidePaddingDp + 32).dp else sidePaddingDp.dp
+    val rowEnd = if (activeSide != EdgeSide.LEFT && showAlphabet) (sidePaddingDp + 32).dp else sidePaddingDp.dp
 
     val listState = rememberLazyListState()
     // Rows outside the scrubbed letter fade out; the section itself never moves, because it
@@ -620,7 +625,14 @@ fun AppListScreen(
                     },
                 ) {
                 when (row) {
-                    is AppListRow.Header -> SectionHeader(row.text, labelSizeSp, contentColor, alignRight)
+                    is AppListRow.Header -> SectionHeader(
+                        text = row.text,
+                        labelSizeSp = labelSizeSp,
+                        contentColor = contentColor,
+                        alignRight = alignRight,
+                        startPadding = rowStart,
+                        endPadding = rowEnd,
+                    )
                     is AppListRow.Entry -> {
                         val appNotifications = if (showAppNotifications) {
                             notificationsByPackage[row.app.packageName].orEmpty()
@@ -650,6 +662,8 @@ fun AppListScreen(
                             onAppInfo = { onAppInfo(row.app) },
                             onHide = { onHideApp(row.app) },
                             onMoveToFolder = { onMoveToFolder(row.app) },
+                            startPadding = rowStart,
+                            endPadding = rowEnd,
                         )
                     }
                 }
@@ -713,6 +727,7 @@ fun AppListScreen(
               pullPx = pullPx,
               band = band,
               side = activeSide,
+              sidePaddingDp = sidePaddingDp,
               modifier = Modifier
                   .align(if (activeSide == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd)
                   .graphicsLayer { alpha = dismissAlpha },
@@ -840,9 +855,16 @@ fun AppListScreen(
 }
 
 @Composable
-private fun SectionHeader(text: String, labelSizeSp: Int, contentColor: Color, alignRight: Boolean) {
+private fun SectionHeader(
+    text: String,
+    labelSizeSp: Int,
+    contentColor: Color,
+    alignRight: Boolean,
+    startPadding: Dp = 20.dp,
+    endPadding: Dp = 20.dp,
+) {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = startPadding, end = endPadding),
         contentAlignment = if (alignRight) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
         Text(
@@ -877,6 +899,8 @@ private fun AppRow(
     onMoveToFolder: () -> Unit,
     notification: dev.victorialauncher.notification.AppNotificationItem? = null,
     onNotificationClick: (dev.victorialauncher.notification.AppNotificationItem) -> Unit = {},
+    startPadding: Dp = 20.dp,
+    endPadding: Dp = 20.dp,
 ) {
     // Same press treatment as the home screen: the stock ripple all but vanishes against a
     // wallpaper, and without any feedback a tap that did register reads as one that didn't.
@@ -891,7 +915,10 @@ private fun AppRow(
                 // Ahead of the inset, so the long-press menu is still placed against the
                 // whole row rather than 20dp to the left of the finger.
                 .recordTouchPosition(touchPosition)
-                .padding(horizontal = 20.dp)
+                .padding(
+                    start = (startPadding - 8.dp).coerceAtLeast(0.dp),
+                    end = (endPadding - 8.dp).coerceAtLeast(0.dp),
+                )
                 .background(
                     color = if (pressed) contentColor.copy(alpha = 0.15f) else Color.Transparent,
                     shape = RoundedCornerShape(18.dp),

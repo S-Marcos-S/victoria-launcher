@@ -41,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
+import dev.victorialauncher.data.EdgeSide
 import dev.victorialauncher.ui.theme.dynamicBorderColor
 import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.material.icons.Icons
@@ -92,6 +93,7 @@ import androidx.compose.ui.platform.LocalView
 import dev.victorialauncher.service.HapticUtil
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -205,7 +207,20 @@ fun HomeScreen(
     clockStyle: ClockStyle = ClockStyle.CLASSIC,
     doubleTapToLock: Boolean = false,
     onDoubleTapLock: (Offset) -> Unit = {},
-) {    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
+    edgeSide: EdgeSide = EdgeSide.RIGHT,
+    alwaysShowAz: Boolean = true,
+) {
+    fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
+
+    // Automatic alignment calculation:
+    // When the alphabet is visible on an edge, content insets by (sidePaddingDp + 32) dp,
+    // leaving a balanced 8dp breathing gutter next to the alphabet column (24dp wide + sidePaddingDp).
+    // On edges without the alphabet, content aligns symmetrically at sidePaddingDp.
+    val hasAlphabetStart = alwaysShowAz && (edgeSide == EdgeSide.LEFT || edgeSide == EdgeSide.BOTH)
+    val hasAlphabetEnd = alwaysShowAz && (edgeSide == EdgeSide.RIGHT || edgeSide == EdgeSide.BOTH)
+    val alphabetClearance = (sidePaddingDp + 32).dp
+    val contentStart = if (hasAlphabetStart) alphabetClearance else sidePaddingDp.dp
+    val contentEnd = if (hasAlphabetEnd) alphabetClearance else sidePaddingDp.dp
 
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var floatingFolderDialog by remember { mutableStateOf<Folder?>(null) }
@@ -453,13 +468,12 @@ fun HomeScreen(
                     contentColor = contentColor,
                     sidePaddingDp = sidePaddingDp,
                     alignRight = alignRight,
+                    startPaddingDp = contentStart.value.toInt(),
+                    endPaddingDp = contentEnd.value.toInt(),
                 )
 
                 // Widget slot placed between clock and favorites
                 if (showWidgetSlot) {
-                    val widgetStart = if (!alignRight) sidePaddingDp.dp else maxOf(sidePaddingDp, 48).dp
-                    val widgetEnd = if (!alignRight) maxOf(sidePaddingDp, 48).dp else sidePaddingDp.dp
-
                     Spacer(Modifier.height(14.dp))
                     WidgetSlot(
                         widgetId = widgetId,
@@ -469,7 +483,7 @@ fun HomeScreen(
                         actions = widgetActions,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = widgetStart, end = widgetEnd),
+                            .padding(start = contentStart, end = contentEnd),
                     )
                 }
 
@@ -505,6 +519,8 @@ fun HomeScreen(
                     contentColor = contentColor,
                     sidePaddingDp = sidePaddingDp,
                     alignRight = alignRight,
+                    contentStart = contentStart,
+                    contentEnd = contentEnd,
                     padTop = padOf(PaddingSlot.NOW_PLAYING_TOP),
                     padBottom = padOf(PaddingSlot.NOW_PLAYING_BOTTOM),
                     touchPosition = touchPosition,
@@ -610,7 +626,9 @@ fun HomeScreen(
                             hapticsEnabled = hapticsEnabled,
                             onEditLayout = { onEditModeChange(true) },
                             actions = widgetActions,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = sidePaddingDp.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = contentStart, end = contentEnd),
                         )
 
                         is HomeItem.FolderItem -> FolderRow(
@@ -624,6 +642,8 @@ fun HomeScreen(
                             contentColor = contentColor,
                             showLabels = showFavoriteLabels,
                             alignRight = alignRight,
+                            contentStart = contentStart,
+                            contentEnd = contentEnd,
                             menuExpanded = folderMenuFor == item.folder.id,
                             menuOffset = menuOffset,
                             touchPosition = touchPosition,
@@ -665,6 +685,8 @@ fun HomeScreen(
                                 contentColor = contentColor,
                                 showLabels = showFavoriteLabels,
                                 alignRight = alignRight,
+                                contentStart = contentStart,
+                                contentEnd = contentEnd,
                                 notification = latestNotification,
                                 onNotificationClick = { notif ->
                                     activeDialogNotification = notif to item.app
@@ -870,6 +892,8 @@ private fun FavoriteRow(
     onOpenSettings: () -> Unit,
     notification: dev.victorialauncher.notification.AppNotificationItem? = null,
     onNotificationClick: (dev.victorialauncher.notification.AppNotificationItem) -> Unit = {},
+    contentStart: Dp = sidePaddingDp.dp,
+    contentEnd: Dp = sidePaddingDp.dp,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -879,7 +903,10 @@ private fun FavoriteRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = (sidePaddingDp - 8).coerceAtLeast(0).dp)
+                .padding(
+                    start = (contentStart - 8.dp).coerceAtLeast(0.dp),
+                    end = (contentEnd - 8.dp).coerceAtLeast(0.dp),
+                )
                 .background(
                     color = if (pressed) contentColor.copy(alpha = 0.15f) else Color.Transparent,
                     shape = RoundedCornerShape(18.dp),
@@ -1049,6 +1076,8 @@ private fun FolderRow(
     onDelete: () -> Unit,
     onOpenApp: (AppInfo) -> Unit,
     onRemoveApp: (AppInfo) -> Unit,
+    contentStart: Dp = sidePaddingDp.dp,
+    contentEnd: Dp = sidePaddingDp.dp,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -1059,7 +1088,10 @@ private fun FolderRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = (sidePaddingDp - 8).coerceAtLeast(0).dp)
+                    .padding(
+                        start = (contentStart - 8.dp).coerceAtLeast(0.dp),
+                        end = (contentEnd - 8.dp).coerceAtLeast(0.dp),
+                    )
                     .background(
                         color = if (pressed) contentColor.copy(alpha = 0.15f) else Color.Transparent,
                         shape = RoundedCornerShape(18.dp),
@@ -1136,12 +1168,14 @@ private fun FolderRow(
 
         // Members expand in place rather than opening a separate screen.
         AnimatedVisibility(visible = expanded && !editMode) {
+            val folderSubStart = if (!alignRight) contentStart + 24.dp else contentStart
+            val folderSubEnd = if (alignRight) contentEnd + 24.dp else contentEnd
             Column {
                 members.forEach { member ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = (sidePaddingDp + 24).dp, end = sidePaddingDp.dp)
+                            .padding(start = folderSubStart, end = folderSubEnd)
                             .combinedClickable(
                                 onClick = { onOpenApp(member) },
                                 onLongClick = { onRemoveApp(member) },
@@ -1161,7 +1195,7 @@ private fun FolderRow(
                         stringResource(R.string.home_folder_empty),
                         color = contentColor.copy(alpha = 0.6f),
                         fontSize = (labelSizeSp - 3).coerceAtLeast(10).sp,
-                        modifier = Modifier.padding(start = (sidePaddingDp + 24).dp, top = 4.dp, bottom = 4.dp),
+                        modifier = Modifier.padding(start = folderSubStart, end = folderSubEnd, top = 4.dp, bottom = 4.dp),
                     )
                 }
             }
@@ -1192,12 +1226,11 @@ private fun NowPlayingBlock(
     onDragPadding: (PaddingSlot, Int) -> Unit,
     currentPadding: (PaddingSlot) -> Int,
     onCommitPadding: (PaddingSlot, Int) -> Unit,
+    contentStart: Dp = sidePaddingDp.dp,
+    contentEnd: Dp = sidePaddingDp.dp,
 ) {
     val density = LocalDensity.current
     val context = LocalContext.current
-
-    val npStart = if (!alignRight) sidePaddingDp.dp else maxOf(sidePaddingDp, 48).dp
-    val npEnd = if (!alignRight) maxOf(sidePaddingDp, 48).dp else sidePaddingDp.dp
 
     PaddingHandle(
         editMode = editMode,
@@ -1215,7 +1248,7 @@ private fun NowPlayingBlock(
             contentColor = contentColor,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = npStart, end = npEnd)
+                .padding(start = contentStart, end = contentEnd)
                 .recordTouchPosition(touchPosition)
                 .combinedClickable(
                     // The transport buttons consume their own taps, so this is only ever the
