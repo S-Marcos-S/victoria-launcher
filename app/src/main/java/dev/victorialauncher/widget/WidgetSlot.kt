@@ -115,9 +115,18 @@ fun WidgetSlot(
                 factory = { ctx ->
                     val hostView = app.widgetHost.createView(ctx, widgetId, providerInfo).apply {
                         setAppWidget(widgetId, providerInfo)
+                        setPadding(0, 0, 0, 0)
                     }
                     LongPressFrameLayout(ctx).apply {
-                        addView(hostView)
+                        clipChildren = false
+                        clipToPadding = false
+                        addView(
+                            hostView,
+                            android.widget.FrameLayout.LayoutParams(
+                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                            )
+                        )
                         onLongPress = { x, y ->
                             HapticUtil.tick(this, hapticsEnabled)
                             menuOffset = with(density) { DpOffset(x.toDp(), y.toDp()) }
@@ -127,6 +136,7 @@ fun WidgetSlot(
                 },
                 update = { container ->
                     val hostView = container.getChildAt(0) as? AppWidgetHostView
+                    hostView?.setPadding(0, 0, 0, 0)
                     hostView?.setAppWidget(widgetId, providerInfo)
                     val (wDp, hDp) = slotSizeDp
                     if (hostView != null && wDp > 0 && hDp > 0 && slotSizeDp != reportedSizeDp) {
@@ -146,7 +156,6 @@ fun WidgetSlot(
             Surface(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(8.dp)
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onTap = { actions.onAddWidget() },
@@ -158,7 +167,7 @@ fun WidgetSlot(
                         )
                     },
                 color = Color.Black.copy(alpha = 0.25f),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize(),

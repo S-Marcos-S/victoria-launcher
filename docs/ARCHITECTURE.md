@@ -1,111 +1,186 @@
-# Architecture
+# Architecture of Victoria Launcher
 
-Victoria Launcher is a single-module Android home-screen launcher: Kotlin, Jetpack
-Compose, `minSdk 26`, `compileSdk`/`targetSdk 35`. No network permission, no
-analytics, no ads, no accounts.
+Victoria Launcher is a single-module Android home-screen launcher built with Kotlin, Jetpack Compose, `minSdk 26`, and `compileSdk`/`targetSdk 35`. It is privacy-first: no ads, no analytics, no trackers, and no user accounts.
 
-## Package layout (`dev.victorialauncher`)
+---
+
+## 🏗️ High-Level System Architecture
+
+```mermaid
+flowchart TD
+    subgraph UI_Layer["Presentation Layer (Jetpack Compose)"]
+        Nav[VictoriaNavHost]
+        Home[HomeRoute / HomeScreen]
+        AppList[AppListScreen & EdgeScrubber]
+        Clock[NiagaraClockWidget]
+        DynBtn[DynamicActionButton]
+        MediaUI[NowPlayingWidget]
+        Slot[WidgetSlot]
+    end
+
+    subgraph State_Layer["State & Domain Layer (Coroutines & Flows)"]
+        PrefsState[Prefs Flow Collectors]
+        ScrubState[ScrubState]
+        MediaBus[NowPlayingBus]
+        NotifBus[NotificationBus]
+        UpdateState[UpdateManager StateFlows]
+    end
+
+    subgraph Data_Layer["Data & Persistence Layer"]
+        DataStore[(Jetpack DataStore)]
+        AppRepo[AppRepository]
+        IconRepo[IconPackRepository]
+        Cache[Bitmap LruCache]
+    end
+
+    subgraph System_Layer["Android Framework & System Services"]
+        PM[PackageManager]
+        WM[WindowManager / BlurBehind]
+        Host[VictoriaAppWidgetHost / View]
+        MediaSvc[NowPlayingListenerService]
+        AccessSvc[VictoriaAccessibilityService]
+        Updater[GitHub Releases API / MediaStore]
+    end
+
+    Nav --> Home
+    Home --> Clock & DynBtn & MediaUI & Slot & AppList
+    Home -.-> PrefsState
+    AppList -.-> ScrubState
+    MediaUI -.-> MediaBus
+    Home -.-> NotifBus
+
+    PrefsState --> DataStore
+    AppRepo --> PM & Cache
+    IconRepo --> PM & Cache
+    Slot --> Host
+    MediaBus --> MediaSvc
+    Home --> AccessSvc
+    UpdateState --> Updater
+```
+
+---
+
+## 📦 Package Layout (`dev.victorialauncher`)
 
 ```
-MainActivity.kt                 Activity, window setup, status-bar peek
-VictoriaApp.kt                  Application; owns Prefs, repositories, widget host
-data/
-  AppInfo.kt                    component + label; `key` is the flattened component name
-  AppRepository.kt              PackageManager queries, launch, app-info intents
-  IconPackRepository.kt         icon-pack discovery, appfilter.xml parsing, icon lookup
-  Prefs.kt                      DataStore<Preferences>: every setting, hidden apps, favorites
-  Folder.kt                     folder model + JSON persistence + favorites token encoding
-  HomePaddings.kt               per-block top/bottom spacing set in edit mode
-ui/
-  VictoriaNavHost.kt            collects settings once, hosts the navigation graph
-  home/HomeRoute.kt             home destination: home screen, app-list overlay, edge zones
-  home/HomeScreen.kt            widget slot + favorites/folders column + edit mode
-  applist/AppListScreen.kt      A-Z list, pull-to-collapse, per-app menus
-  applist/EdgeScrubber.kt       the A-Z strip that bows around the fingertip
-  applist/EdgeTouchZone.kt      the invisible edge strip that opens and scrubs the list
-  applist/ScrubState.kt         scrub state holder (see "Recomposition" below)
-  applist/ScrubberGeometry.kt   one source of truth for where each letter sits
-  applist/AppListModel.kt       flattens apps into headers + rows
-  common/AppIcon.kt             icon rasterisation and the bounded bitmap cache
-  common/…                      shared dialogs, icon picker, touch-position modifier
-  settings/…                    settings screen and the three picker screens
-  theme/                        Material theme, font mapping, wallpaper-aware text colour
-media/                          notification-listener service + Now Playing card
-service/                        haptics, status-bar fader, accessibility service, system UI
-widget/                         AppWidgetHost, widget slot, widget picker
+dev.victorialauncher
+├── MainActivity.kt                      Activity, window insets, status-bar peek, update receivers
+├── VictoriaApp.kt                       Application singleton; initializes repositories, Prefs, widget host
+├── data/
+│   ├── AppInfo.kt                       Component name + label; flattened key representation
+│   ├── AppRepository.kt                 PackageManager querying, launch intents, package change receivers
+│   ├── Folder.kt                        Folder data model + JSON persistence + tokenized favorites
+│   ├── HomePaddings.kt                  Vertical and horizontal padding slots
+│   ├── IconPackRepository.kt            Icon-pack discovery, appfilter.xml parsing, drawable resolution
+│   └── Prefs.kt                         DataStore<Preferences> schema, atomic flows, reactive keys
+├── media/
+│   ├── NowPlayingBus.kt                 Central state holder for active media sessions
+│   ├── NowPlayingListenerService.kt     NotificationListenerService tracking MediaSessions & playback
+│   └── NowPlayingWidget.kt              Now Playing card, transport controls, album art, swipe to dismiss
+├── notification/
+│   └── NotificationBus.kt               Notification bus bridging active messages to the UI layer
+├── service/
+│   ├── HapticUtil.kt                    VibrationEffect tick generator respecting system feedback settings
+│   ├── StatusBarFader.kt                Window inset animator for peek status bar behavior
+│   ├── SystemUi.kt                      System UI flags and status bar visibility controls
+│   └── VictoriaAccessibilityService.kt  Sanctioned service for screen locking and shade expansion
+├── ui/
+│   ├── VictoriaNavHost.kt               Global navigation graph, collects preferences once
+│   ├── applist/
+│   │   ├── AppListModel.kt              Flattens installed apps into headers and items
+│   │   ├── AppListScreen.kt             A-Z list overlay with real-time search, pull-to-collapse
+│   │   ├── EdgeScrubber.kt              The A-Z strip that dynamically bows along a Gaussian curve
+│   │   ├── EdgeTouchZone.kt             Invisible edge touch interception zone
+│   │   ├── ScrubState.kt                Isolated scrub state holder preventing unnecessary recomposition
+│   │   └── ScrubberGeometry.kt          Single source of truth for glyph positioning and amplitude
+│   ├── common/
+│   │   ├── AppIcon.kt                   Off-main-thread icon rasterization and byte-bounded LruCache
+│   │   ├── AppMenuDialog.kt             Contextual long-press actions menu (options, info, uninstall)
+│   │   ├── EditAppDialog.kt             Custom app name and icon picker modal
+│   │   ├── FolderIconImage.kt           Composed 2x2 folder thumbnail or single icon
+│   │   ├── FolderPickerDialog.kt        Folder selection modal
+│   │   ├── IconPickerScreen.kt          Icon selection from installed icon packs
+│   │   └── TouchPosition.kt             Non-consuming touch-position coordinate recorder
+│   ├── home/
+│   │   ├── DynamicActionButton.kt       Physical action button with tanh resistance and roller transitions
+│   │   ├── FolderFloatingDialog.kt      Frosted-glass floating folder popup with blur behind
+│   │   ├── HomeOptionsBottomSheet.kt    Monet-tinted bottom sheet (settings, wallpaper, widgets)
+│   │   ├── HomeRoute.kt                 Orchestrates screen, app list overlay, gesture touch zones
+│   │   ├── HomeScreen.kt                Unified alignment layout, edit mode reordering, favorites, clock
+│   │   ├── NiagaraClockWidget.kt        6 clock styles, date ticks, system Clock & Calendar app intents
+│   │   ├── ScreenOffEffect.kt           Visual fade transition for double-tap-to-lock
+│   │   └── UpdateChangelogDialog.kt     Markdown release notes modal with direct download button
+│   ├── notification/
+│   │   └── NotificationDetailDialog.kt  Frosted-glass notification dialog with conversation thread history
+│   ├── settings/
+│   │   ├── ClockStylePickerScreen.kt    Visual picker for the 6 home clock styles
+│   │   ├── DynamicButtonSettingsScreen.kt Configuration of Click, Swipe Up and Swipe Down actions
+│   │   ├── FolderAppsScreen.kt          Folder membership management
+│   │   ├── HiddenAppsScreen.kt          Toggle hidden apps
+│   │   ├── Labels.kt                    User-facing setting labels
+│   │   ├── ManageFavoritesScreen.kt     Drag-and-drop reordering of home screen favorites
+│   │   └── SettingsScreen.kt            Categorized settings hierarchy
+│   └── theme/
+│       ├── ContentColor.kt              Wallpaper luminance sampling and automatic text contrast
+│       └── Theme.kt                     Material You Monet engine, dynamic surface and border colors
+├── update/
+│   └── UpdateManager.kt                 GitHub Releases polling, download via MediaStore, notifications
+└── widget/
+    ├── LongPressFrameLayout.kt          Touch event arbiter for embedded Android widgets
+    ├── VictoriaAppWidgetHost.kt         AppWidgetHost and VictoriaAppWidgetHostView (zero-padding enforcement)
+    ├── WidgetPickerActivity.kt          System widget picker integration
+    └── WidgetSlot.kt                    Widget container, dynamic resizing handles, long-press menu
 ```
 
-## Things that look wrong until you know why
+---
 
-**The launcher does not draw the wallpaper.** `Theme.VictoriaLauncher` sets
-`android:windowShowWallpaper`, so the real system wallpaper shows through a
-transparent window. "Dim wallpaper" is therefore just a scrim `Box`, not image
-processing.
+## 💡 Architecture Decisions & Non-Obvious Constraints
 
-**`LongPressFrameLayout` wraps every embedded widget** instead of a Compose
-`pointerInput`. A Compose long-press detector owns the whole touch stream once it
-starts tracking, which would break the widget's own buttons. This mirrors how
-scrollable containers arbitrate with children: don't intercept on `ACTION_DOWN`,
-watch via `onInterceptTouchEvent`, steal the stream only once our timer fires.
+### 1. Transparent System Wallpaper Window
+The launcher **never draws the wallpaper**. `Theme.VictoriaLauncher` sets `android:windowShowWallpaper = true` with a transparent background. The real system wallpaper (including live wallpapers) renders directly through the window compositor. "Dim wallpaper" is simply a scrim `Box`, requiring zero bitmap memory.
 
-**The A-Z strip bows; the letters never scale.** Scaling the glyphs stretched them
-until they looked pixelated, so `EdgeScrubber` translates each letter along a
-gaussian instead. `scrubY`/`pullPx` arrive as lambdas read inside `graphicsLayer`,
-which puts the read in the draw phase — recomposing 26 `Text` nodes per pointer
-move made this jitter.
+### 2. Touch Arbitration with Android Widgets (`LongPressFrameLayout`)
+Compose pointer inputs claim exclusive ownership of the touch stream once tracked, which would break touch buttons inside hosted Android widgets (such as music playback buttons). `LongPressFrameLayout` uses Android's traditional `onInterceptTouchEvent` pattern: it monitors touches on `ACTION_DOWN` without intercepting, only stealing the touch stream if its long-press timer expires.
 
-**`recordTouchPosition` deliberately does not consume the down event.** It exists so
-a row can place its long-press menu at the finger while `combinedClickable` and any
-scrolling parent still arbitrate normally. Using `detectTapGestures` instead
-consumes the down event and silently stops the parent from ever seeing the drag.
+### 3. Suppression of Framework Widget Padding (`VictoriaAppWidgetHostView`)
+Since Android 4.0 (API 14), Android's standard `AppWidgetHostView` automatically calculates default system padding (`getDefaultPaddingForWidget`) and sets it on itself. Because Victoria Launcher manages precise margin boundaries via Compose (`contentStart` and `contentEnd`), `VictoriaAppWidgetHostView` overrides `setPadding(0, 0, 0, 0)` so widgets align flush with the clock, apps, and now playing controls.
 
-**The app-list overlay stays composed while hidden.** It is measured but never
-placed (`layout(0, 0) {}`), so it neither draws nor receives touches. Building the
-list from scratch on every open is what made it take a beat to appear. The home
-screen behind it is likewise kept laid out — an `AppWidgetHostView` that is never
-placed loses its layout and returns with its text collapsed.
+### 4. Gaussian Bowing Without Glyph Scaling (`EdgeScrubber`)
+Scaling font glyphs during fast dragging causes pixelation and font cache thrashing. `EdgeScrubber` translates each letter along a Gaussian curve on the X axis without changing its font scale. Touch positions arrive as lambdas executed inside `Modifier.graphicsLayer { ... }`, evaluating purely during the draw phase and bypassing the recomposition phase.
 
-**Gesture exclusion is spent on the scrub band, not the whole edge.** Android
-honours only 200dp of exclusion per side, so `HomeRoute` clips the excluded
-rectangle to the band the strip actually occupies.
+### 5. Non-Consuming Touch Position Recorder (`recordTouchPosition`)
+To open context menus at the exact fingertip coordinates without consuming the `ACTION_DOWN` event (which would break vertical scrolling and dragging gestures), `recordTouchPosition` observes pointer coordinates passively without calling `consume()`.
 
-## Recomposition
+### 6. Off-Screen Layout Preservation
+The app-list overlay stays composed while hidden. It is measured but not placed (`layout(0, 0) {}`), rendering nothing to screen and consuming no GPU resources. When summoned, it appears instantaneously without initial composition lag.
 
-Two deliberate choices keep scrubbing off the main thread's back:
+---
 
-- **`ScrubState`** holds the letter, position and elastic pull. It is passed down as
-  one stable object so only the composable that *reads* a field is invalidated. When
-  the home destination read the letter directly, each of the ~26 letter changes per
-  gesture invalidated that whole scope — and the home screen hangs off it.
-- **Icons are rasterised once into a byte-bounded `LruCache`** and pre-warmed off the
-  main thread, favorites first. The cache is bounded by bytes rather than entry
-  count because the cache key includes the rasterised pixel size: moving the
-  icon-size slider adds a generation rather than replacing one, and a single 96dp
-  icon on a dense screen is ~450 KB.
+## ⚡ Performance and Recomposition Isolation
 
-## Permissions
+- **Stable State Holder (`ScrubState`):** Emits letter changes through a single stable state holder object. Components observing the current letter recompose locally without re-evaluating the parent `HomeRoute`.
+- **Byte-Bounded Bitmap `LruCache`:** Icons are cached by byte size rather than entry count (`Runtime.getRuntime().maxMemory() / 8`). The cache key includes target pixel dimensions (`key#sizePx`), preventing out-of-memory errors when the user adjusts the icon size slider.
 
-The app requests **no `INTERNET` permission**. It cannot phone home.
+---
 
-| Permission | Why | Optional? |
+## 🔐 Permissions and Security
+
+| Permission | Purpose | Optional? |
 |---|---|---|
-| `QUERY_ALL_PACKAGES` | A launcher must enumerate every installed app, icon pack and widget provider. Without it `PackageManager` filters almost everything out on Android 11+. | No |
-| `EXPAND_STATUS_BAR` | Needed by the pre-Android-12 reflection fallback for opening the notification shade. | No |
-| `VIBRATE` | The haptic tick as the finger crosses a letter. Respects the system touch-feedback setting, and can be turned off in Settings. | No |
-| Accessibility service | The only sanctioned way to open the notification shade or lock the screen — neither has a public API. The service ignores every event it receives and reads nothing. | Yes — the swipe-down and double-tap-to-lock gestures simply report that they need it |
-| Notification listener | Reads the active media session for the Now Playing card. | Yes — off by default |
+| `QUERY_ALL_PACKAGES` | Enumerate installed applications, icon packs, and widget providers on Android 11+ (API 30+). | No |
+| `INTERNET` | Check GitHub Releases API for updates and download signed APK releases. | No |
+| `POST_NOTIFICATIONS` | Send non-intrusive update notification alerts on Android 13+ (API 33+). | Optional (System prompt) |
+| `REQUEST_INSTALL_PACKAGES` | Trigger the Android PackageInstaller to install downloaded APK updates. | Optional (Granted per install) |
+| `VIBRATE` | Precise linear haptic feedback ticks during letter navigation. | No |
+| `EXPAND_STATUS_BAR` | Expand the notification shade via gesture. | No |
+| `BIND_ACCESSIBILITY_SERVICE` | Sanctioned API to lock the screen (double-tap) and expand notifications without reflection. | Optional (Accessibility settings) |
+| `BIND_NOTIFICATION_LISTENER_SERVICE` | Read active media playback for Now Playing and capture unread message notifications. | Optional (Settings prompt) |
 
-`BIND_APPWIDGET` is **not** requested: it is signature-level and is never granted to
-an ordinary app. `AppWidgetHost` and `bindAppWidgetIdIfAllowed` work without it for
-whichever app is the current Home.
+---
 
-## Known gaps
+## 📚 Specialized Documentation
 
-- No search in the A-Z list; the edge scrubber is the only way to find an app.
-- Work-profile apps are invisible. `AppRepository` uses `PackageManager` rather than
-  `LauncherApps`, and `AppInfo` carries no `UserHandle`. Fixing this changes
-  `AppInfo.key`, which is the persisted favorites key, so it needs a data migration.
-- No Baseline Profile. Generating one needs a device or emulator; it is the largest
-  remaining first-launch win.
-- Unit tests cover only framework-free logic. Anything touching `PackageManager`,
-  `ComponentName` or Compose needs Robolectric or an instrumented test.
+- [Features Guide (`docs/FEATURES_GUIDE.md`)](FEATURES_GUIDE.md): Comprehensive functional specification of all launcher features.
+- [Theming & UI (`docs/THEMING_AND_UI.md`)](THEMING_AND_UI.md): Monet dynamic colors, frosted glass tinting, blur flags, and typography.
+- [Update System (`docs/UPDATE_SYSTEM.md`)](UPDATE_SYSTEM.md): Built-in updater architecture, background downloads, and release workflows.
+- [Data & Storage (`docs/DATA_AND_STORAGE.md`)](DATA_AND_STORAGE.md): DataStore preferences, serialization, repositories, and memory caching.

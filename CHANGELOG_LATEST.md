@@ -1,5 +1,19 @@
 ### 🚀 Novidades e Melhorias da Versão 0.50.0
 
+- **Correção e Alinhamento Perfeito dos Widgets e Reprodutor de Mídia (Now Playing):**
+  - **Eliminação do Afastamento Extra no Reprodutor de Mídia (`NowPlayingWidget`):** Removido o espaçamento horizontal interno duplicado que afastava a arte do álbum e os controles de mídia 14dp para dentro da tela. Agora a capa da faixa em reprodução inicia exatamente na mesma coordenada horizontal (`contentStart`) dos ícones de aplicativos e do relógio, garantindo alinhamento e simetria impecáveis.
+  - **Suporte ao Modo Destro no Reprodutor:** Implementada adaptação dinâmica ao modo destro (`alignRight`), posicionando a arte do álbum à direita e os controles à esquerda com alinhamentos proporcionais.
+  - **Supressão de Paddings Automáticos do Framework em Widgets (`VictoriaAppWidgetHostView`):** Implementada a classe especializada `VictoriaAppWidgetHostView` herdando de `AppWidgetHostView`, anulando os espaçamentos automáticos embutidos pelo sistema Android (API 14+) através de `setPadding(0, 0, 0, 0)`. Com isso, qualquer widget escolhido pelo usuário passa a ocupar com precisão cirúrgica o espaço entre `contentStart` e `contentEnd`.
+  - **Ajuste Fino no Slot de Widgets (`WidgetSlot`):** Remoção de paddings residuais no container e no cartão placeholder de adição de widgets, sincronizando perfeitamente suas margens com os demais blocos da tela inicial.
+
+- **Central de Documentação Completa e Profissional (`docs/`):**
+  - **`docs/README.md`:** Portal unificado com índice, especificações do projeto e trilhas de leitura para desenvolvedores, designers e entusiastas.
+  - **`docs/FEATURES_GUIDE.md`:** Manual exaustivo de todas as funcionalidades (Scrubber alfabético com física gaussiana, alinhamento harmônico, botão dinâmico com física `tanh`, 6 estilos de relógio, gaveta de apps, pastas e gestos globais).
+  - **`docs/THEMING_AND_UI.md`:** Guia aprofundado do Material You / Monet, tingimento dinâmico de superfícies translúcidas (`dynamicSurfaceColor`), bordas com brilho ambiente (`dynamicBorderColor`), desfoque de janelas e tipografia.
+  - **`docs/UPDATE_SYSTEM.md`:** Arquitetura do `UpdateManager`, integração com a API do GitHub Releases, notificações discretas do sistema, downloads resilientes via MediaStore e diretrizes de changelog.
+  - **`docs/DATA_AND_STORAGE.md`:** Persistência no Jetpack DataStore, tabela completa de preferências, serialização de pastas, repositórios de apps/ícones e gerenciamento de memória em cache `LruCache` delimitado por bytes.
+  - **`docs/ARCHITECTURE.md`:** Atualização e modernização abrangente de diagramas de arquitetura, ciclo de vida de janelas, arbitragem de toques em widgets e tabela de permissões.
+
 - **Botão de Alinhamento Rápido na Tela de Edição do Layout:**
   - **Restauração de Alinhamento com 1 Toque:** Adicionado o botão *"Alinhar elementos"* na barra de ações superior do modo de edição/ordenação da tela inicial (*Editar layout*).
   - **Alinhamento com Base nos Aplicativos e na Borda:** Caso o usuário tenha desalinhado os componentes ao arrastar o puxador de espaçamento lateral ou os puxadores verticais, o botão restaura instantaneamente a distância padrão e simétrica dos aplicativos em relação à borda do celular (`sidePaddingDp = 20dp`), alinhando de imediato o alfabeto, os aplicativos, os widgets, o relógio e o reprodutor de mídia.

@@ -1305,6 +1305,7 @@ private fun NowPlayingBlock(
             iconSizeDp = iconSizeDp,
             labelSizeSp = labelSizeSp,
             contentColor = contentColor,
+            alignRight = alignRight,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = contentStart, end = contentEnd)
