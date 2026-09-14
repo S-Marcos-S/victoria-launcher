@@ -31,6 +31,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleUpdateIntent(intent)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
+            }
+        }
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowCompat.getInsetsController(window, window.decorView).show(
             androidx.core.view.WindowInsetsCompat.Type.statusBars()
@@ -78,6 +84,16 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         // Pressing HOME re-delivers the intent to us; treat it as "go back to the home screen".
         homeIntentTick++
+        handleUpdateIntent(intent)
+    }
+
+    private fun handleUpdateIntent(intent: Intent?) {
+        if (intent == null) return
+        if (intent.action == dev.victorialauncher.update.UpdateManager.ACTION_OPEN_UPDATE_CHANGELOG ||
+            intent.getBooleanExtra(dev.victorialauncher.update.UpdateManager.EXTRA_OPEN_UPDATE, false)
+        ) {
+            dev.victorialauncher.update.UpdateManager.requestShowUpdateChangelog()
+        }
     }
 
     override fun onStart() {

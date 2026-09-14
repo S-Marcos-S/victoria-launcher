@@ -49,6 +49,10 @@
     <string name="update_toast_downloading">Downloading update… Track progress in notifications</string>
     <string name="update_toast_download_completed">Download completed! APK saved to Downloads folder</string>
     <string name="update_toast_error">Error starting download: %1$s</string>
+    <string name="update_notification_channel_name">App updates</string>
+    <string name="update_notification_channel_desc">Alerts for new versions of Victoria Launcher</string>
+    <string name="update_notification_title">Victoria Launcher %1$s available</string>
+    <string name="update_notification_text">Tap to see what\'s new and update</string>
 
     <!-- Edit-mode drag handles -->
     <string name="handle_side_padding">↔ Side padding · %1$ddp</string>

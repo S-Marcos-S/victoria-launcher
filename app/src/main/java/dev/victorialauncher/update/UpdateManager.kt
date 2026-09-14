@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.update
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
@@ -10,7 +13,10 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import dev.victorialauncher.BuildConfig
+import dev.victorialauncher.MainActivity
 import dev.victorialauncher.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -60,9 +66,19 @@ data class UpdateInfo(
 }
 
 object UpdateManager {
+    const val ACTION_OPEN_UPDATE_CHANGELOG = "dev.victorialauncher.action.OPEN_UPDATE_CHANGELOG"
+    const val EXTRA_OPEN_UPDATE = "dev.victorialauncher.extra.OPEN_UPDATE"
+    private const val UPDATE_NOTIFICATION_CHANNEL_ID = "victoria_launcher_updates"
+    private const val UPDATE_NOTIFICATION_ID = 4242
+    private const val PREFS_NAME = "victoria_update_prefs"
+    private const val KEY_LAST_NOTIFIED_UPDATE = "last_notified_update"
+
     private const val GITHUB_REPO = "S-Marcos-S/victoria-launcher"
     private const val RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=5"
     private const val FALLBACK_RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases/tags/latest"
+
+    private var appContext: Context? = null
+    private var lastKnownUpdate: UpdateInfo? = null
 
     private val _updateAvailable = MutableStateFlow<UpdateInfo?>(null)
     val updateAvailable: StateFlow<UpdateInfo?> = _updateAvailable.asStateFlow()
@@ -70,12 +86,30 @@ object UpdateManager {
     private val _downloadStatus = MutableStateFlow<DownloadStatus>(DownloadStatus.Idle)
     val downloadStatus: StateFlow<DownloadStatus> = _downloadStatus.asStateFlow()
 
+    private val _showChangelogRequested = MutableStateFlow(false)
+    val showChangelogRequested: StateFlow<Boolean> = _showChangelogRequested.asStateFlow()
+
     private val updateScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private var lastCheckTimeMs = 0L
     private const val CHECK_INTERVAL_MS = 20 * 60 * 1000L // 20 minutos de cache para economizar bateria e cota
 
     private var dismissedUpdateKey: String? = null
+
+    fun init(context: Context) {
+        appContext = context.applicationContext
+    }
+
+    fun requestShowUpdateChangelog() {
+        if (_updateAvailable.value == null && lastKnownUpdate != null) {
+            _updateAvailable.value = lastKnownUpdate
+        }
+        _showChangelogRequested.value = true
+    }
+
+    fun dismissChangelogRequest() {
+        _showChangelogRequested.value = false
+    }
 
     fun dismissCurrentUpdate() {
         val info = _updateAvailable.value ?: return
@@ -91,7 +125,89 @@ object UpdateManager {
         dismissedUpdateKey = null
     }
 
-    fun checkForUpdates(coroutineScope: CoroutineScope, force: Boolean = false) {
+    fun maybeNotifyUpdateAvailable(context: Context, update: UpdateInfo) {
+        val appCtx = context.applicationContext
+        val updateKey = update.commitSha ?: update.tagName
+        val prefs = appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastNotified = prefs.getString(KEY_LAST_NOTIFIED_UPDATE, null)
+        if (lastNotified != updateKey) {
+            showUpdateNotification(appCtx, update)
+            prefs.edit().putString(KEY_LAST_NOTIFIED_UPDATE, updateKey).apply()
+        }
+    }
+
+    fun showUpdateNotification(context: Context, update: UpdateInfo) {
+        try {
+            val appCtx = context.applicationContext
+            val notificationManager = appCtx.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                ?: return
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    UPDATE_NOTIFICATION_CHANNEL_ID,
+                    appCtx.getString(R.string.update_notification_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = appCtx.getString(R.string.update_notification_channel_desc)
+                    setShowBadge(true)
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        appCtx,
+                        android.Manifest.permission.POST_NOTIFICATIONS,
+                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    return
+                }
+            }
+
+            val intent = Intent(appCtx, MainActivity::class.java).apply {
+                action = ACTION_OPEN_UPDATE_CHANGELOG
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(EXTRA_OPEN_UPDATE, true)
+            }
+
+            val pendingIntent = PendingIntent.getActivity(
+                appCtx,
+                UPDATE_NOTIFICATION_ID,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+
+            val title = appCtx.getString(R.string.update_notification_title, update.displayVersion)
+            val text = appCtx.getString(R.string.update_notification_text)
+
+            val notification = NotificationCompat.Builder(appCtx, UPDATE_NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build()
+
+            notificationManager.notify(UPDATE_NOTIFICATION_ID, notification)
+        } catch (_: Throwable) {
+            // Silencia qualquer exceção ao postar notificação
+        }
+    }
+
+    fun cancelUpdateNotification(context: Context) {
+        try {
+            val appCtx = context.applicationContext
+            val notificationManager = appCtx.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notificationManager?.cancel(UPDATE_NOTIFICATION_ID)
+        } catch (_: Throwable) {}
+    }
+
+    fun checkForUpdates(coroutineScope: CoroutineScope, force: Boolean = false, context: Context? = null) {
+        if (context != null && appContext == null) {
+            init(context)
+        }
         val now = System.currentTimeMillis()
         if (!force && now - lastCheckTimeMs < CHECK_INTERVAL_MS) {
             return
@@ -284,7 +400,7 @@ object UpdateManager {
                                 ?: extractVersion(tagName, releaseName)
                                 ?: BuildConfig.VERSION_NAME
 
-                            _updateAvailable.value = UpdateInfo(
+                            val updateInfo = UpdateInfo(
                                 hasUpdate = true,
                                 tagName = tagName,
                                 releaseName = releaseName,
@@ -295,8 +411,16 @@ object UpdateManager {
                                 apkSize = apkSize,
                                 publishedAtMs = updatedAtMs,
                             )
+                            lastKnownUpdate = updateInfo
+                            _updateAvailable.value = updateInfo
+                            appContext?.let { ctx ->
+                                maybeNotifyUpdateAvailable(ctx, updateInfo)
+                            }
                         } else {
                             _updateAvailable.value = null
+                            appContext?.let { ctx ->
+                                cancelUpdateNotification(ctx)
+                            }
                         }
                     }
                 }
@@ -333,6 +457,7 @@ object UpdateManager {
         }
 
         val appContext = context.applicationContext
+        cancelUpdateNotification(appContext)
         _downloadStatus.value = DownloadStatus.Downloading(0)
         Toast.makeText(
             appContext,

@@ -142,10 +142,11 @@ fun HomeRoute(
     var lockTargetOffset by remember { mutableStateOf<Offset?>(null) }
 
     LaunchedEffect(Unit) {
-        dev.victorialauncher.update.UpdateManager.checkForUpdates(this)
+        dev.victorialauncher.update.UpdateManager.checkForUpdates(this, context = context)
     }
 
     val updateInfo by dev.victorialauncher.update.UpdateManager.updateAvailable.collectAsState()
+    val showChangelogRequested by dev.victorialauncher.update.UpdateManager.showChangelogRequested.collectAsState()
 
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val notificationsByPackage by dev.victorialauncher.notification.NotificationBus.notifications.collectAsState()
@@ -561,19 +562,17 @@ fun HomeRoute(
             )
         }
 
-        // Exibe o balão flutuante translúcido ("O que há de novo") quando houver nova versão detectada,
-        // apenas na tela inicial e se o usuário ainda não tiver dispensado esta compilação.
+        // Exibe o balão flutuante translúcido ("O que há de novo") apenas quando o usuário
+        // solicita explicitamente (ao tocar na notificação do sistema), nunca automaticamente na tela inicial.
         val currentUpdate = updateInfo
-        if (currentUpdate != null && currentUpdate.hasUpdate &&
-            !dev.victorialauncher.update.UpdateManager.isUpdateDismissed(currentUpdate) &&
-            !appListVisible && !homeEditMode && !showHomeOptions
-        ) {
+        if (showChangelogRequested && currentUpdate != null && currentUpdate.hasUpdate) {
             UpdateChangelogDialog(
                 update = currentUpdate,
                 onDismissRequest = {
-                    dev.victorialauncher.update.UpdateManager.dismissCurrentUpdate()
+                    dev.victorialauncher.update.UpdateManager.dismissChangelogRequest()
                 },
                 onDownload = {
+                    dev.victorialauncher.update.UpdateManager.dismissChangelogRequest()
                     dev.victorialauncher.update.UpdateManager.startDownload(context, currentUpdate)
                 },
             )

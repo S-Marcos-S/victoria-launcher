@@ -1,5 +1,12 @@
 ### 🚀 Novidades e Melhorias da Versão 0.50.0
 
+- **Substituição do Pop-up Automático de Atualização por Notificação do Sistema:**
+  - **Experiência Não Intrusiva na Tela Inicial:** O diálogo/balão flutuante de mudanças ("O que há de novo") não surge mais de forma involuntária ou automática cobrindo a tela inicial ao detectar novas versões do aplicativo.
+  - **Notificação Discreta e Informativa do Sistema:** Ao identificar que uma nova versão foi compilada ou lançada, o launcher agora emite uma notificação elegante na barra de status do Android informando a versão disponível (*"Victoria Launcher vX.Y.Z disponível"* - *"Toque para ver o que há de novo e atualizar"*).
+  - **Acesso Direto sob Demanda:** Ao tocar na notificação, o aplicativo é trazido ao primeiro plano e o diálogo com o que há de novo e botão de download/instalação é exibido para o usuário.
+  - **Integração Total com o Painel de Opções:** A verificação manual de atualizações e visualização das novidades permanecem sempre disponíveis no painel de opções da tela inicial (`HomeOptionsBottomSheet`).
+  - **Compatibilidade com Android 13+:** Implementado canal de notificação dedicado (`victoria_launcher_updates`), tratamento seguro de permissões em tempo de execução (`POST_NOTIFICATIONS`) e controle inteligente de cache para evitar notificações repetidas da mesma versão.
+
 - **Alinhamento Automático e Harmônico (Alfabeto, Aplicativos, Widgets e Relógio):**
   - **Grid de Alinhamento Unificado e Automático:** Implementado um sistema de alinhamento harmônico entre a borda do alfabeto (`EdgeScrubber`), a lista de aplicativos favoritos e pastas (`FavoriteRow` e `FolderRow`), os widgets (`WidgetSlot` e `NowPlayingBlock`) e o relógio da tela inicial (`NiagaraClockWidget`).
   - **Padrão Harmônico por Padrão:** Todos os componentes alinham-se automaticamente às mesmas diretrizes verticais:

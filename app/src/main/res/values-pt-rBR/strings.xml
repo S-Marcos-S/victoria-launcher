@@ -50,6 +50,10 @@
     <string name="update_toast_downloading">Baixando atualização… Acompanhe pela barra de notificações</string>
     <string name="update_toast_download_completed">Download concluído! APK salvo na pasta Downloads</string>
     <string name="update_toast_error">Erro ao iniciar download: %1$s</string>
+    <string name="update_notification_channel_name">Atualizações do aplicativo</string>
+    <string name="update_notification_channel_desc">Avisos sobre novas versões disponíveis do Victoria Launcher</string>
+    <string name="update_notification_title">Victoria Launcher %1$s disponível</string>
+    <string name="update_notification_text">Toque para ver o que há de novo e atualizar</string>
 
     <!-- Alças de arrasto no modo de edição -->
     <string name="handle_side_padding">↔ Espaçamento lateral · %1$ddp</string>
