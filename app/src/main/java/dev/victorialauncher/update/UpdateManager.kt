@@ -149,8 +149,8 @@ object UpdateManager {
                         val currentSha = BuildConfig.GIT_SHA.trim()
                         val currentBuildTime = BuildConfig.BUILD_TIME_MILLIS
 
-                        // Procura primeiro uma release oficial com versão maior que a atual
-                        var chosenRelease: JSONObject? = null
+                        // 1. Procura primeiro uma release oficial com versão maior que a atual
+                        var higherVersionRelease: JSONObject? = null
                         var chosenVersion: String? = null
 
                         for (rel in releasesList) {
@@ -158,14 +158,14 @@ object UpdateManager {
                             val name = rel.optString("name", "")
                             val v = extractVersion(tag, name)
                             if (v != null && isVersionGreater(v, currentVersion)) {
-                                chosenRelease = rel
+                                higherVersionRelease = rel
                                 chosenVersion = v
                                 break
                             }
                         }
 
-                        // Se nenhuma versão for estritamente maior, escolhe a release que tiver o APK mais recente (ou "latest")
-                        if (chosenRelease == null) {
+                        // 2. Se nenhuma versão for estritamente maior, escolhe a release que tiver o APK mais recente (ou "latest")
+                        val chosenRelease: JSONObject = higherVersionRelease ?: run {
                             val latestRelease = releasesList.find { it.optString("tag_name").equals("latest", ignoreCase = true) }
                             val newestAssetRelease = releasesList.maxByOrNull { rel ->
                                 val assets = rel.optJSONArray("assets") ?: return@maxByOrNull 0L
@@ -185,7 +185,7 @@ object UpdateManager {
                                 }
                                 maxMs
                             }
-                            chosenRelease = newestAssetRelease ?: latestRelease ?: releasesList.firstOrNull()
+                            newestAssetRelease ?: latestRelease ?: releasesList.first()
                         }
 
                         val tagName = chosenRelease.optString("tag_name", "latest")
