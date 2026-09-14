@@ -126,8 +126,8 @@ jobs:
           Built automatically from commit \`${{ github.sha }}\`.
           EOF
 
-      - name: Create New Version Release
-        if: (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && steps.version_check.outputs.IS_NEW_VERSION == 'true'
+      - name: Create or Update Version Release
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version_check.outputs.TAG_NAME }}

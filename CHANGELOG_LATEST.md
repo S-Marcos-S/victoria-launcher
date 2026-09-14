@@ -28,5 +28,7 @@
 
 - **Criação Automática de Releases e Detecção Inteligente de Atualizações:**
   - **Releases Versionadas Automáticas:** O GitHub Actions agora detecta se a versão no `build.gradle.kts` mudou e, caso a tag ainda não exista no repositório, cria automaticamente uma nova release oficial (ex: `Victoria Launcher v0.49.0` com a tag `v0.49.0`), anexando os APKs e o changelog.
-  - **Manutenção de Builds Intermediárias:** Quando a versão não é alterada, os APKs da release `latest` continuam sendo atualizados a cada commit sem duplicar releases.
-  - **Detecção Semântica no App (`UpdateManager`):** O aplicativo agora compara a versão semântica remota com a versão instalada, identificando instantaneamente novas releases versionadas ou compilações mais recentes, exibindo o balão de atualização e o changelog correspondente para download direto.
+  - **Manutenção de Builds Intermediárias:** Quando a versão não é alterada, os APKs da release `latest` e da versão atual continuam sendo atualizados a cada commit sem duplicar releases.
+  - **Detecção Semântica & Seleção do APK Mais Recente (`UpdateManager`):** O aplicativo agora compara a versão semântica remota e os timestamps de assets mais recentes, identificando imediatamente novas releases ou compilações intermediárias.
+  - **Aviso Automático na Tela Inicial ("O que há de novo"):** O balão flutuante translúcido com blur agora aparece automaticamente na tela inicial assim que uma nova versão é detectada, permitindo baixar diretamente ou dispensar ("Lembrar depois"), mantendo persistência de dispensa para evitar interrupções repetitivas.
+  - **Máxima Eficiência de Bateria:** Checagem de atualizações otimizada com cache inteligente de 20 minutos, sem processos ou serviços em segundo plano drenando bateria.

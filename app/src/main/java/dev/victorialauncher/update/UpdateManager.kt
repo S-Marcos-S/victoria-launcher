@@ -73,13 +73,30 @@ object UpdateManager {
     private val updateScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private var lastCheckTimeMs = 0L
-    private const val CHECK_INTERVAL_MS = 5 * 60 * 1000L // 5 minutos de cache
+    private const val CHECK_INTERVAL_MS = 20 * 60 * 1000L // 20 minutos de cache para economizar bateria e cota
+
+    private var dismissedUpdateKey: String? = null
+
+    fun dismissCurrentUpdate() {
+        val info = _updateAvailable.value ?: return
+        dismissedUpdateKey = info.commitSha ?: info.tagName
+    }
+
+    fun isUpdateDismissed(info: UpdateInfo): Boolean {
+        val key = info.commitSha ?: info.tagName
+        return key != null && key == dismissedUpdateKey
+    }
+
+    fun resetDismissed() {
+        dismissedUpdateKey = null
+    }
 
     fun checkForUpdates(coroutineScope: CoroutineScope, force: Boolean = false) {
         val now = System.currentTimeMillis()
-        if (!force && now - lastCheckTimeMs < CHECK_INTERVAL_MS && _updateAvailable.value != null) {
+        if (!force && now - lastCheckTimeMs < CHECK_INTERVAL_MS) {
             return
         }
+        lastCheckTimeMs = now
 
         coroutineScope.launch(Dispatchers.IO) {
             try {
@@ -147,9 +164,28 @@ object UpdateManager {
                             }
                         }
 
-                        // Se nenhuma versão for estritamente maior, pega a primeira release (ou latest) para comparar commit SHA/data
+                        // Se nenhuma versão for estritamente maior, escolhe a release que tiver o APK mais recente (ou "latest")
                         if (chosenRelease == null) {
-                            chosenRelease = releasesList.first()
+                            val latestRelease = releasesList.find { it.optString("tag_name").equals("latest", ignoreCase = true) }
+                            val newestAssetRelease = releasesList.maxByOrNull { rel ->
+                                val assets = rel.optJSONArray("assets") ?: return@maxByOrNull 0L
+                                var maxMs = 0L
+                                for (i in 0 until assets.length()) {
+                                    val a = assets.optJSONObject(i) ?: continue
+                                    val name = a.optString("name", "")
+                                    if (name.contains("release") && name.endsWith(".apk")) {
+                                        val u = a.optString("updated_at", "")
+                                        if (u.isNotBlank()) {
+                                            try {
+                                                val ms = Instant.parse(u).toEpochMilli()
+                                                if (ms > maxMs) maxMs = ms
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
+                                }
+                                maxMs
+                            }
+                            chosenRelease = newestAssetRelease ?: latestRelease ?: releasesList.firstOrNull()
                         }
 
                         val tagName = chosenRelease.optString("tag_name", "latest")

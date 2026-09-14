@@ -145,6 +145,8 @@ fun HomeRoute(
         dev.victorialauncher.update.UpdateManager.checkForUpdates(this)
     }
 
+    val updateInfo by dev.victorialauncher.update.UpdateManager.updateAvailable.collectAsState()
+
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val notificationsByPackage by dev.victorialauncher.notification.NotificationBus.notifications.collectAsState()
     val listenerGranted = remember(homeIntentTick) { isListenerEnabled(context) }
@@ -549,6 +551,23 @@ fun HomeRoute(
                             Toast.LENGTH_SHORT,
                         ).show()
                     }
+                },
+            )
+        }
+
+        // Exibe o balão flutuante translúcido ("O que há de novo") quando houver nova versão detectada,
+        // apenas na tela inicial e se o usuário ainda não tiver dispensado esta compilação.
+        if (updateInfo?.hasUpdate == true &&
+            !dev.victorialauncher.update.UpdateManager.isUpdateDismissed(updateInfo!!) &&
+            !appListVisible && !homeEditMode && !showHomeOptions
+        ) {
+            UpdateChangelogDialog(
+                update = updateInfo!!,
+                onDismissRequest = {
+                    dev.victorialauncher.update.UpdateManager.dismissCurrentUpdate()
+                },
+                onDownload = {
+                    dev.victorialauncher.update.UpdateManager.startDownload(context, updateInfo!!)
                 },
             )
         }
