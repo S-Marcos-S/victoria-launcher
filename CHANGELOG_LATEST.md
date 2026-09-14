@@ -12,6 +12,7 @@
     - **Diálogo de Novidades e Atualizações (`UpdateChangelogDialog`):** Badge de versão em `primaryContainer`, caixa de texto de novidades em `surfaceContainer` e botões de download/instalação acentuados com a cor primária dinâmica.
     - **Diálogo de Notificações Detalhadas (`NotificationDetailDialog`):** Adicionado suporte ao efeito de desfoque de fundo do sistema (`FLAG_BLUR_BEHIND`), chips de remetentes selecionados em `primaryContainer` e balões de mensagens envoltos em tons suaves de `surfaceContainer`.
   - **Equilíbrio Perfeito entre Frosted Glass e Monet:** Todas as janelas mantêm a estética translúcida com desfoque de fundo (`blurBehindRadius = 32`) combinada com leve transparência (90% de opacidade) sobre a cor do container dinâmico, garantindo legibilidade absoluta e beleza visual.
+  - **Estabilidade & Compilação:** Correção da importação de `MaterialTheme` no painel de opções (`HomeOptionsBottomSheet`).
 
 - **Novo Botão Dinâmico na Tela Inicial:**
   - Implementado um botão de atalhos dinâmico posicionado estrategicamente na parte inferior da tela, ao lado da coluna do alfabeto, facilitando o alcance ergonômico com uma mão.
