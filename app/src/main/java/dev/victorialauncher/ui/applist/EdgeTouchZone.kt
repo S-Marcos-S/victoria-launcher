@@ -87,10 +87,12 @@ fun EdgeTouchZone(
                         change.consume()
                     }
                     val releasedOnStar = letters.getOrNull(lastIndex) == SCRUBBER_STAR
-                    scope.launch {
-                        state.release()
-                        if (releasedOnStar) {
-                            onDismiss()
+                    if (releasedOnStar) {
+                        state.cancel()
+                        onDismiss()
+                    } else {
+                        scope.launch {
+                            state.release()
                         }
                     }
                 }

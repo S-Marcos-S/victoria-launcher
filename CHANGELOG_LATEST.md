@@ -36,7 +36,9 @@
 - **Aprimoramento do Ícone de Estrela e Correção da Animação do Alfabeto:**
   - **Correção da Visibilidade do Alfabeto na Estrela:** Corrigida a falha onde a animação e a visualização do alfabeto (`EdgeScrubber`) desapareciam ao passar o dedo sobre a estrela ou ao iniciar o gesto de rolagem a partir da tela inicial. O alfabeto e a bolha de prévia foram desacoplados da camada de esmaecimento da lista, mantendo a animação elástica e o feedback visual 100% visíveis e estáveis.
   - **Transição Suave de Retorno:** A alternância entre a lista de aplicativos e a tela inicial ao atingir a estrela agora conta com cross-fade animado suave (`starAlpha`), sem cortes bruscos ou perda do gesto.
+  - **Eliminação do Flash da Letra 'A' ao Soltar a Estrela:** Corrigida a aparição momentânea da lista de aplicativos da letra "A" ao soltar o dedo sobre o ícone de estrela. A dispensa da lista agora é executada de forma imediata e síncrona no encerramento do gesto, cancelando o estado do gesto sem atrasos de mola e garantindo que a tela inicial permaneça visível sem qualquer piscamento ou transição indesejada.
   - **Ícone de Estrela Refinado:** Atualizado para `Icons.Rounded.Star` com pontas arredondadas e proporção óptica equilibrada (13dp na coluna do alfabeto e 38dp na bolha flutuante), integrando-se perfeitamente à tipografia e ao visual moderno do sistema.
   - **Estabilidade & Compilação:** Correção de inferência de tipos e smart-casting no gerenciador de atualizações (`UpdateManager`) e na tela inicial (`HomeRoute`).
+
 
 

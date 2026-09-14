@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -559,7 +560,7 @@ fun AppListScreen(
     ) {
       val starAlpha by animateFloatAsState(
           targetValue = if (scrubLetter == SCRUBBER_STAR) 0f else 1f,
-          animationSpec = tween(120),
+          animationSpec = if (!visible) snap() else tween(120),
           label = "starAlpha",
       )
       Box(
