@@ -42,6 +42,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import dev.victorialauncher.data.AppInfo
+import dev.victorialauncher.ui.theme.dynamicBorderColor
+import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 
 data class AppMenuItem(
     val title: String,
@@ -102,8 +104,8 @@ fun AppMenuDialog(
                         indication = null,
                         onClick = {},
                     ),
-                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
+                color = dynamicSurfaceColor(),
+                border = androidx.compose.foundation.BorderStroke(1.dp, dynamicBorderColor()),
                 shape = RoundedCornerShape(28.dp),
                 tonalElevation = 6.dp,
             ) {
@@ -131,7 +133,7 @@ fun AppMenuDialog(
                             Text(
                                 text = app.packageName,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = colorScheme.onSurfaceVariant,
+                                color = colorScheme.primary.copy(alpha = 0.85f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 11.sp,
@@ -140,8 +142,8 @@ fun AppMenuDialog(
                     }
 
                     Spacer(Modifier.height(16.dp))
-                    HorizontalDivider(color = colorScheme.outlineVariant.copy(alpha = 0.40f))
-                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider(color = colorScheme.primary.copy(alpha = 0.20f))
+                    Spacer(Modifier.height(10.dp))
 
                     // Menu action items
                     items.forEach { item ->
@@ -155,16 +157,27 @@ fun AppMenuDialog(
                                     onDismissRequest()
                                     item.onClick()
                                 }
-                                .padding(horizontal = 12.dp, vertical = 12.dp),
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = null,
-                                tint = iconColor,
-                                modifier = Modifier.size(22.dp),
-                            )
-                            Spacer(Modifier.width(16.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (item.isDestructive) colorScheme.errorContainer.copy(alpha = 0.35f)
+                                        else colorScheme.primary.copy(alpha = 0.14f)
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = null,
+                                    tint = iconColor,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                            Spacer(Modifier.width(14.dp))
                             Text(
                                 text = item.title,
                                 color = itemColor,

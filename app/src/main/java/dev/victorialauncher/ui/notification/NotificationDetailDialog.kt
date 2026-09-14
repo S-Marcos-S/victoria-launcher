@@ -21,12 +21,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import dev.victorialauncher.ui.theme.dynamicBorderColor
+import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -119,8 +122,8 @@ fun NotificationDetailDialog(
                     .fillMaxWidth(0.92f)
                     .clip(RoundedCornerShape(24.dp))
                     .clickable(enabled = false) {}, // absorb clicks inside dialog
-                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
-                border = BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
+                color = dynamicSurfaceColor(),
+                border = BorderStroke(1.dp, dynamicBorderColor()),
                 shape = RoundedCornerShape(24.dp),
                 tonalElevation = 6.dp,
             ) {
@@ -293,12 +296,13 @@ fun NotificationDetailDialog(
                             Spacer(Modifier.width(8.dp))
                         }
 
-                        OutlinedButton(
+                        Button(
                             onClick = { onOpen(selectedItem) },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = colorScheme.primary,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorScheme.primary,
+                                contentColor = colorScheme.onPrimary,
                             ),
-                            border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(12.dp),
                         ) {
                             Text(stringResource(R.string.notification_open))
                         }

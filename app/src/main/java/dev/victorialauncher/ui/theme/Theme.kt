@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.theme
 
+import android.app.WallpaperManager
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,7 +10,9 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import dev.victorialauncher.data.AppFont
@@ -74,6 +77,16 @@ fun VictoriaTheme(
 ) {
     val darkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
+
+    val wallpaperPrimary = remember(context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            runCatching {
+                val wm = WallpaperManager.getInstance(context)
+                wm.getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb()?.let { Color(it) }
+            }.getOrNull()
+        } else null
+    }
+
     // On Android 12+, use the system's Material You palette (derived from the user's
     // wallpaper) so Settings/dialogs feel like stock Android instead of a bespoke skin;
     // background stays transparent regardless, since the home screen relies on it to let
@@ -81,7 +94,15 @@ fun VictoriaTheme(
     val baseColors = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else {
-        if (darkTheme) DarkColors else LightColors
+        val fallback = if (darkTheme) DarkColors else LightColors
+        if (wallpaperPrimary != null) {
+            fallback.copy(
+                primary = wallpaperPrimary,
+                primaryContainer = wallpaperPrimary.copy(alpha = 0.35f),
+            )
+        } else {
+            fallback
+        }
     }
     val colors = baseColors.copy(background = Color.Transparent)
     val baseTypography = MaterialTheme.typography
@@ -96,4 +117,30 @@ fun VictoriaTheme(
         labelLarge = baseTypography.labelLarge.copy(fontFamily = fontFamily),
     )
     MaterialTheme(colorScheme = colors, typography = typography, content = content)
+}
+
+/**
+ * Calculates a rich frosted-glass surface color tinted with the active
+ * dynamic Monet color (Material You theme), ensuring dialogs and floating surfaces
+ * feel deeply integrated with the user's wallpaper rather than appearing as flat neutral grey.
+ */
+@Composable
+fun dynamicSurfaceColor(
+    alpha: Float = 0.90f,
+    tintFraction: Float = 0.12f,
+): Color {
+    val colorScheme = MaterialTheme.colorScheme
+    return lerp(colorScheme.surfaceContainerHigh, colorScheme.primary, tintFraction).copy(alpha = alpha)
+}
+
+/**
+ * Calculates an elegant dynamic glowing border color harmonized with the Monet palette.
+ */
+@Composable
+fun dynamicBorderColor(
+    alpha: Float = 0.35f,
+    tintFraction: Float = 0.40f,
+): Color {
+    val colorScheme = MaterialTheme.colorScheme
+    return lerp(colorScheme.outlineVariant, colorScheme.primary, tintFraction).copy(alpha = alpha)
 }

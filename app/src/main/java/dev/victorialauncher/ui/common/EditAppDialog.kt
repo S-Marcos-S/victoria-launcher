@@ -16,14 +16,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import dev.victorialauncher.ui.theme.dynamicBorderColor
+import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -97,8 +105,8 @@ fun EditAppDialog(
                         indication = null,
                         onClick = {},
                     ),
-                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
+                color = dynamicSurfaceColor(),
+                border = androidx.compose.foundation.BorderStroke(1.dp, dynamicBorderColor()),
                 shape = RoundedCornerShape(28.dp),
                 tonalElevation = 6.dp,
             ) {
@@ -107,12 +115,32 @@ fun EditAppDialog(
                         .fillMaxWidth()
                         .padding(24.dp),
                 ) {
-                    Text(
-                        text = stringResource(R.string.action_edit_icon_and_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colorScheme.onSurface,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = null,
+                                tint = colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.action_edit_icon_and_name),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colorScheme.onSurface,
+                        )
+                    }
 
                     Spacer(Modifier.height(18.dp))
 
@@ -136,13 +164,16 @@ fun EditAppDialog(
 
                     Spacer(Modifier.height(14.dp))
 
-                    TextButton(
+                    OutlinedButton(
                         onClick = onChangeIcon,
                         shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = colorScheme.primary,
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.50f)),
                     ) {
                         Text(
                             text = stringResource(R.string.action_change_icon),
-                            color = colorScheme.primary,
                             fontWeight = FontWeight.Medium,
                         )
                     }
@@ -174,11 +205,14 @@ fun EditAppDialog(
                             )
                         }
 
-                        TextButton(
+                        Spacer(Modifier.width(8.dp))
+
+                        Button(
                             onClick = { onConfirmName(text.trim()) },
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = colorScheme.primary
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorScheme.primary,
+                                contentColor = colorScheme.onPrimary,
                             ),
                         ) {
                             Text(

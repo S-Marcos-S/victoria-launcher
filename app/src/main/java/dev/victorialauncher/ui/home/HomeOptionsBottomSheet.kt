@@ -36,7 +36,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Checklist
@@ -172,7 +174,11 @@ fun HomeOptionsBottomSheet(
                     )
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .background(colorScheme.surfaceContainerLow)
+                    .background(lerp(colorScheme.surfaceContainerLow, colorScheme.primary, 0.10f))
+                    .border(
+                        BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.25f)),
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    )
                     .navigationBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 16.dp)
                     .clickable(
@@ -186,7 +192,7 @@ fun HomeOptionsBottomSheet(
                     modifier = Modifier
                         .size(width = 36.dp, height = 4.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(colorScheme.onSurfaceVariant.copy(alpha = 0.40f))
+                        .background(colorScheme.primary.copy(alpha = 0.50f))
                         .align(Alignment.CenterHorizontally),
                 )
 
@@ -413,22 +419,34 @@ private fun OptionItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 14.dp),
+            .padding(horizontal = 8.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (highlight) colorScheme.primary else colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp),
-        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(
+                    if (highlight) colorScheme.primaryContainer
+                    else colorScheme.primary.copy(alpha = 0.14f)
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (highlight) colorScheme.onPrimaryContainer else colorScheme.primary,
+                modifier = Modifier.size(22.dp),
+            )
+        }
         Spacer(Modifier.width(16.dp))
         Text(
             text = label,
             color = colorScheme.onSurface,
             fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),
         )
         if (badge != null) {

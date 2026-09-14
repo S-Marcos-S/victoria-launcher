@@ -36,7 +36,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import dev.victorialauncher.ui.theme.dynamicBorderColor
+import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
@@ -1358,8 +1364,8 @@ private fun FolderEditDialog(
                         indication = null,
                         onClick = {},
                     ),
-                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
+                color = dynamicSurfaceColor(),
+                border = androidx.compose.foundation.BorderStroke(1.dp, dynamicBorderColor()),
                 shape = RoundedCornerShape(28.dp),
                 tonalElevation = 6.dp,
             ) {
@@ -1368,12 +1374,32 @@ private fun FolderEditDialog(
                         .fillMaxWidth()
                         .padding(24.dp),
                 ) {
-                    Text(
-                        text = stringResource(R.string.action_edit_icon_and_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colorScheme.onSurface,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = null,
+                                tint = colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.action_edit_icon_and_name),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colorScheme.onSurface,
+                        )
+                    }
 
                     Spacer(Modifier.height(18.dp))
 
@@ -1397,27 +1423,35 @@ private fun FolderEditDialog(
 
                     Spacer(Modifier.height(14.dp))
 
-                    TextButton(
-                        onClick = onChangeIcon,
-                        shape = RoundedCornerShape(12.dp),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(
-                            text = stringResource(R.string.action_change_icon),
-                            color = colorScheme.primary,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
-
-                    if (hasCustomIcon) {
-                        TextButton(
-                            onClick = onResetIcon,
+                        OutlinedButton(
+                            onClick = onChangeIcon,
                             shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = colorScheme.primary,
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.50f)),
                         ) {
                             Text(
-                                text = stringResource(R.string.home_folder_use_previews),
-                                color = colorScheme.primary,
+                                text = stringResource(R.string.action_change_icon),
                                 fontWeight = FontWeight.Medium,
                             )
+                        }
+
+                        if (hasCustomIcon) {
+                            TextButton(
+                                onClick = onResetIcon,
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.home_folder_use_previews),
+                                    color = colorScheme.primary,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
                         }
                     }
 
@@ -1438,11 +1472,14 @@ private fun FolderEditDialog(
                             )
                         }
 
-                        TextButton(
+                        Spacer(Modifier.width(8.dp))
+
+                        Button(
                             onClick = { if (text.isNotBlank()) onConfirm(text.trim()) },
                             shape = RoundedCornerShape(12.dp),
-                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                                contentColor = colorScheme.primary,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorScheme.primary,
+                                contentColor = colorScheme.onPrimary,
                             ),
                         ) {
                             Text(

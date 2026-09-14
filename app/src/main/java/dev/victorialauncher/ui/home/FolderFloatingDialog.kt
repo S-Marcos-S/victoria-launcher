@@ -35,6 +35,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import dev.victorialauncher.ui.theme.dynamicBorderColor
+import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -115,8 +117,8 @@ fun FolderFloatingDialog(
                         indication = null,
                         onClick = {},
                     ),
-                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
+                color = dynamicSurfaceColor(),
+                border = androidx.compose.foundation.BorderStroke(1.dp, dynamicBorderColor()),
                 shape = RoundedCornerShape(26.dp),
                 tonalElevation = 6.dp,
             ) {
@@ -131,7 +133,7 @@ fun FolderFloatingDialog(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(42.dp)
                                 .background(colorScheme.primaryContainer, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -157,7 +159,7 @@ fun FolderFloatingDialog(
                             Text(
                                 text = stringResource(R.string.folder_member_count, members.size),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = colorScheme.onSurfaceVariant,
+                                color = colorScheme.primary.copy(alpha = 0.85f),
                             )
                         }
 
@@ -166,25 +168,33 @@ fun FolderFloatingDialog(
                                 onDismissRequest()
                                 onManageFolder()
                             },
-                            modifier = Modifier.size(36.dp),
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(colorScheme.primary.copy(alpha = 0.12f)),
                         ) {
                             Icon(
                                 Icons.Filled.Settings,
                                 contentDescription = stringResource(R.string.home_folder_choose_apps),
-                                tint = colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp),
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(19.dp),
                             )
                         }
 
+                        Spacer(Modifier.width(8.dp))
+
                         IconButton(
                             onClick = onDismissRequest,
-                            modifier = Modifier.size(36.dp),
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(colorScheme.primary.copy(alpha = 0.12f)),
                         ) {
                             Icon(
                                 Icons.Filled.Close,
                                 contentDescription = stringResource(R.string.action_back),
-                                tint = colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp),
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(19.dp),
                             )
                         }
                     }

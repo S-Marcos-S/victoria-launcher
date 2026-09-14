@@ -33,6 +33,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import dev.victorialauncher.ui.theme.dynamicBorderColor
+import dev.victorialauncher.ui.theme.dynamicSurfaceColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -111,8 +113,8 @@ fun UpdateChangelogDialog(
                         onClick = {},
                     ),
                 shape = RoundedCornerShape(24.dp),
-                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
-                border = BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
+                color = dynamicSurfaceColor(),
+                border = BorderStroke(1.dp, dynamicBorderColor()),
                 tonalElevation = 6.dp,
             ) {
                 Column(

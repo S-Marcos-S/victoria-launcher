@@ -1,18 +1,25 @@
 ### 🚀 Novidades e Melhorias da Versão 0.49.0
 
 - **Cores Dinâmicas do Sistema (Material You / Monet) em Todas as Janelas e Diálogos:**
-  - **Integração Profissional com o Monet (Android 12+):** Todas as janelas flutuantes, menus contextuais, painéis inferiores (bottom sheets) e caixas de diálogo agora utilizam as cores dinâmicas extraídas automaticamente do papel de parede do usuário (`MaterialTheme.colorScheme`), proporcionando total harmonia e integração visual com o sistema operacional.
-  - **Paleta Semântica Completa & Fallback Refinado (Pré-Android 12):** Implementação extensiva de tokens de container modernos do Material 3 (`surfaceContainer`, `surfaceContainerHigh`, `surfaceContainerHighest`, `surfaceContainerLow`, `outlineVariant`, `errorContainer`, etc.) garantindo uma experiência visual de alto nível tanto no tema Escuro quanto no Claro em qualquer versão do Android.
-  - **Modernização de Todas as Janelas e Superfícies Flutuantes:**
-    - **Menu Rápido de Aplicativos (`AppMenuDialog`):** Fundo translúcido com `surfaceContainerHigh`, bordas sutis adaptadas ao papel de parede com `outlineVariant`, ícones de ação em `primary` e destaque de desinstalação na cor semântica de erro do sistema (`error`).
-    - **Janela Flutuante de Pastas (`FolderFloatingDialog`):** Visual estilo frosted-glass com fundo dinâmico, badge do ícone de pasta em destaque com `primaryContainer` e `onPrimaryContainer`, e contraste tipográfico aprimorado.
-    - **Diálogo de Edição de Apps (`EditAppDialog`) e Pastas (`FolderEditDialog`):** Campos de texto com bordas focadas em `primary`, rótulos em `onSurfaceVariant` e botões de ação perfeitamente integrados ao tema do sistema.
-    - **Diálogo de Seleção de Pastas (`FolderPickerDialog`):** Fundo com `surfaceContainerHigh`, ícones de pasta e adição estilizados com `primary`, divisores suaves em `outlineVariant` e campo de nova pasta adaptativo.
-    - **Painel Inferior de Opções da Home (`HomeOptionsBottomSheet`):** Superfície fluida com `surfaceContainerLow`, puxador discreto em `onSurfaceVariant`, cards informativos de atualização no tom `primaryContainer` e botões de ação harmonizados.
-    - **Diálogo de Novidades e Atualizações (`UpdateChangelogDialog`):** Badge de versão em `primaryContainer`, caixa de texto de novidades em `surfaceContainer` e botões de download/instalação acentuados com a cor primária dinâmica.
-    - **Diálogo de Notificações Detalhadas (`NotificationDetailDialog`):** Adicionado suporte ao efeito de desfoque de fundo do sistema (`FLAG_BLUR_BEHIND`), chips de remetentes selecionados em `primaryContainer` e balões de mensagens envoltos em tons suaves de `surfaceContainer`.
-  - **Equilíbrio Perfeito entre Frosted Glass e Monet:** Todas as janelas mantêm a estética translúcida com desfoque de fundo (`blurBehindRadius = 32`) combinada com leve transparência (90% de opacidade) sobre a cor do container dinâmico, garantindo legibilidade absoluta e beleza visual.
-  - **Estabilidade & Compilação:** Correção da importação de `MaterialTheme` no painel de opções (`HomeOptionsBottomSheet`).
+  - **Color Tinting Dinâmico de Superfície (`dynamicSurfaceColor`):** As superfícies das janelas e diálogos não ficam mais em cinza neutro estático. Implementado o algoritmo de mesclagem (`lerp`) que infunde a cor primária dinâmica do wallpaper (Monet) no container de vidro fosco translúcido (`FLAG_BLUR_BEHIND`), garantindo que o fundo translúcido assuma a tonalidade real do papel de parede (azul, verde, roxo, âmbar, etc.).
+  - **Bordas Dinâmicas com Brilho do Wallpaper (`dynamicBorderColor`):** Contorno sutil com tonalidade adaptativa derivada da cor primária Monet, delimitando com elegância e sofisticação todas as janelas flutuantes.
+  - **Pills Circulares e Ícones Tematizados no Painel de Opções (`HomeOptionsBottomSheet`):**
+    - Todas as opções (Configurações, Editar tela inicial, Papel de parede, Adicionar widget, Botão dinâmico) agora contam com ícones aninhados em elegantes círculos com fundo dinâmico suave (`primary.copy(alpha = 0.14f)`) e ícones em destaque na cor primária Monet.
+    - Puxador superior (drag handle) adaptado na cor dinâmica primária do sistema.
+    - Fundo do painel inferior suavemente tingido na tonalidade do wallpaper com borda superior harmônica.
+  - **Menu de Contexto de Aplicativos (`AppMenuDialog`):**
+    - Ações aninhadas em círculos dinâmicos temáticos (com destaque em vermelho semântico de erro para desinstalação e primário para as demais ações).
+    - Subtítulo do nome de pacote na cor primária e divisor estilizado com transparência dinâmica.
+  - **Janela Flutuante de Pastas (`FolderFloatingDialog`):**
+    - Badge de pasta em `primaryContainer`, botões de ação circulares (Configurações e Fechar) com fundo e ícones na cor primária, e subtítulo de contagem em destaque dinâmico.
+  - **Diálogos de Edição (`EditAppDialog` e `FolderEditDialog`):**
+    - Badge de cabeçalho com ícone de edição estilizado, botão de alterar ícone com borda dinâmica e botão de confirmação destacado em botão preenchido com a cor primária (`primary`).
+  - **Diálogos de Notificações (`NotificationDetailDialog`) e Seleção de Pasta (`FolderPickerDialog`):**
+    - Botões de ação em cores primárias dinâmicas, fundos adaptados ao papel de parede e divisores harmônicos.
+  - **Suporte Abrangente a Versões do Android (8.1+ a 15):**
+    - Suporte nativo ao Monet no Android 12+ via `dynamicDarkColorScheme`/`dynamicLightColorScheme`.
+    - Extração automática de cores primárias do wallpaper via `WallpaperManager` no Android 8.1 a 11, garantindo que mesmo versões anteriores do sistema desfrutem de janelas tingidas na cor do papel de parede.
+
 
 - **Novo Botão Dinâmico na Tela Inicial:**
   - Implementado um botão de atalhos dinâmico posicionado estrategicamente na parte inferior da tela, ao lado da coluna do alfabeto, facilitando o alcance ergonômico com uma mão.
