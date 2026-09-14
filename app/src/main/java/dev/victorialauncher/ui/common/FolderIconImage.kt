@@ -65,7 +65,7 @@ fun FolderIconImage(override: String, sizeDp: Int, modifier: Modifier = Modifier
                             bitmap = bitmap,
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary, BlendMode.SrcIn),
-                            modifier = Modifier.size((sizeDp * 0.58f).dp),
+                            modifier = Modifier.size((sizeDp * 0.74f).dp),
                         )
                     }
                 }
@@ -78,7 +78,7 @@ fun FolderIconImage(override: String, sizeDp: Int, modifier: Modifier = Modifier
                             bitmap = bitmap,
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary, BlendMode.SrcIn),
-                            modifier = Modifier.size((sizeDp * 0.88f).dp),
+                            modifier = Modifier.size(sizeDp.dp),
                         )
                     }
                 }

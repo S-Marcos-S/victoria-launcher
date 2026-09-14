@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
@@ -88,7 +90,7 @@ private fun iconCacheKey(app: AppInfo, iconPack: String?, override: String?, px:
     "${app.key}|$iconPack|$override|$px"
 
 private fun themedIconCacheKey(app: AppInfo, iconPack: String?, override: String?, px: Int) =
-    "themed|${app.key}|$iconPack|$override|$px"
+    "themed_v3|${app.key}|$iconPack|$override|$px"
 
 /**
  * Decode every app's icon ahead of time, off the main thread. Without this the first open of
@@ -240,7 +242,7 @@ fun ThemedAppIcon(
                         bitmap = bitmap,
                         contentDescription = app.label,
                         colorFilter = ColorFilter.tint(effectiveTintColor, BlendMode.SrcIn),
-                        modifier = Modifier.size((sizeDp * 0.58f).dp),
+                        modifier = Modifier.size((sizeDp * 0.74f).dp),
                     )
                 }
             }
@@ -255,7 +257,7 @@ fun ThemedAppIcon(
                         bitmap = bitmap,
                         contentDescription = app.label,
                         colorFilter = ColorFilter.tint(effectiveTintColor, BlendMode.SrcIn),
-                        modifier = Modifier.size((sizeDp * 0.88f).dp),
+                        modifier = Modifier.size(sizeDp.dp),
                     )
                 }
             }
@@ -272,39 +274,37 @@ internal fun generateMonochromeBitmap(drawable: Drawable, px: Int, label: String
         val mono = drawable.monochrome
         if (mono != null) {
             val layer = mono.mutate()
-            val scale = 1.28f
-            val offset = ((px * scale - px) / 2f).toInt()
-            layer.setBounds(-offset, -offset, px + offset, px + offset)
+            layer.setBounds(0, 0, px, px)
             layer.draw(canvas)
             convertToWhiteMask(bitmap)
             if (hasSufficientVisiblePixels(bitmap)) {
-                return bitmap
+                return autoFrameGlyphBitmap(bitmap, px)
             }
         }
     }
 
     // 2. Adaptive icon foreground layer fallback
     if (drawable is AdaptiveIconDrawable) {
+        bitmap.eraseColor(AndroidColor.TRANSPARENT)
         val fg = drawable.foreground.mutate()
-        val scale = 1.28f
-        val offset = ((px * scale - px) / 2f).toInt()
-        fg.setBounds(-offset, -offset, px + offset, px + offset)
+        fg.setBounds(0, 0, px, px)
         fg.draw(canvas)
         stripCornerBackground(bitmap)
         convertToWhiteMask(bitmap)
         if (hasSufficientVisiblePixels(bitmap)) {
-            return bitmap
+            return autoFrameGlyphBitmap(bitmap, px)
         }
     }
 
     // 3. Fallback for non-adaptive drawables (legacy or custom icons)
+    bitmap.eraseColor(AndroidColor.TRANSPARENT)
     val target = drawable.mutate()
     target.setBounds(0, 0, px, px)
     target.draw(canvas)
     stripCornerBackground(bitmap)
     convertToWhiteMask(bitmap)
     if (hasSufficientVisiblePixels(bitmap)) {
-        return bitmap
+        return autoFrameGlyphBitmap(bitmap, px)
     }
 
     // 4. Absolute fallback: Monogram with first letter of the app label
@@ -450,6 +450,63 @@ private fun hasSufficientVisiblePixels(bitmap: Bitmap): Boolean {
     return visible >= (count * 0.02)
 }
 
+private fun autoFrameGlyphBitmap(src: Bitmap, targetPx: Int): Bitmap {
+    val w = src.width
+    val h = src.height
+    if (w <= 0 || h <= 0) return src
+
+    val pixels = IntArray(w * h)
+    src.getPixels(pixels, 0, w, 0, 0, w, h)
+
+    var minX = w
+    var minY = h
+    var maxX = -1
+    var maxY = -1
+
+    for (y in 0 until h) {
+        val rowOffset = y * w
+        for (x in 0 until w) {
+            val alpha = AndroidColor.alpha(pixels[rowOffset + x])
+            if (alpha > 20) {
+                if (x < minX) minX = x
+                if (x > maxX) maxX = x
+                if (y < minY) minY = y
+                if (y > maxY) maxY = y
+            }
+        }
+    }
+
+    if (maxX < minX || maxY < minY) {
+        return src
+    }
+
+    val cropW = maxX - minX + 1
+    val cropH = maxY - minY + 1
+
+    if (cropW < 4 || cropH < 4) {
+        return src
+    }
+
+    val output = Bitmap.createBitmap(targetPx, targetPx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(output)
+
+    val targetContentSize = targetPx * 0.86f
+    val scale = minOf(targetContentSize / cropW.toFloat(), targetContentSize / cropH.toFloat())
+
+    val destW = cropW * scale
+    val destH = cropH * scale
+    val destLeft = (targetPx - destW) / 2f
+    val destTop = (targetPx - destH) / 2f
+
+    val srcRect = Rect(minX, minY, maxX + 1, maxY + 1)
+    val destRect = RectF(destLeft, destTop, destLeft + destW, destTop + destH)
+
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    canvas.drawBitmap(src, srcRect, destRect, paint)
+
+    return output
+}
+
 private fun generateMonogramBitmap(label: String, px: Int): Bitmap {
     val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
@@ -457,7 +514,7 @@ private fun generateMonogramBitmap(label: String, px: Int): Bitmap {
 
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = AndroidColor.WHITE
-        textSize = px * 0.55f
+        textSize = px * 0.65f
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }

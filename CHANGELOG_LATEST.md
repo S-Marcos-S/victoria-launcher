@@ -1,3 +1,16 @@
+### 🚀 Novidades e Melhorias da Versão 0.51.1
+
+- **Correção da Escala Óptica e Enquadramento dos Ícones Temáticos:**
+  - **Eliminação do Duplo Padding e Margens Transparentes Excessivas:** Corrigido o comportamento em que a imagem e os glifos dentro dos ícones temáticos ficavam visivelmente menores do que nos ícones normais. A especificação técnica de `AdaptiveIconDrawable` do Android define um canvas de 108dp com safe-zone central de ~44dp, o que introduzia margens transparentes vazias no glifo extraído antes mesmo da aplicação das margens do container squircle.
+  - **Algoritmo de Auto-Enquadramento Óptico (`autoFrameGlyphBitmap`):** Implementado algoritmo de detecção de limites visíveis por varredura do canal alfa. O glifo útil é recortado e redimensionado para preencher de forma ideal 86% do espaço útil com interpolação bilinear de alta precisão (`FILTER_BITMAP_FLAG`), eliminando espaços mortos e mantendo a fidelidade geométrica sem distorções.
+  - **Ajuste de Proporção Material 3 e Estilo Minimalista:**
+    - *Material You:* O glifo interno agora ocupa 74% da largura do squircle de container (`Modifier.size((sizeDp * 0.74f).dp)`), resultando em um glifo ativo de ~36dp dentro de ícones de 56dp — proporção exatamente correspondente ao Pixel Launcher oficial no Android 14/15.
+    - *Minimalista:* O glifo monocromático aproveita integralmente a grade do ícone (`Modifier.size(sizeDp.dp)`), equiparando o peso visual e a presença óptica aos ícones convencionais não tematizados.
+    - *Monogramas Nítidos:* Aumento do corpo tipográfico do monograma fallback de 55% para 65%, garantindo legibilidade e proporção visual harmônica com os demais apps.
+  - **Invalidação e Renovação Automática do Cache (`themed_v3`):** Chave de cache atualizada para descartar instantaneamente bitmaps de versões anteriores e forçar a regeneração de todos os ícones com a nova calibração óptica.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.51.0
 
 - **Ícones Temáticos Dinâmicos do Monet para Todos os Aplicativos:**
