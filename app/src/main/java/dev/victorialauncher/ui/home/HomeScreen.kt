@@ -1328,6 +1328,8 @@ private fun FolderEditDialog(
         onDispose {}
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(
@@ -1339,7 +1341,7 @@ private fun FolderEditDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
+                .background(colorScheme.scrim.copy(alpha = 0.45f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -1351,19 +1353,15 @@ private fun FolderEditDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.90f)
                     .clip(RoundedCornerShape(28.dp))
-                    .border(
-                        width = 1.dp,
-                        color = Color.White.copy(alpha = 0.20f),
-                        shape = RoundedCornerShape(28.dp),
-                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                color = Color(0xDD1E232A),
+                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
                 shape = RoundedCornerShape(28.dp),
-                tonalElevation = 8.dp,
+                tonalElevation = 6.dp,
             ) {
                 Column(
                     modifier = Modifier
@@ -1374,7 +1372,7 @@ private fun FolderEditDialog(
                         text = stringResource(R.string.action_edit_icon_and_name),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
+                        color = colorScheme.onSurface,
                     )
 
                     Spacer(Modifier.height(18.dp))
@@ -1385,12 +1383,13 @@ private fun FolderEditDialog(
                         label = { Text(stringResource(R.string.home_folder_name_label)) },
                         shape = RoundedCornerShape(16.dp),
                         colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
+                            focusedBorderColor = colorScheme.primary,
+                            unfocusedBorderColor = colorScheme.outline,
+                            focusedTextColor = colorScheme.onSurface,
+                            unfocusedTextColor = colorScheme.onSurface,
+                            focusedLabelColor = colorScheme.primary,
+                            unfocusedLabelColor = colorScheme.onSurfaceVariant,
+                            cursorColor = colorScheme.primary,
                         ),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -1404,7 +1403,7 @@ private fun FolderEditDialog(
                     ) {
                         Text(
                             text = stringResource(R.string.action_change_icon),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = colorScheme.primary,
                             fontWeight = FontWeight.Medium,
                         )
                     }
@@ -1416,7 +1415,7 @@ private fun FolderEditDialog(
                         ) {
                             Text(
                                 text = stringResource(R.string.home_folder_use_previews),
-                                color = MaterialTheme.colorScheme.primary,
+                                color = colorScheme.primary,
                                 fontWeight = FontWeight.Medium,
                             )
                         }
@@ -1435,7 +1434,7 @@ private fun FolderEditDialog(
                         ) {
                             Text(
                                 text = stringResource(R.string.action_cancel),
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -1443,7 +1442,7 @@ private fun FolderEditDialog(
                             onClick = { if (text.isNotBlank()) onConfirm(text.trim()) },
                             shape = RoundedCornerShape(12.dp),
                             colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary,
+                                contentColor = colorScheme.primary,
                             ),
                         ) {
                             Text(

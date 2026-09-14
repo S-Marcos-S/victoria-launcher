@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.common
 
 import android.os.Build
@@ -72,6 +72,8 @@ fun AppMenuDialog(
         onDispose {}
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
@@ -83,7 +85,7 @@ fun AppMenuDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
+                .background(colorScheme.scrim.copy(alpha = 0.45f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -95,19 +97,15 @@ fun AppMenuDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.86f)
                     .clip(RoundedCornerShape(28.dp))
-                    .border(
-                        width = 1.dp,
-                        color = Color.White.copy(alpha = 0.20f),
-                        shape = RoundedCornerShape(28.dp),
-                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                color = Color(0xDD1E232A),
+                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
                 shape = RoundedCornerShape(28.dp),
-                tonalElevation = 8.dp,
+                tonalElevation = 6.dp,
             ) {
                 Column(
                     modifier = Modifier
@@ -126,14 +124,14 @@ fun AppMenuDialog(
                                 text = displayName,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
+                                color = colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 text = app.packageName,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.5f),
+                                color = colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 11.sp,
@@ -142,12 +140,13 @@ fun AppMenuDialog(
                     }
 
                     Spacer(Modifier.height(16.dp))
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.12f))
+                    HorizontalDivider(color = colorScheme.outlineVariant.copy(alpha = 0.40f))
                     Spacer(Modifier.height(8.dp))
 
                     // Menu action items
                     items.forEach { item ->
-                        val itemColor = if (item.isDestructive) Color(0xFFEF5350) else Color.White.copy(alpha = 0.90f)
+                        val itemColor = if (item.isDestructive) colorScheme.error else colorScheme.onSurface
+                        val iconColor = if (item.isDestructive) colorScheme.error else colorScheme.primary
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -162,7 +161,7 @@ fun AppMenuDialog(
                             Icon(
                                 imageVector = item.icon,
                                 contentDescription = null,
-                                tint = itemColor,
+                                tint = iconColor,
                                 modifier = Modifier.size(22.dp),
                             )
                             Spacer(Modifier.width(16.dp))

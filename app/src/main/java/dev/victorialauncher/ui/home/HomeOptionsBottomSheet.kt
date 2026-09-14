@@ -106,6 +106,8 @@ fun HomeOptionsBottomSheet(
         }
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing)),
@@ -115,7 +117,7 @@ fun HomeOptionsBottomSheet(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
+                .background(colorScheme.scrim.copy(alpha = 0.45f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -169,7 +171,7 @@ fun HomeOptionsBottomSheet(
                     )
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .background(Color(0xFF1E1E1E))
+                    .background(colorScheme.surfaceContainerLow)
                     .navigationBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 16.dp)
                     .clickable(
@@ -183,7 +185,7 @@ fun HomeOptionsBottomSheet(
                     modifier = Modifier
                         .size(width = 36.dp, height = 4.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(Color.White.copy(alpha = 0.3f))
+                        .background(colorScheme.onSurfaceVariant.copy(alpha = 0.40f))
                         .align(Alignment.CenterHorizontally),
                 )
 
@@ -191,7 +193,7 @@ fun HomeOptionsBottomSheet(
 
                 Text(
                     text = stringResource(R.string.options_title),
-                    color = Color.White,
+                    color = colorScheme.onSurface,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
@@ -204,10 +206,10 @@ fun HomeOptionsBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF1B2E1E).copy(alpha = 0.75f))
+                            .background(colorScheme.primaryContainer.copy(alpha = 0.35f))
                             .border(
                                 width = 1.dp,
-                                color = Color(0xFF4CAF50).copy(alpha = 0.35f),
+                                color = colorScheme.primary.copy(alpha = 0.40f),
                                 shape = RoundedCornerShape(16.dp),
                             )
                             .padding(14.dp),
@@ -219,13 +221,13 @@ fun HomeOptionsBottomSheet(
                             Icon(
                                 imageVector = Icons.Filled.SystemUpdate,
                                 contentDescription = null,
-                                tint = Color(0xFF4CAF50),
+                                tint = colorScheme.primary,
                                 modifier = Modifier.size(22.dp),
                             )
                             Spacer(Modifier.width(10.dp))
                             Text(
                                 text = stringResource(R.string.update_available_title),
-                                color = Color.White,
+                                color = colorScheme.onSurface,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.weight(1f),
@@ -233,12 +235,12 @@ fun HomeOptionsBottomSheet(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(Color(0xFF2E7D32))
+                                    .background(colorScheme.primary)
                                     .padding(horizontal = 7.dp, vertical = 3.dp),
                             ) {
                                 Text(
                                     text = update.displayVersion,
-                                    color = Color.White,
+                                    color = colorScheme.onPrimary,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -258,9 +260,9 @@ fun HomeOptionsBottomSheet(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = Color.White,
+                                    contentColor = colorScheme.primary,
                                 ),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
+                                border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.40f)),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Info,
@@ -284,8 +286,8 @@ fun HomeOptionsBottomSheet(
                                         modifier = Modifier.weight(1f),
                                         shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.buttonColors(
-                                            disabledContainerColor = Color(0xFF2E7D32).copy(alpha = 0.7f),
-                                            disabledContentColor = Color.White,
+                                            disabledContainerColor = colorScheme.primary.copy(alpha = 0.6f),
+                                            disabledContentColor = colorScheme.onPrimary,
                                         ),
                                     ) {
                                         Text(
@@ -303,8 +305,8 @@ fun HomeOptionsBottomSheet(
                                         modifier = Modifier.weight(1f),
                                         shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF2E7D32),
-                                            contentColor = Color.White,
+                                            containerColor = colorScheme.primary,
+                                            contentColor = colorScheme.onPrimary,
                                         ),
                                     ) {
                                         Icon(
@@ -328,8 +330,8 @@ fun HomeOptionsBottomSheet(
                                         modifier = Modifier.weight(1f),
                                         shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF2E7D32),
-                                            contentColor = Color.White,
+                                            containerColor = colorScheme.primary,
+                                            contentColor = colorScheme.onPrimary,
                                         ),
                                     ) {
                                         Icon(
@@ -406,6 +408,7 @@ private fun OptionItem(
     badge: String? = null,
     highlight: Boolean = false,
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -417,13 +420,13 @@ private fun OptionItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (highlight) Color(0xFF4CAF50) else Color.White,
+            tint = if (highlight) colorScheme.primary else colorScheme.onSurfaceVariant,
             modifier = Modifier.size(24.dp),
         )
         Spacer(Modifier.width(16.dp))
         Text(
             text = label,
-            color = Color.White,
+            color = colorScheme.onSurface,
             fontSize = 16.sp,
             modifier = Modifier.weight(1f),
         )
@@ -431,12 +434,12 @@ private fun OptionItem(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFF2E7D32))
+                    .background(colorScheme.primary)
                     .padding(horizontal = 8.dp, vertical = 2.dp),
             ) {
                 Text(
                     text = badge,
-                    color = Color.White,
+                    color = colorScheme.onPrimary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                 )

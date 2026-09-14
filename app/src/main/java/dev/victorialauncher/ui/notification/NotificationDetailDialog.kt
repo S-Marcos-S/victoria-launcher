@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.notification
 
+import android.os.Build
+import android.view.WindowManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,12 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import dev.victorialauncher.R
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.notification.AppNotificationItem
@@ -77,6 +81,20 @@ fun NotificationDetailDialog(
     var currentKey by remember(item.key) { mutableStateOf(distinctList.firstOrNull { it.key == item.key }?.key ?: distinctList.firstOrNull()?.key ?: item.key) }
     val selectedItem = distinctList.find { it.key == currentKey } ?: distinctList.firstOrNull() ?: item
 
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dialogWindow != null) {
+            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = dialogWindow.attributes
+            params.blurBehindRadius = 32
+            dialogWindow.attributes = params
+        }
+        onDispose {}
+    }
+
+    val colorScheme = MaterialTheme.colorScheme
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
@@ -89,7 +107,7 @@ fun NotificationDetailDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.55f))
+                .background(colorScheme.scrim.copy(alpha = 0.45f))
                 .clickable(onClick = onDismissRequest),
             contentAlignment = Alignment.Center,
         ) {
@@ -100,15 +118,11 @@ fun NotificationDetailDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .clip(RoundedCornerShape(24.dp))
-                    .border(
-                        width = 1.dp,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(24.dp)
-                    )
                     .clickable(enabled = false) {}, // absorb clicks inside dialog
-                color = Color(0xDD1E232A), // Deep dark translucent glass
+                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                border = BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
                 shape = RoundedCornerShape(24.dp),
-                tonalElevation = 8.dp,
+                tonalElevation = 6.dp,
             ) {
                 Column(
                     modifier = Modifier
@@ -129,17 +143,17 @@ fun NotificationDetailDialog(
                                 val chipTitle = (if (notif.title.isNotBlank()) notif.title else appName) + countSuffix
 
                                 Surface(
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.08f),
+                                    color = if (isSelected) colorScheme.primaryContainer else colorScheme.surfaceContainerHighest.copy(alpha = 0.65f),
                                     shape = RoundedCornerShape(16.dp),
                                     border = if (isSelected) {
-                                        BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
+                                        BorderStroke(1.dp, colorScheme.primary)
                                     } else null,
                                     modifier = Modifier.clickable { currentKey = notif.key },
                                 ) {
                                     Text(
                                         text = chipTitle,
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f),
+                                        color = if (isSelected) colorScheme.onPrimaryContainer else colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                         maxLines = 1,
                                     )
@@ -171,7 +185,7 @@ fun NotificationDetailDialog(
                                 text = headerTitle,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
+                                color = colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             )
@@ -179,7 +193,7 @@ fun NotificationDetailDialog(
                                 Text(
                                     text = headerSubtitle,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.7f),
+                                    color = colorScheme.onSurfaceVariant,
                                     maxLines = 1,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 )
@@ -189,7 +203,7 @@ fun NotificationDetailDialog(
                         Text(
                             text = timeText,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.6f),
+                            color = colorScheme.onSurfaceVariant,
                         )
                     }
 
@@ -209,7 +223,7 @@ fun NotificationDetailDialog(
                             ) {
                                 selectedItem.messages.forEach { msg ->
                                     Surface(
-                                        color = Color.White.copy(alpha = 0.07f),
+                                        color = colorScheme.surfaceContainer.copy(alpha = 0.70f),
                                         shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
@@ -223,14 +237,14 @@ fun NotificationDetailDialog(
                                                     text = msg.sender,
                                                     style = MaterialTheme.typography.labelMedium,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                                                    color = colorScheme.primary,
                                                 )
                                                 Spacer(Modifier.height(2.dp))
                                             }
                                             Text(
                                                 text = msg.text,
                                                 style = MaterialTheme.typography.bodyMedium,
-                                                color = Color.White.copy(alpha = 0.92f),
+                                                color = colorScheme.onSurface,
                                                 lineHeight = 20.sp,
                                             )
                                             if (msg.timestamp > 0L) {
@@ -239,7 +253,7 @@ fun NotificationDetailDialog(
                                                 Text(
                                                     text = msgTime,
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = Color.White.copy(alpha = 0.45f),
+                                                    color = colorScheme.onSurfaceVariant,
                                                     modifier = Modifier.align(Alignment.End),
                                                 )
                                             }
@@ -252,7 +266,7 @@ fun NotificationDetailDialog(
                                 Text(
                                     text = selectedItem.text,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.88f),
+                                    color = colorScheme.onSurface,
                                     lineHeight = 20.sp,
                                 )
                             }
@@ -271,7 +285,7 @@ fun NotificationDetailDialog(
                             TextButton(
                                 onClick = { onDismissNotification(selectedItem) },
                                 colors = ButtonDefaults.textButtonColors(
-                                    contentColor = Color.White.copy(alpha = 0.75f)
+                                    contentColor = colorScheme.onSurfaceVariant,
                                 ),
                             ) {
                                 Text(stringResource(R.string.notification_dismiss))
@@ -282,13 +296,9 @@ fun NotificationDetailDialog(
                         OutlinedButton(
                             onClick = { onOpen(selectedItem) },
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary
+                                contentColor = colorScheme.primary,
                             ),
-                            border = ButtonDefaults.outlinedButtonBorder.copy(
-                                brush = androidx.compose.ui.graphics.SolidColor(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                                )
-                            ),
+                            border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.5f)),
                         ) {
                             Text(stringResource(R.string.notification_open))
                         }

@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.home
 
 import android.os.Build
@@ -85,6 +85,8 @@ fun FolderFloatingDialog(
         onDispose {}
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
@@ -96,7 +98,7 @@ fun FolderFloatingDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
+                .background(colorScheme.scrim.copy(alpha = 0.45f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -108,19 +110,15 @@ fun FolderFloatingDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.90f)
                     .clip(RoundedCornerShape(26.dp))
-                    .border(
-                        width = 1.dp,
-                        color = Color.White.copy(alpha = 0.18f),
-                        shape = RoundedCornerShape(26.dp),
-                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {},
                     ),
-                color = Color(0xDD1B1F26),
+                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
                 shape = RoundedCornerShape(26.dp),
-                tonalElevation = 8.dp,
+                tonalElevation = 6.dp,
             ) {
                 Column(
                     modifier = Modifier
@@ -134,13 +132,13 @@ fun FolderFloatingDialog(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(Color.White.copy(alpha = 0.10f), CircleShape),
+                                .background(colorScheme.primaryContainer, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 Icons.Filled.Folder,
                                 contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.85f),
+                                tint = colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(22.dp),
                             )
                         }
@@ -152,14 +150,14 @@ fun FolderFloatingDialog(
                                 text = folder.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
+                                color = colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 text = stringResource(R.string.folder_member_count, members.size),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -173,7 +171,7 @@ fun FolderFloatingDialog(
                             Icon(
                                 Icons.Filled.Settings,
                                 contentDescription = stringResource(R.string.home_folder_choose_apps),
-                                tint = Color.White.copy(alpha = 0.65f),
+                                tint = colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -185,7 +183,7 @@ fun FolderFloatingDialog(
                             Icon(
                                 Icons.Filled.Close,
                                 contentDescription = stringResource(R.string.action_back),
-                                tint = Color.White.copy(alpha = 0.65f),
+                                tint = colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -202,7 +200,7 @@ fun FolderFloatingDialog(
                         ) {
                             Text(
                                 text = stringResource(R.string.home_folder_empty),
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
@@ -234,7 +232,7 @@ fun FolderFloatingDialog(
                                     Spacer(Modifier.height(6.dp))
                                     Text(
                                         text = displayName(app),
-                                        color = Color.White.copy(alpha = 0.9f),
+                                        color = colorScheme.onSurface,
                                         fontSize = (labelSizeSp - 3).coerceAtLeast(11).sp,
                                         textAlign = TextAlign.Center,
                                         maxLines = 2,

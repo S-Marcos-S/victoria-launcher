@@ -79,6 +79,8 @@ fun UpdateChangelogDialog(
         onDispose {}
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
@@ -90,7 +92,7 @@ fun UpdateChangelogDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
+                .background(colorScheme.scrim.copy(alpha = 0.45f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -109,9 +111,9 @@ fun UpdateChangelogDialog(
                         onClick = {},
                     ),
                 shape = RoundedCornerShape(24.dp),
-                color = Color(0xDD171B22), // Transparente escuro (86% opacidade)
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                tonalElevation = 12.dp,
+                color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                border = BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.40f)),
+                tonalElevation = 6.dp,
             ) {
                 Column(
                     modifier = Modifier
@@ -127,13 +129,13 @@ fun UpdateChangelogDialog(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF2E7D32).copy(alpha = 0.35f)),
+                                .background(colorScheme.primaryContainer),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.NewReleases,
                                 contentDescription = null,
-                                tint = Color(0xFF4CAF50),
+                                tint = colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(24.dp),
                             )
                         }
@@ -145,7 +147,7 @@ fun UpdateChangelogDialog(
                                 text = stringResource(R.string.update_dialog_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
+                                color = colorScheme.onSurface,
                             )
                             val versionSubtitle = if (!update.commitSha.isNullOrBlank()) {
                                 "${update.displayVersion} (${update.commitSha.take(7)})"
@@ -155,7 +157,7 @@ fun UpdateChangelogDialog(
                             Text(
                                 text = versionSubtitle,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF81C784),
+                                color = colorScheme.primary,
                                 fontWeight = FontWeight.Medium,
                             )
                         }
@@ -165,7 +167,7 @@ fun UpdateChangelogDialog(
                             Text(
                                 text = String.format(Locale.getDefault(), "%.2f MB", sizeMb),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -177,7 +179,7 @@ fun UpdateChangelogDialog(
                         Text(
                             text = stringResource(R.string.update_compiled_at, dateFormatted),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.5f),
+                            color = colorScheme.onSurfaceVariant,
                         )
                     }
 
@@ -189,14 +191,14 @@ fun UpdateChangelogDialog(
                             .fillMaxWidth()
                             .heightIn(max = 260.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White.copy(alpha = 0.06f))
+                            .background(colorScheme.surfaceContainer.copy(alpha = 0.65f))
                             .padding(14.dp)
                             .verticalScroll(rememberScrollState()),
                     ) {
                         Text(
                             text = update.changelog,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.92f),
+                            color = colorScheme.onSurface,
                             lineHeight = 20.sp,
                         )
                     }
@@ -212,7 +214,7 @@ fun UpdateChangelogDialog(
                         TextButton(
                             onClick = onDismissRequest,
                             colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color.White.copy(alpha = 0.75f),
+                                contentColor = colorScheme.onSurfaceVariant,
                             ),
                         ) {
                             Text(stringResource(R.string.action_close))
@@ -226,8 +228,8 @@ fun UpdateChangelogDialog(
                                     onClick = {},
                                     enabled = false,
                                     colors = ButtonDefaults.buttonColors(
-                                        disabledContainerColor = Color(0xFF2E7D32).copy(alpha = 0.7f),
-                                        disabledContentColor = Color.White,
+                                        disabledContainerColor = colorScheme.primary.copy(alpha = 0.6f),
+                                        disabledContentColor = colorScheme.onPrimary,
                                     ),
                                     shape = RoundedCornerShape(12.dp),
                                 ) {
@@ -240,8 +242,8 @@ fun UpdateChangelogDialog(
                                         status.fileUri?.let { UpdateManager.promptInstall(context, it) }
                                     },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF2E7D32),
-                                        contentColor = Color.White,
+                                        containerColor = colorScheme.primary,
+                                        contentColor = colorScheme.onPrimary,
                                     ),
                                     shape = RoundedCornerShape(12.dp),
                                 ) {
@@ -258,8 +260,8 @@ fun UpdateChangelogDialog(
                                 Button(
                                     onClick = onDownload,
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF2E7D32),
-                                        contentColor = Color.White,
+                                        containerColor = colorScheme.primary,
+                                        contentColor = colorScheme.onPrimary,
                                     ),
                                     shape = RoundedCornerShape(12.dp),
                                 ) {
