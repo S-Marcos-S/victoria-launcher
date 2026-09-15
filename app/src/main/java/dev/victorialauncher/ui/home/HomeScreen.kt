@@ -285,6 +285,10 @@ fun HomeScreen(
         }
     }
     val displayItems = dragOrder ?: homeItems
+    val totalSlots = (displayItems.size + 4).coerceAtLeast(4)
+    val clockSlot = totalSlots - 1
+    val widgetSlot = totalSlots - 2
+    val nowPlayingSlot = totalSlots - 3
 
     // Folders sit alongside apps in the favorites block, so both bound its padding.
     val firstRowIndex = displayItems.indexOfFirst { it !is HomeItem.Widget }
@@ -522,11 +526,6 @@ fun HomeScreen(
                             },
                         )
                 )
-
-                val totalSlots = (displayItems.size + 4).coerceAtLeast(4)
-                val clockSlot = totalSlots - 1
-                val widgetSlot = totalSlots - 2
-                val nowPlayingSlot = totalSlots - 3
 
                 NiagaraClockWidget(
                     clockStyle = clockStyle,
