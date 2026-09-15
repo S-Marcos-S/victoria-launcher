@@ -111,6 +111,10 @@
     <string name="clock_style_analog">Analog</string>
     <string name="clock_style_digital_card">Digital Card</string>
     <string name="clock_style_day_focus">Day Focus</string>
+    <string name="clock_style_tech_hud">Tech HUD</string>
+    <string name="clock_style_system_monitor">System Monitor</string>
+    <string name="clock_style_minimal_specs">Minimal Specs</string>
+    <string name="clock_style_retro_terminal">Retro Terminal</string>
     <string name="settings_hide_status_bar">Hide status bar</string>
     <string name="settings_dim_home">Dim wallpaper on home screen</string>
     <string name="settings_dim_applist">Dim wallpaper behind app list</string>

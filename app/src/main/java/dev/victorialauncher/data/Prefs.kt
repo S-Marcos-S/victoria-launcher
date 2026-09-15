@@ -19,7 +19,18 @@ import org.json.JSONObject
 enum class EdgeSide { LEFT, RIGHT, BOTH }
 enum class AppFont { SYSTEM, SANS_SERIF, SERIF, MONOSPACE }
 
-enum class ClockStyle { CLASSIC, STACKED, MINIMAL, ANALOG, DIGITAL_CARD, DAY_FOCUS }
+enum class ClockStyle {
+    CLASSIC,
+    STACKED,
+    MINIMAL,
+    ANALOG,
+    DIGITAL_CARD,
+    DAY_FOCUS,
+    TECH_HUD,
+    SYSTEM_MONITOR,
+    MINIMAL_SPECS,
+    RETRO_TERMINAL,
+}
 
 /** AUTO picks light or dark text from the wallpaper's own colours. */
 enum class TextColorMode { AUTO, LIGHT, DARK }

@@ -112,6 +112,10 @@
     <string name="clock_style_analog">Analógico</string>
     <string name="clock_style_digital_card">Cartão Digital</string>
     <string name="clock_style_day_focus">Dia em Destaque</string>
+    <string name="clock_style_tech_hud">HUD Futurista</string>
+    <string name="clock_style_system_monitor">Monitor do Sistema</string>
+    <string name="clock_style_minimal_specs">Minimalista com Métricas</string>
+    <string name="clock_style_retro_terminal">Terminal Geek</string>
     <string name="settings_hide_status_bar">Ocultar barra de status</string>
     <string name="settings_dim_home">Escurecer papel de parede na tela inicial</string>
     <string name="settings_dim_applist">Escurecer papel de parede na lista de apps</string>

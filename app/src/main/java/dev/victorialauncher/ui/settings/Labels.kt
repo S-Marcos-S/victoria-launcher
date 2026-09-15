@@ -45,6 +45,10 @@ fun ClockStyle.labelRes(): Int = when (this) {
     ClockStyle.ANALOG -> R.string.clock_style_analog
     ClockStyle.DIGITAL_CARD -> R.string.clock_style_digital_card
     ClockStyle.DAY_FOCUS -> R.string.clock_style_day_focus
+    ClockStyle.TECH_HUD -> R.string.clock_style_tech_hud
+    ClockStyle.SYSTEM_MONITOR -> R.string.clock_style_system_monitor
+    ClockStyle.MINIMAL_SPECS -> R.string.clock_style_minimal_specs
+    ClockStyle.RETRO_TERMINAL -> R.string.clock_style_retro_terminal
 }
 
 @StringRes

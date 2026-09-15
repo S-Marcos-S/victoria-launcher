@@ -1,3 +1,24 @@
+### 🚀 Novidades e Melhorias da Versão 0.52.0
+
+- **Novos Relógios Técnicos com Telemetria do Sistema em Tempo Real:**
+  - **4 Novos Estilos de Relógio na Tela Inicial:**
+    - **HUD Futurista (Tech HUD):** Estética cyberpunk/sci-fi com cabeçalho de status do sistema (`SYS_OK`), indicador de pulso ativo, chips translúcidos com bordas adaptativas e badges dedicados para memória RAM livre, temperatura da bateria em °C e porcentagem de carga com ícone de carregamento.
+    - **Monitor do Sistema (System Monitor):** Cartão de vidro fosco translúcido com cantos arredondados, barra de progresso horizontal em tempo real do uso da memória RAM (com porcentagem e valores em GB usados/totais), e indicadores de energia e temperatura.
+    - **Minimalista com Métricas (Minimal Specs):** Design minimalista e limpo no consagrado padrão Niagara, exibindo hora em tipografia destacada e uma linha sutil com separadores em ponto (`•`) contendo RAM livre, temperatura e nível de bateria.
+    - **Terminal Geek (Retro Terminal):** Estética retrô de terminal de linha de comando (CLI) em tipografia monoespaçada, com prompt de status (`> victorialauncher --status`), barra de progresso em caracteres ASCII (`[====....]`), porcentagem de uso de RAM e telemetria de energia.
+  - **Eficiência Energética Absoluta e Zero Impacto na Bateria:**
+    - Arquitetura 100% orientada a eventos (`event-driven`): sem loops em segundo plano, sem timers contínuos de verificação e sem wakelocks de CPU.
+    - O consumo de RAM e os dados da bateria só são lidos quando o Android emite eventos nativos do sistema (`Intent.ACTION_BATTERY_CHANGED`, conexão/desconexão do carregador), no tick de mudança de minuto (`ACTION_TIME_TICK`) e no retorno à tela inicial (`ON_RESUME`).
+    - Ativação sob demanda: os receptores de telemetria só são registrados no sistema se o usuário estiver utilizando um dos quatro relógios técnicos. Caso utilize um dos relógios clássicos ou analógicos, zero recursos de telemetria são executados.
+  - **Atalhos e Interatividade Direta:**
+    - Toque na hora abre o aplicativo de Relógio/Alarmes.
+    - Toque na data abre o aplicativo de Calendário.
+    - Toque nos chips ou dados de telemetria abre instantaneamente as Configurações de Bateria do sistema Android.
+  - **Seletor de Estilos com Grade de Duas Colunas:**
+    - Atualização da tela de escolha de relógios em *Configurações → Estilo do relógio*, exibindo miniaturas dinâmicas e fiéis de todos os 10 estilos de relógios disponíveis.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.51.1
 
 - **Correção da Escala Óptica e Enquadramento dos Ícones Temáticos:**
