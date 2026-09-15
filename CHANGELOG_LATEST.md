@@ -1,15 +1,3 @@
-### 🚀 Novidades e Melhorias da Versão 0.54.0
-
-- **Animação Profissional de Desbloqueio e Entrada na Tela Inicial:**
-  - **Cascata Fluida de Baixo para Cima (Bottom-Up Wave):** Ao desbloquear o dispositivo (`ACTION_USER_PRESENT`) ou retornar à tela inicial (`ON_RESUME`), todos os elementos da tela inicial deslizam suavemente em uma cascata ascendente e orgânica.
-  - **Efeito Escalonado Elegante (Staggered Wave):** Os elementos inferiores (Botão de Ação Dinâmico e favoritos mais abaixo) iniciam o movimento primeiro, seguidos em sequência pelos favoritos intermediários, reprodutor de mídia, slot de widgets e, por último, o relógio e a data no topo da tela.
-  - **Curva Material 3 Emphasized Decelerate:** Movimento calibrado com desaceleração sofisticada (`CubicBezierEasing(0.08f, 0.85f, 0.18f, 1.0f)`), transmitindo a sensação tátil de física natural e acabamento de alta qualidade.
-  - **Alta Performance a 60/120 FPS:** Renderização direta na GPU através de `Modifier.graphicsLayer` (transformações em RenderNode nativo do Android), sem custos de recomposição ou gargalos de layout.
-  - **Interatividade Imediata:** Não bloqueia gestos nem toques durante a animação; qualquer toque em aplicativos ou atalhos é registrado instantaneamente.
-  - **Controle Total nas Configurações:** Nova chave seletora em *Configurações → Aparência → Animação de desbloqueio* para ativar ou desativar o efeito a qualquer momento conforme a preferência do usuário.
-
----
-
 ### 🚀 Novidades e Melhorias da Versão 0.53.1
 
 - **Indicador de Acesso Root nas Configurações do Aplicativo:**

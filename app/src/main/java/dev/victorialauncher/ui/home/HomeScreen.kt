@@ -211,7 +211,6 @@ fun HomeScreen(
     onDoubleTapLock: (Offset) -> Unit = {},
     edgeSide: EdgeSide = EdgeSide.RIGHT,
     alwaysShowAz: Boolean = true,
-    entranceController: HomeScreenEntranceController? = null,
 ) {
     fun displayName(app: AppInfo) = nameOverrides[app.key] ?: app.label
 
@@ -523,11 +522,6 @@ fun HomeScreen(
                         )
                 )
 
-                val totalSlots = (displayItems.size + 4).coerceAtLeast(4)
-                val clockSlot = totalSlots - 1
-                val widgetSlot = totalSlots - 2
-                val nowPlayingSlot = totalSlots - 3
-
                 NiagaraClockWidget(
                     clockStyle = clockStyle,
                     contentColor = contentColor,
@@ -535,7 +529,6 @@ fun HomeScreen(
                     alignRight = alignRight,
                     startPaddingDp = contentStart.value.toInt(),
                     endPaddingDp = contentEnd.value.toInt(),
-                    modifier = Modifier.then(entranceController?.modifierForSlot(clockSlot, totalSlots) ?: Modifier),
                 )
 
                 // Widget slot placed between clock and favorites
@@ -549,8 +542,7 @@ fun HomeScreen(
                         actions = widgetActions,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = contentStart, end = contentEnd)
-                            .then(entranceController?.modifierForSlot(widgetSlot, totalSlots) ?: Modifier),
+                            .padding(start = contentStart, end = contentEnd),
                     )
                 }
 
@@ -601,7 +593,6 @@ fun HomeScreen(
                     onDragPadding = { slot, v -> liveSlot = slot; liveValue = v },
                     currentPadding = { slot -> padOf(slot) },
                     onCommitPadding = { slot, v -> onCommitPadding(slot, v); liveSlot = null },
-                    modifier = Modifier.then(entranceController?.modifierForSlot(nowPlayingSlot, totalSlots) ?: Modifier),
                 )
             }
 
@@ -658,14 +649,6 @@ fun HomeScreen(
                             }
                         }
                         .zIndex(if (draggingIndex == index) 1f else 0f)
-                        .then(
-                            if (draggingIndex == null && !editMode) {
-                                val itemSlot = 1 + (displayItems.lastIndex - index)
-                                entranceController?.modifierForSlot(itemSlot, totalSlots) ?: Modifier
-                            } else {
-                                Modifier
-                            }
-                        )
                         .graphicsLayer {
                             if (draggingIndex == index) {
                                 translationY = dragOffset
@@ -1304,7 +1287,6 @@ private fun NowPlayingBlock(
     onCommitPadding: (PaddingSlot, Int) -> Unit,
     contentStart: Dp = sidePaddingDp.dp,
     contentEnd: Dp = sidePaddingDp.dp,
-    modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
     val context = LocalContext.current
@@ -1317,7 +1299,7 @@ private fun NowPlayingBlock(
         current = { currentPadding(PaddingSlot.NOW_PLAYING_TOP) },
         onCommit = { onCommitPadding(PaddingSlot.NOW_PLAYING_TOP, it) },
     )
-    Box(modifier = modifier) {
+    Box {
         NowPlayingWidget(
             heightDp = heightDp,
             iconSizeDp = iconSizeDp,

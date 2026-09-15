@@ -125,8 +125,6 @@
     <string name="settings_hide_status_bar">Ocultar barra de status</string>
     <string name="settings_dim_home">Escurecer papel de parede na tela inicial</string>
     <string name="settings_dim_applist">Escurecer papel de parede na lista de apps</string>
-    <string name="settings_unlock_animation">Animação de desbloqueio</string>
-    <string name="settings_unlock_animation_detail">Revela os itens da tela inicial suavemente de baixo para cima ao desbloquear</string>
     <string name="settings_haptics">Resposta tátil</string>
     <string name="settings_haptics_detail">Segue a configuração de vibração ao toque do sistema</string>
     <string name="settings_edge_side">Borda que abre a lista de apps</string>

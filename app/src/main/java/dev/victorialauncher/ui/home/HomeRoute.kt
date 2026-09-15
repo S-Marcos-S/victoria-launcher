@@ -150,7 +150,6 @@ fun HomeRoute(
 
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val notificationsByPackage by dev.victorialauncher.notification.NotificationBus.notifications.collectAsState()
-    val entranceController = rememberHomeScreenEntranceController(enabled = settings.unlockAnimation)
     val listenerGranted = remember(homeIntentTick) { isListenerEnabled(context) }
     // Don't reserve the block (or its padding) unless there is something to render:
     // no live session means the whole thing collapses, padding included.
@@ -378,7 +377,6 @@ fun HomeRoute(
                 onDoubleTapLock = handleDoubleTapLock,
                 edgeSide = settings.edgeSide,
                 alwaysShowAz = settings.alwaysShowAz,
-                entranceController = entranceController,
             )
         }
 
@@ -446,11 +444,9 @@ fun HomeRoute(
                 band = band,
                 side = scrub.side,
                 sidePaddingDp = settings.sidePaddingDp,
-                modifier = Modifier
-                    .align(
-                        if (scrub.side == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd
-                    )
-                    .then(entranceController.modifierForSlot(favorites.size / 2 + 1, (favorites.size + 4).coerceAtLeast(4))),
+                modifier = Modifier.align(
+                    if (scrub.side == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd
+                ),
             )
         }
 
@@ -539,7 +535,6 @@ fun HomeRoute(
                         end = if (!isLeft) dynamicBtnSidePadding else 0.dp,
                         bottom = dynamicButtonBottom,
                     )
-                    .then(entranceController.modifierForSlot(0, (favorites.size + 4).coerceAtLeast(4)))
                     .zIndex(2f),
             )
         }
@@ -616,5 +611,4 @@ data class HomeSettings(
     val dynamicButtonClickApp: String? = null,
     val dynamicButtonSwipeUpApp: String? = null,
     val dynamicButtonSwipeDownApp: String? = null,
-    val unlockAnimation: Boolean = true,
 )

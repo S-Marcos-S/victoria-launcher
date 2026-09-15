@@ -144,7 +144,6 @@ fun VictoriaNavHost(
     val dynamicButtonClickApp by app.prefs.dynamicButtonClickApp.collectAsState(initial = null)
     val dynamicButtonSwipeUpApp by app.prefs.dynamicButtonSwipeUpApp.collectAsState(initial = null)
     val dynamicButtonSwipeDownApp by app.prefs.dynamicButtonSwipeDownApp.collectAsState(initial = null)
-    val unlockAnimation by app.prefs.unlockAnimation.collectAsState(initial = true)
 
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
     val foldersById = remember(folders) { folders.associateBy { it.id } }
@@ -195,7 +194,6 @@ fun VictoriaNavHost(
         dynamicButtonClickApp = dynamicButtonClickApp,
         dynamicButtonSwipeUpApp = dynamicButtonSwipeUpApp,
         dynamicButtonSwipeDownApp = dynamicButtonSwipeDownApp,
-        unlockAnimation = unlockAnimation,
     )
 
     var pendingIconTarget by remember { mutableStateOf<String?>(null) }
@@ -343,8 +341,6 @@ fun VictoriaNavHost(
                 themedIconStyle = themedIconStyle,
                 onSetThemedIcons = { scope.launch { app.prefs.setThemedIcons(it) } },
                 onSetThemedIconStyle = { scope.launch { app.prefs.setThemedIconStyle(it) } },
-                unlockAnimation = unlockAnimation,
-                onSetUnlockAnimation = { scope.launch { app.prefs.setUnlockAnimation(it) } },
                 onOpenAccessibilitySettings = {
                     context.startActivity(
                         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
