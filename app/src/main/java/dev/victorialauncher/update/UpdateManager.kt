@@ -75,6 +75,7 @@ object UpdateManager {
     private const val KEY_LAST_NOTIFIED_UPDATE = "last_notified_update"
     private const val KEY_DOWNLOADED_APK_URI = "downloaded_apk_uri"
     private const val KEY_DOWNLOADED_VERSION_CODE = "downloaded_version_code"
+    private const val KEY_DOWNLOADED_VERSION_NAME = "downloaded_version_name"
     private const val KEY_DOWNLOADED_COMMIT_SHA = "downloaded_commit_sha"
 
     private const val GITHUB_REPO = "S-Marcos-S/victoria-launcher"
@@ -521,7 +522,8 @@ object UpdateManager {
                 prefs.edit()
                     .putString(KEY_DOWNLOADED_APK_URI, savedUri?.toString())
                     .putInt(KEY_DOWNLOADED_VERSION_CODE, BuildConfig.VERSION_CODE)
-                    .putString(KEY_DOWNLOADED_COMMIT_SHA, BuildConfig.GIT_SHA)
+                    .putString(KEY_DOWNLOADED_VERSION_NAME, update.versionName)
+                    .putString(KEY_DOWNLOADED_COMMIT_SHA, update.commitSha)
                     .apply()
 
                 _downloadStatus.value = DownloadStatus.Finished(savedUri)
@@ -733,65 +735,45 @@ object UpdateManager {
             try {
                 val appCtx = context.applicationContext
                 val prefs = appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                val downloadedVer = prefs.getInt(KEY_DOWNLOADED_VERSION_CODE, -1)
+                val savedUriStr = prefs.getString(KEY_DOWNLOADED_APK_URI, null)
+                if (savedUriStr.isNullOrBlank()) {
+                    return@launch
+                }
+
+                val downloadedVerCode = prefs.getInt(KEY_DOWNLOADED_VERSION_CODE, -1)
+                val downloadedVerName = prefs.getString(KEY_DOWNLOADED_VERSION_NAME, null)
                 val downloadedSha = prefs.getString(KEY_DOWNLOADED_COMMIT_SHA, null)
-                val currentVer = BuildConfig.VERSION_CODE
+                val currentVerCode = BuildConfig.VERSION_CODE
+                val currentVerName = BuildConfig.VERSION_NAME
                 val currentSha = BuildConfig.GIT_SHA.trim()
 
                 val wasUpdated = force ||
-                        (downloadedVer != -1 && currentVer > downloadedVer) ||
-                        (!downloadedSha.isNullOrBlank() && currentSha.isNotBlank() && currentSha != downloadedSha)
+                        (downloadedVerCode != -1 && currentVerCode > downloadedVerCode) ||
+                        (!downloadedVerName.isNullOrBlank() && (isVersionGreater(currentVerName, downloadedVerName) || currentVerName == downloadedVerName)) ||
+                        (!downloadedSha.isNullOrBlank() && currentSha.isNotBlank() && currentSha.startsWith(downloadedSha, ignoreCase = true))
 
                 if (!wasUpdated) {
                     return@launch
                 }
 
-                // 1. Tenta apagar a URI específica registrada
-                val savedUriStr = prefs.getString(KEY_DOWNLOADED_APK_URI, null)
-                if (!savedUriStr.isNullOrBlank()) {
-                    try {
-                        val uri = Uri.parse(savedUriStr)
-                        appCtx.contentResolver.delete(uri, null, null)
-                    } catch (_: Throwable) {}
-                }
-
-                // 2. Apaga entradas do MediaStore no Android 10+
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    try {
-                        val resolver = appCtx.contentResolver
-                        val downloadsUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-                        val projection = arrayOf(MediaStore.MediaColumns._ID)
-                        val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
-                        val selectionArgs = arrayOf("victoria-launcher-release%")
-                        resolver.query(downloadsUri, projection, selection, selectionArgs, null)?.use { cursor ->
-                            val idCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-                            while (cursor.moveToNext()) {
-                                val id = cursor.getLong(idCol)
-                                val itemUri = ContentUris.withAppendedId(downloadsUri, id)
-                                try {
-                                    resolver.delete(itemUri, null, null)
-                                } catch (_: Throwable) {}
-                            }
-                        }
-                    } catch (_: Throwable) {}
-                }
-
-                // 3. Apaga arquivos físicos restantes na pasta Downloads
+                // 1. Tenta apagar apenas a URI específica registrada pelo launcher
                 try {
-                    val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                    if (dir != null && dir.exists()) {
-                        dir.listFiles { _, name ->
-                            name.startsWith("victoria-launcher-release") && name.endsWith(".apk")
-                        }?.forEach { file ->
-                            try { file.delete() } catch (_: Throwable) {}
+                    val uri = Uri.parse(savedUriStr)
+                    if (uri.scheme == "file") {
+                        uri.path?.let { path ->
+                            val f = File(path)
+                            if (f.exists()) f.delete()
                         }
+                    } else {
+                        appCtx.contentResolver.delete(uri, null, null)
                     }
                 } catch (_: Throwable) {}
 
-                // 4. Limpa metadados salvos
+                // 2. Limpa metadados salvos
                 prefs.edit()
                     .remove(KEY_DOWNLOADED_APK_URI)
                     .remove(KEY_DOWNLOADED_VERSION_CODE)
+                    .remove(KEY_DOWNLOADED_VERSION_NAME)
                     .remove(KEY_DOWNLOADED_COMMIT_SHA)
                     .apply()
             } catch (_: Throwable) {}

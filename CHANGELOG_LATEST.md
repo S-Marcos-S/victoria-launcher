@@ -1,3 +1,12 @@
+### 🚀 Novidades e Melhorias da Versão 0.54.1
+
+- **Correção da Instalação do APK ("Arquivo Inválido") e Ajuste de VersionCode:**
+  - **Resolução de Conflito de Downgrade:** Elevado o `versionCode` para 61 (v0.54.1). Após o revert de alterações anteriores que havia retornado temporariamente o versionCode para 59, dispositivos que já haviam instalado a versão com código 60 via Root sofriam bloqueio do instalador do sistema Android por tentativa de downgrade ("O pacote parece ser inválido" / "O arquivo é inválido"). A nova versão garante atualização limpa e direta.
+  - **Refatoração Segura da Limpeza de APKs (`cleanupDownloadedApk`):** Eliminada a varredura cega que excluía indiscriminadamente qualquer arquivo com o prefixo do app na pasta Downloads pública e no MediaStore. Agora o launcher rastreia e remove com precisão cirúrgica apenas a URI exata do pacote baixado internamente pelo sistema de atualização, impedindo que downloads manuais ou arquivos em andamento pelo navegador sejam truncados ou corrompidos para 0 bytes.
+  - **Metadados Precisos de Versão:** Registro correto da versão e commit do pacote baixado nas preferências para validação pós-instalação.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.53.1
 
 - **Indicador de Acesso Root nas Configurações do Aplicativo:**
