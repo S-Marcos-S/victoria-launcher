@@ -16,6 +16,8 @@
     - Toque nos chips ou dados de telemetria abre instantaneamente as Configurações de Bateria do sistema Android.
   - **Seletor de Estilos com Grade de Duas Colunas:**
     - Atualização da tela de escolha de relógios em *Configurações → Estilo do relógio*, exibindo miniaturas dinâmicas e fiéis de todos os 10 estilos de relógios disponíveis.
+  - **Correção e Estabilidade:**
+    - Inclusão do import de precisão matemática `roundToInt` no componente visual do Terminal Retrô.
 
 ---
 

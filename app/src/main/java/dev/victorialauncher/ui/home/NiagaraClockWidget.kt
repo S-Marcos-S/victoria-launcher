@@ -53,6 +53,7 @@ import dev.victorialauncher.service.SystemStats
 import dev.victorialauncher.service.rememberSystemStats
 import java.util.Calendar
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /** Distance from the top of the screen: ~2.5 cm (25 mm = ~158 dp at 160 dpi). */
