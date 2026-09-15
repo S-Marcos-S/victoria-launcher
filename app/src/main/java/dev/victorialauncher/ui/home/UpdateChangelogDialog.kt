@@ -28,9 +28,11 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import dev.victorialauncher.ui.theme.dynamicBorderColor
@@ -39,7 +41,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +59,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import dev.victorialauncher.R
 import dev.victorialauncher.update.DownloadStatus
+import dev.victorialauncher.update.RootInstaller
 import dev.victorialauncher.update.UpdateInfo
 import dev.victorialauncher.update.UpdateManager
 import java.text.SimpleDateFormat
@@ -65,10 +70,12 @@ import java.util.Locale
 fun UpdateChangelogDialog(
     update: UpdateInfo,
     onDismissRequest: () -> Unit,
-    onDownload: () -> Unit,
+    onDownload: ((useRoot: Boolean) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val downloadStatus by UpdateManager.downloadStatus.collectAsState()
+    val isRootAvailable = remember { RootInstaller.isRootAvailable() }
+    var useRootInstall by remember { mutableStateOf(isRootAvailable) }
     val view = LocalView.current
     DisposableEffect(view) {
         val dialogWindow = (view.parent as? DialogWindowProvider)?.window
@@ -205,6 +212,38 @@ fun UpdateChangelogDialog(
                         )
                     }
 
+                    if (isRootAvailable) {
+                        Spacer(Modifier.height(14.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(colorScheme.surfaceContainer.copy(alpha = 0.5f))
+                                .clickable { useRootInstall = !useRootInstall }
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.update_root_install_option),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = stringResource(R.string.update_root_install_desc),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Switch(
+                                checked = useRootInstall,
+                                onCheckedChange = { useRootInstall = it },
+                            )
+                        }
+                    }
+
                     Spacer(Modifier.height(20.dp))
 
                     // Botões de ação
@@ -238,10 +277,31 @@ fun UpdateChangelogDialog(
                                     Text(stringResource(R.string.update_downloading_progress, status.progressPercent))
                                 }
                             }
+                            is DownloadStatus.InstallingRoot -> {
+                                Button(
+                                    onClick = {},
+                                    enabled = false,
+                                    colors = ButtonDefaults.buttonColors(
+                                        disabledContainerColor = colorScheme.primary.copy(alpha = 0.6f),
+                                        disabledContentColor = colorScheme.onPrimary,
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = colorScheme.onPrimary,
+                                        strokeWidth = 2.dp,
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.update_status_installing_root))
+                                }
+                            }
                             is DownloadStatus.Finished -> {
                                 Button(
                                     onClick = {
-                                        status.fileUri?.let { UpdateManager.promptInstall(context, it) }
+                                        status.fileUri?.let { uri ->
+                                            UpdateManager.installUpdate(context, uri, useRoot = useRootInstall)
+                                        }
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = colorScheme.primary,
@@ -255,12 +315,23 @@ fun UpdateChangelogDialog(
                                         modifier = Modifier.size(18.dp),
                                     )
                                     Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(R.string.update_action_install))
+                                    val label = if (useRootInstall) {
+                                        stringResource(R.string.update_action_install_root)
+                                    } else {
+                                        stringResource(R.string.update_action_install)
+                                    }
+                                    Text(label)
                                 }
                             }
                             else -> {
                                 Button(
-                                    onClick = onDownload,
+                                    onClick = {
+                                        if (onDownload != null) {
+                                            onDownload(useRootInstall)
+                                        } else {
+                                            UpdateManager.startDownload(context, update, autoInstallWithRoot = useRootInstall)
+                                        }
+                                    },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = colorScheme.primary,
                                         contentColor = colorScheme.onPrimary,

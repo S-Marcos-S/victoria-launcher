@@ -1,3 +1,19 @@
+### 🚀 Novidades e Melhorias da Versão 0.53.0
+
+- **Limpeza Automática do APK Pós-Atualização:**
+  - **Eliminação de Resíduos de Armazenamento:** Após o download e instalação da nova versão do Victoria Launcher, o arquivo APK baixado é automaticamente removido da pasta de Downloads do usuário.
+  - **Remoção Imediata no Modo Root:** Ao atualizar diretamente via Root, o arquivo APK em Downloads e os arquivos temporários são apagados no mesmo instante em que a instalação é confirmada.
+  - **Suporte Nativo ao Sistema no Modo Convencional:** No modo convencional com o instalador do sistema, implementado o receptor [`MyPackageReplacedReceiver`](file:///c:/Users/Marcos/projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/update/MyPackageReplacedReceiver.kt) ouvindo o evento nativo `ACTION_MY_PACKAGE_REPLACED`. Combinado com a rotina de inicialização em `VictoriaApp.onCreate()`, o aplicativo compara os metadados da versão e exclui o APK antigo com segurança do `MediaStore.Downloads` (Android 10+) e da pasta física de Downloads.
+
+- **Instalação Silenciosa via Root (Bypass do Google Play Protect):**
+  - **Detecção Automática de Root:** O launcher identifica automaticamente a disponibilidade de superusuário no dispositivo (Magisk, KernelSU, APatch).
+  - **Instalação Direta sem Telas Intermediárias:** Ao acionar a instalação com Root ativo, o launcher executa silenciosamente o comando `pm install -r -d -g -t` via `su` a partir de diretório protegido (`/data/local/tmp`).
+  - **Bypass Completo do Google Play Protect:** Como a instalação atua diretamente no `PackageManagerService` em nível de sistema, dispensa totalmente a interface do instalador de pacotes do Android e pula qualquer tela ou bloqueio de verificação do Google Play Protect ("App não reconhecido").
+  - **Controle no Diálogo "O que há de novo":** Adicionada chave seletora com switch integrado permitindo escolher entre *"Instalar via Root (Sem Play Protect)"* ou o instalador padrão.
+  - **Fallback Resiliente:** Caso o usuário recuse o pedido de superusuário ou aconteça qualquer imprevisto, o instalador convencional do sistema Android é aberto imediatamente sem interromper o processo.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.52.0
 
 - **Novos Relógios Técnicos com Telemetria do Sistema em Tempo Real:**

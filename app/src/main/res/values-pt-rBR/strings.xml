@@ -56,6 +56,12 @@
     <string name="update_notification_channel_desc">Avisos sobre novas versões disponíveis do Victoria Launcher</string>
     <string name="update_notification_title">Victoria Launcher %1$s disponível</string>
     <string name="update_notification_text">Toque para ver o que há de novo e atualizar</string>
+    <string name="update_root_install_option">Instalar via Root (Sem Play Protect)</string>
+    <string name="update_root_install_desc">Instalação silenciosa direta sem passar pelo Google Play Protect</string>
+    <string name="update_action_install_root">Instalar via Root</string>
+    <string name="update_status_installing_root">Instalando via Root…</string>
+    <string name="update_toast_root_success">Atualização instalada com sucesso via Root!</string>
+    <string name="update_toast_root_failed">Falha na instalação Root: %1$s. Abrindo instalador padrão…</string>
 
     <!-- Alças de arrasto no modo de edição -->
     <string name="handle_side_padding">↔ Espaçamento lateral · %1$ddp</string>

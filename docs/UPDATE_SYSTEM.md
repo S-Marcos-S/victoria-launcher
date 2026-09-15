@@ -112,10 +112,11 @@ val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValu
 
 ---
 
-## 6. Integração com PackageInstaller do Android
+## 6. Integração com PackageInstaller e Instalação Root (Bypass do Play Protect)
 
-Ao término do download, o launcher dispara o instalador oficial do Android:
+Ao término do download, o launcher suporta dois modos de instalação:
 
+### A. Instalação Convencional (PackageInstaller)
 ```kotlin
 val installIntent = Intent(Intent.ACTION_VIEW).apply {
     setDataAndType(apkUri, "application/vnd.android.package-archive")
@@ -124,12 +125,29 @@ val installIntent = Intent(Intent.ACTION_VIEW).apply {
 }
 context.startActivity(installIntent)
 ```
-
 - **Permissão `REQUEST_INSTALL_PACKAGES`:** Declarada no manifesto para permitir que o launcher invoque a instalação de APKs baixados.
+
+### B. Instalação Direta via Root (`su` - Bypass do Play Protect)
+Em aparelhos rooteados (Magisk, KernelSU, APatch), o Victoria Launcher oferece instalação silenciosa direta via `dev.victorialauncher.update.RootInstaller`:
+- **Comando do Sistema:** Executa `pm install -r -d -g -t` como superusuário a partir de área segura (`/data/local/tmp`).
+- **Sem Telas Intermediárias:** Não exibe a interface do instalador de pacotes do Android nem solicita confirmação do usuário.
+- **Bypass do Google Play Protect:** O comando `pm install` executado via `root` atua diretamente no `PackageManagerService` do Android, contornando completamente os avisos e bloqueios do Google Play Protect ("Verificando app...", "App de desenvolvedor desconhecido").
+- **Fallback Automático:** Caso o usuário negue o acesso superusuário no Magisk/KernelSU ou ocorra falha, o instalador padrão do Android é acionado imediatamente.
 
 ---
 
-## 7. Otimização de Bateria e Cache Inteligente
+## 7. Limpeza Automática do APK Pós-Atualização
+
+Para que o arquivo APK baixado não ocupe armazenamento na pasta de Downloads do usuário após a conclusão da atualização:
+1. **Modo Root:** O APK baixado é apagado imediatamente pelo `UpdateManager.cleanupDownloadedApk(context, force = true)` assim que o comando `pm install` retorna `Success`.
+2. **Modo Convencional:**
+   - O receptor de sistema [`MyPackageReplacedReceiver`](file:///c:/Users/Marcos/projects/launcher/victoria-launcher/app/src/main/java/dev/victorialauncher/update/MyPackageReplacedReceiver.kt) escuta a ação nativa `android.intent.action.MY_PACKAGE_REPLACED`.
+   - Na inicialização do aplicativo em `VictoriaApp.onCreate()`, `UpdateManager.cleanupDownloadedApk(this)` verifica se a versão ou commit atual em execução é mais recente que os metadados gravados durante o download.
+   - O arquivo é removido com sucesso tanto do `MediaStore.Downloads` (Android 10+) quanto da pasta física de Downloads (`Environment.DIRECTORY_DOWNLOADS`).
+
+---
+
+## 8. Otimização de Bateria e Cache Inteligente
 
 Para evitar consumo desnecessário de dados móveis, bateria e limite de requisições da API pública do GitHub:
 - **Janela de Cache de 20 Minutos:** O launcher impõe um intervalo mínimo de 20 minutos (`CHECK_INTERVAL_MS = 20 * 60 * 1000L`) para verificações silenciosas em segundo plano quando o usuário retorna à tela inicial.
@@ -137,9 +155,9 @@ Para evitar consumo desnecessário de dados móveis, bateria e limite de requisi
 
 ---
 
-## 8. Diretriz de Changelog Pré-Build (GEMINI.md)
+## 9. Diretriz de Changelog Pré-Build (GEMINI.md)
 
-Para alimentar com perfeição as notas de versão do `UpdateManager`, o projeto segue uma regra mandatória documentada no arquivo [`GEMINI.md`](file:///data/data/com.termux/files/home/storage/kotlin_projects/launcher/victoria-launcher/GEMINI.md):
+Para alimentar com perfeição as notas de versão do `UpdateManager`, o projeto segue uma regra mandatória documentada no arquivo [`GEMINI.md`](file:///c:/Users/Marcos/projects/launcher/victoria-launcher/GEMINI.md):
 
 > **Regra Obrigatória:** Toda alteração, recurso ou correção no código-fonte deve atualizar previamente o arquivo `CHANGELOG_LATEST.md` na raiz do repositório.
 

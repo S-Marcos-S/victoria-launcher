@@ -38,6 +38,7 @@ sealed class DownloadStatus {
     object Idle : DownloadStatus()
     data class Downloading(val progressPercent: Int) : DownloadStatus()
     data class Finished(val fileUri: Uri?) : DownloadStatus()
+    object InstallingRoot : DownloadStatus()
     data class Failed(val error: String) : DownloadStatus()
 }
 
@@ -72,6 +73,9 @@ object UpdateManager {
     private const val UPDATE_NOTIFICATION_ID = 4242
     private const val PREFS_NAME = "victoria_update_prefs"
     private const val KEY_LAST_NOTIFIED_UPDATE = "last_notified_update"
+    private const val KEY_DOWNLOADED_APK_URI = "downloaded_apk_uri"
+    private const val KEY_DOWNLOADED_VERSION_CODE = "downloaded_version_code"
+    private const val KEY_DOWNLOADED_COMMIT_SHA = "downloaded_commit_sha"
 
     private const val GITHUB_REPO = "S-Marcos-S/victoria-launcher"
     private const val RELEASES_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=5"
@@ -451,7 +455,11 @@ object UpdateManager {
         return false
     }
 
-    fun startDownload(context: Context, update: UpdateInfo) {
+    fun startDownload(
+        context: Context,
+        update: UpdateInfo,
+        autoInstallWithRoot: Boolean = false,
+    ) {
         if (_downloadStatus.value is DownloadStatus.Downloading) {
             return
         }
@@ -507,6 +515,15 @@ object UpdateManager {
                 }
 
                 conn.disconnect()
+
+                // Salva metadados da versão para limpeza automática pós-atualização
+                val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                prefs.edit()
+                    .putString(KEY_DOWNLOADED_APK_URI, savedUri?.toString())
+                    .putInt(KEY_DOWNLOADED_VERSION_CODE, BuildConfig.VERSION_CODE)
+                    .putString(KEY_DOWNLOADED_COMMIT_SHA, BuildConfig.GIT_SHA)
+                    .apply()
+
                 _downloadStatus.value = DownloadStatus.Finished(savedUri)
 
                 withContext(Dispatchers.Main) {
@@ -516,8 +533,12 @@ object UpdateManager {
                         Toast.LENGTH_LONG,
                     ).show()
 
-                    savedUri?.let { uri ->
-                        promptInstall(appContext, uri)
+                    if (savedUri != null) {
+                        if (autoInstallWithRoot && RootInstaller.isRootAvailable()) {
+                            installViaRoot(appContext, savedUri)
+                        } else {
+                            promptInstall(appContext, savedUri)
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -662,6 +683,118 @@ object UpdateManager {
             context.startActivity(intent)
         } catch (_: Exception) {
             // Se o instalador não puder ser chamado via intent, o APK está disponível na pasta Downloads
+        }
+    }
+
+    fun installUpdate(context: Context, uri: Uri, useRoot: Boolean = false) {
+        if (useRoot && RootInstaller.isRootAvailable()) {
+            installViaRoot(context, uri)
+        } else {
+            promptInstall(context, uri)
+        }
+    }
+
+    fun installViaRoot(context: Context, uri: Uri) {
+        val appCtx = context.applicationContext
+        _downloadStatus.value = DownloadStatus.InstallingRoot
+        updateScope.launch {
+            val result = RootInstaller.installApkViaRoot(appCtx, uri)
+            withContext(Dispatchers.Main) {
+                if (result.isSuccess) {
+                    Toast.makeText(
+                        appCtx,
+                        appCtx.getString(R.string.update_toast_root_success),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                    cleanupDownloadedApk(appCtx, force = true)
+                    _downloadStatus.value = DownloadStatus.Idle
+                    _showChangelogRequested.value = false
+                    _updateAvailable.value = null
+                } else {
+                    val error = result.exceptionOrNull()?.message ?: "Erro desconhecido"
+                    Toast.makeText(
+                        appCtx,
+                        appCtx.getString(R.string.update_toast_root_failed, error),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                    _downloadStatus.value = DownloadStatus.Finished(uri)
+                    promptInstall(appCtx, uri)
+                }
+            }
+        }
+    }
+
+    /**
+     * Cleans up downloaded APK files from Downloads and MediaStore once the app
+     * is successfully updated (or when forced, e.g. after silent root install).
+     */
+    fun cleanupDownloadedApk(context: Context, force: Boolean = false) {
+        updateScope.launch(Dispatchers.IO) {
+            try {
+                val appCtx = context.applicationContext
+                val prefs = appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                val downloadedVer = prefs.getInt(KEY_DOWNLOADED_VERSION_CODE, -1)
+                val downloadedSha = prefs.getString(KEY_DOWNLOADED_COMMIT_SHA, null)
+                val currentVer = BuildConfig.VERSION_CODE
+                val currentSha = BuildConfig.GIT_SHA.trim()
+
+                val wasUpdated = force ||
+                        (downloadedVer != -1 && currentVer > downloadedVer) ||
+                        (!downloadedSha.isNullOrBlank() && currentSha.isNotBlank() && currentSha != downloadedSha)
+
+                if (!wasUpdated) {
+                    return@launch
+                }
+
+                // 1. Tenta apagar a URI específica registrada
+                val savedUriStr = prefs.getString(KEY_DOWNLOADED_APK_URI, null)
+                if (!savedUriStr.isNullOrBlank()) {
+                    try {
+                        val uri = Uri.parse(savedUriStr)
+                        appCtx.contentResolver.delete(uri, null, null)
+                    } catch (_: Throwable) {}
+                }
+
+                // 2. Apaga entradas do MediaStore no Android 10+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    try {
+                        val resolver = appCtx.contentResolver
+                        val downloadsUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                        val projection = arrayOf(MediaStore.MediaColumns._ID)
+                        val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
+                        val selectionArgs = arrayOf("victoria-launcher-release%")
+                        resolver.query(downloadsUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                            val idCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+                            while (cursor.moveToNext()) {
+                                val id = cursor.getLong(idCol)
+                                val itemUri = ContentUris.withAppendedId(downloadsUri, id)
+                                try {
+                                    resolver.delete(itemUri, null, null)
+                                } catch (_: Throwable) {}
+                            }
+                        }
+                    } catch (_: Throwable) {}
+                }
+
+                // 3. Apaga arquivos físicos restantes na pasta Downloads
+                try {
+                    val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    if (dir != null && dir.exists()) {
+                        dir.listFiles { _, name ->
+                            name.startsWith("victoria-launcher-release") && name.endsWith(".apk")
+                        }?.forEach { file ->
+                            try { file.delete() } catch (_: Throwable) {}
+                        }
+                    }
+                } catch (_: Throwable) {}
+
+                // 4. Limpa metadados salvos
+                prefs.edit()
+                    .remove(KEY_DOWNLOADED_APK_URI)
+                    .remove(KEY_DOWNLOADED_VERSION_CODE)
+                    .remove(KEY_DOWNLOADED_COMMIT_SHA)
+                    .apply()
+            } catch (_: Throwable) {}
         }
     }
 }

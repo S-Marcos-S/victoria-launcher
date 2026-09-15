@@ -400,8 +400,8 @@ fun HomeOptionsBottomSheet(
         UpdateChangelogDialog(
             update = updateInfo!!,
             onDismissRequest = { showChangelogDialog = false },
-            onDownload = {
-                UpdateManager.startDownload(context, updateInfo!!)
+            onDownload = { useRoot ->
+                UpdateManager.startDownload(context, updateInfo!!, autoInstallWithRoot = useRoot)
             },
         )
     }

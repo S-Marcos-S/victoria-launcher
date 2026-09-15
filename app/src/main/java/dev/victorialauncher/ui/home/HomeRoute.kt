@@ -574,9 +574,9 @@ fun HomeRoute(
                 onDismissRequest = {
                     dev.victorialauncher.update.UpdateManager.dismissChangelogRequest()
                 },
-                onDownload = {
+                onDownload = { useRoot ->
                     dev.victorialauncher.update.UpdateManager.dismissChangelogRequest()
-                    dev.victorialauncher.update.UpdateManager.startDownload(context, currentUpdate)
+                    dev.victorialauncher.update.UpdateManager.startDownload(context, currentUpdate, autoInstallWithRoot = useRoot)
                 },
             )
         }

@@ -21,6 +21,7 @@ class VictoriaApp : Application() {
     override fun onCreate() {
         super.onCreate()
         dev.victorialauncher.update.UpdateManager.init(this)
+        dev.victorialauncher.update.UpdateManager.cleanupDownloadedApk(this)
         prefs = Prefs(this)
         appRepository = AppRepository(this)
         iconPackRepository = IconPackRepository(this)
