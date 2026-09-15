@@ -33,8 +33,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import dev.victorialauncher.update.RootInstaller
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -413,6 +415,7 @@ fun SettingsScreen(
             }
 
             item {
+                val isRootAvailable = remember { RootInstaller.isRootAvailable() }
                 Section(stringResource(R.string.settings_section_about)) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
@@ -421,6 +424,58 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         )
+                    }
+                    RowDivider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_root_access),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Text(
+                                text = if (isRootAvailable) {
+                                    stringResource(R.string.settings_root_available)
+                                } else {
+                                    stringResource(R.string.settings_root_unavailable)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isRootAvailable) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                },
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isRootAvailable) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                            },
+                        ) {
+                            Text(
+                                text = if (isRootAvailable) {
+                                    stringResource(R.string.settings_root_badge_detected)
+                                } else {
+                                    stringResource(R.string.settings_root_badge_none)
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isRootAvailable) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
                     }
                 }
             }

@@ -1,3 +1,11 @@
+### 🚀 Novidades e Melhorias da Versão 0.53.1
+
+- **Indicador de Acesso Root nas Configurações do Aplicativo:**
+  - **Status Visual de Superusuário:** Adicionada uma nova linha informativa na seção *Sobre* (ao final da tela de Configurações), identificando se o dispositivo possui acesso Root disponível no sistema.
+  - **Badge Adaptativo e Detecção:** Exibe distintivo dinâmico (`ROOT ATIVO` / `SEM ROOT`) com detecção automática de binários `su` (Magisk, KernelSU, APatch), fornecendo confirmação clara sobre a disponibilidade de recursos avançados, como a instalação direta de atualizações sem verificação do Google Play Protect.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.53.0
 
 - **Limpeza Automática do APK Pós-Atualização:**

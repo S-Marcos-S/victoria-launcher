@@ -225,4 +225,11 @@
     <string name="settings_dynamic_button_clear">Limpar ação</string>
     <string name="dynamic_button_swipe_up_hint">Puxar para cima</string>
     <string name="dynamic_button_swipe_down_hint">Puxar para baixo</string>
+
+    <!-- Status do Root nas Configurações -->
+    <string name="settings_root_access">Acesso Root</string>
+    <string name="settings_root_available">Binário de superusuário detectado (Magisk / KernelSU / APatch)</string>
+    <string name="settings_root_unavailable">Dispositivo sem permissão root</string>
+    <string name="settings_root_badge_detected">ROOT ATIVO</string>
+    <string name="settings_root_badge_none">SEM ROOT</string>
 </resources>

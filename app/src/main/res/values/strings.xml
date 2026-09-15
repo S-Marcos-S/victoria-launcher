@@ -224,4 +224,11 @@
     <string name="settings_dynamic_button_clear">Clear action</string>
     <string name="dynamic_button_swipe_up_hint">Pull up</string>
     <string name="dynamic_button_swipe_down_hint">Pull down</string>
+
+    <!-- Root status in Settings -->
+    <string name="settings_root_access">Root access</string>
+    <string name="settings_root_available">Superuser binary detected (Magisk / KernelSU / APatch)</string>
+    <string name="settings_root_unavailable">Device without root access</string>
+    <string name="settings_root_badge_detected">ROOT ACTIVE</string>
+    <string name="settings_root_badge_none">NO ROOT</string>
 </resources>
