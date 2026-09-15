@@ -108,6 +108,8 @@ fun SettingsScreen(
     themedIconStyle: ThemedIconStyle = ThemedIconStyle.MATERIAL_YOU,
     onSetThemedIcons: (Boolean) -> Unit = {},
     onSetThemedIconStyle: (ThemedIconStyle) -> Unit = {},
+    unlockAnimation: Boolean = true,
+    onSetUnlockAnimation: (Boolean) -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit,
     onOpenHiddenApps: () -> Unit,
     onOpenFavorites: () -> Unit,
@@ -201,6 +203,13 @@ fun SettingsScreen(
                     SwitchRow(stringResource(R.string.settings_show_names), showFavoriteLabels, onSetShowFavoriteLabels)
                     RowDivider()
                     SwitchRow(stringResource(R.string.settings_hide_status_bar), hideStatusBar, onSetHideStatusBar)
+                    RowDivider()
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_unlock_animation),
+                        detail = stringResource(R.string.settings_unlock_animation_detail),
+                        checked = unlockAnimation,
+                        onCheckedChange = onSetUnlockAnimation,
+                    )
                     RowDivider()
                     SliderRow(
                         label = stringResource(R.string.settings_dim_home),

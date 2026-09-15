@@ -84,6 +84,7 @@ class Prefs(private val context: Context) {
         val DYNAMIC_BUTTON_CLICK_APP = stringPreferencesKey("dynamic_button_click_app")
         val DYNAMIC_BUTTON_SWIPE_UP_APP = stringPreferencesKey("dynamic_button_swipe_up_app")
         val DYNAMIC_BUTTON_SWIPE_DOWN_APP = stringPreferencesKey("dynamic_button_swipe_down_app")
+        val UNLOCK_ANIMATION = booleanPreferencesKey("unlock_animation")
     }
 
     private val data get() = context.dataStore.data
@@ -195,6 +196,7 @@ class Prefs(private val context: Context) {
     val dynamicButtonClickApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_CLICK_APP] }.distinctUntilChanged()
     val dynamicButtonSwipeUpApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_SWIPE_UP_APP] }.distinctUntilChanged()
     val dynamicButtonSwipeDownApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP] }.distinctUntilChanged()
+    val unlockAnimation: Flow<Boolean> = data.map { it[Keys.UNLOCK_ANIMATION] ?: true }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->
@@ -454,6 +456,10 @@ class Prefs(private val context: Context) {
         context.dataStore.edit { pref ->
             if (key.isNullOrBlank()) pref.remove(Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP) else pref[Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP] = key
         }
+    }
+
+    suspend fun setUnlockAnimation(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.UNLOCK_ANIMATION] = enabled }
     }
 
     private fun jsonToMap(json: String?): Map<String, String> {
