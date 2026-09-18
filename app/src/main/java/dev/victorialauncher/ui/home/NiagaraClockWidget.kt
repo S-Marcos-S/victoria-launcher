@@ -32,6 +32,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -791,13 +793,18 @@ private fun TechChip(
     label: String,
     contentColor: Color,
     modifier: Modifier = Modifier,
+    fontSize: TextUnit = 11.5.sp,
+    iconSize: TextUnit = 11.sp,
+    horizontalPadding: Dp = 8.dp,
+    verticalPadding: Dp = 6.dp,
+    shapeRadius: Dp = 8.dp,
     onClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(shapeRadius))
             .background(contentColor.copy(alpha = 0.08f))
-            .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(8.dp))
+            .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(shapeRadius))
             .then(
                 if (onClick != null) {
                     Modifier.clickable(
@@ -807,19 +814,19 @@ private fun TechChip(
                     )
                 } else Modifier
             )
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
-            Text(text = icon, fontSize = 11.sp)
-            Spacer(Modifier.width(4.dp))
+            Text(text = icon, fontSize = iconSize)
+            Spacer(Modifier.width(3.dp))
             Text(
                 text = label,
                 color = contentColor.copy(alpha = 0.9f),
-                fontSize = 11.5.sp,
+                fontSize = fontSize,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -1347,16 +1354,21 @@ private fun DailyReflectionStatsClockContent(
 
         Spacer(Modifier.height(10.dp))
 
-        // Telemetry chips na mesma linha, reaproveitando os mesmos chips do HUD Futurista
+        // 4 Telemetry chips compactos na mesma linha, reaproveitando os mesmos chips do HUD Futurista
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TechChip(
                 icon = "💾",
                 label = "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G",
                 contentColor = contentColor,
+                fontSize = 10.sp,
+                iconSize = 9.5.sp,
+                horizontalPadding = 4.dp,
+                verticalPadding = 4.dp,
+                shapeRadius = 6.dp,
                 modifier = Modifier.weight(1f),
                 onClick = onRamClick,
             )
@@ -1364,6 +1376,23 @@ private fun DailyReflectionStatsClockContent(
                 icon = "🌡️",
                 label = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
                 contentColor = contentColor,
+                fontSize = 10.sp,
+                iconSize = 9.5.sp,
+                horizontalPadding = 4.dp,
+                verticalPadding = 4.dp,
+                shapeRadius = 6.dp,
+                modifier = Modifier.weight(1f),
+                onClick = onBatteryClick,
+            )
+            TechChip(
+                icon = if (stats.isCharging) "⚡" else "🔋",
+                label = "${stats.batteryPercent}%",
+                contentColor = contentColor,
+                fontSize = 10.sp,
+                iconSize = 9.5.sp,
+                horizontalPadding = 4.dp,
+                verticalPadding = 4.dp,
+                shapeRadius = 6.dp,
                 modifier = Modifier.weight(1f),
                 onClick = onBatteryClick,
             )
@@ -1371,6 +1400,11 @@ private fun DailyReflectionStatsClockContent(
                 icon = "💽",
                 label = "ROM ${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G",
                 contentColor = contentColor,
+                fontSize = 10.sp,
+                iconSize = 9.5.sp,
+                horizontalPadding = 4.dp,
+                verticalPadding = 4.dp,
+                shapeRadius = 6.dp,
                 modifier = Modifier.weight(1f),
                 onClick = onStorageClick,
             )
@@ -1784,11 +1818,12 @@ fun ClockStylePreview(
                     Spacer(Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         listOf(
                             "RAM ${stats.ramUsedPercent}%",
                             "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
+                            "${stats.batteryPercent}%",
                             "ROM ${stats.storageUsedPercent}%",
                         ).forEach { label ->
                             Box(
@@ -1802,7 +1837,7 @@ fun ClockStylePreview(
                                 Text(
                                     text = label,
                                     color = tint.copy(alpha = 0.8f),
-                                    fontSize = 4.5.sp,
+                                    fontSize = 4.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     maxLines = 1,
                                 )
