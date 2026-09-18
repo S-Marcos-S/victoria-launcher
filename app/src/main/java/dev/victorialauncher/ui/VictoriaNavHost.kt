@@ -230,14 +230,14 @@ fun VictoriaNavHost(
         WidgetSlotActions(
             onAddWidget = { widgetPickerLauncher.launch(Intent(context, WidgetPickerActivity::class.java)) },
             onRemoveWidget = { targetId ->
-                val idToRemove = if (targetId > 0) targetId else widgetId
+                val idToRemove = if (targetId > 0) targetId else (widgetIds.firstOrNull() ?: widgetId)
                 scope.launch {
                     if (idToRemove > 0) app.widgetHost.deleteAppWidgetId(idToRemove)
                     app.prefs.removeWidgetId(idToRemove)
                 }
             },
             onWidgetSettings = { targetId ->
-                val idToConfig = if (targetId > 0) targetId else widgetId
+                val idToConfig = if (targetId > 0) targetId else (widgetIds.firstOrNull() ?: widgetId)
                 val info = AppWidgetManager.getInstance(context).getAppWidgetInfo(idToConfig)
                 val configure = info?.configure
                 if (configure != null) {
@@ -249,7 +249,7 @@ fun VictoriaNavHost(
                 }
             },
             onAppInfo = { targetId ->
-                val idToInfo = if (targetId > 0) targetId else widgetId
+                val idToInfo = if (targetId > 0) targetId else (widgetIds.firstOrNull() ?: widgetId)
                 val info = AppWidgetManager.getInstance(context).getAppWidgetInfo(idToInfo)
                 info?.let { app.appRepository.openAppInfo(it.provider.packageName) }
             },

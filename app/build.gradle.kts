@@ -15,13 +15,10 @@ val keystoreProperties = Properties().apply {
 }
 val hasSigningConfig = keystoreProperties.getProperty("storeFile") != null
 
-val gitCommitSha: String = System.getenv("GITHUB_SHA")?.ifBlank { null } ?: runCatching {
-    val stdout = ByteArrayOutputStream()
-    rootProject.exec {
+val gitCommitSha: String = providers.environmentVariable("GITHUB_SHA").orNull?.ifBlank { null } ?: runCatching {
+    providers.exec {
         commandLine("git", "rev-parse", "HEAD")
-        standardOutput = stdout
-    }
-    stdout.toString().trim()
+    }.standardOutput.asText.get().trim()
 }.getOrDefault("")
 
 val buildTimeMillis: Long = System.currentTimeMillis()
@@ -34,8 +31,8 @@ android {
         applicationId = "dev.victorialauncher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 64
-        versionName = "0.56.1"
+        versionCode = 65
+        versionName = "0.56.2"
 
         buildConfigField("String", "GIT_SHA", "\"$gitCommitSha\"")
         buildConfigField("Long", "BUILD_TIME_MILLIS", "${buildTimeMillis}L")

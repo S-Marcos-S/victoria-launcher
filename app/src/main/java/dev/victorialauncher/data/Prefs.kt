@@ -448,12 +448,18 @@ class Prefs(private val context: Context) {
     }
 
     suspend fun removeWidgetId(id: Int) {
+        if (id <= 0) return
         context.dataStore.edit { pref ->
             val current = pref[Keys.WIDGET_IDS]?.split(",")
                 ?.mapNotNull { it.trim().toIntOrNull() }
                 ?.filter { it > 0 }
                 ?: (pref[Keys.WIDGET_ID]?.takeIf { it > 0 }?.let { listOf(it) } ?: emptyList())
-            val updated = current.filter { it != id }
+            val indexToRemove = current.indexOf(id)
+            val updated = if (indexToRemove >= 0) {
+                current.toMutableList().apply { removeAt(indexToRemove) }
+            } else {
+                current.filter { it != id }
+            }
             pref[Keys.WIDGET_IDS] = updated.joinToString(",")
             pref[Keys.WIDGET_ID] = updated.firstOrNull() ?: -1
         }

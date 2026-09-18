@@ -1,3 +1,23 @@
+### 🚀 Novidades e Melhorias da Versão 0.56.2
+
+- **Correção da Remoção Individual de Widgets do Carrossel:**
+  - **Eliminação da Remoção Indevida dos Dois Widgets:** Corrigido o problema em que, ao haver dois widgets empilhados e solicitar a remoção de um deles, ambos pareciam sumir da tela.
+  - **Transição Imediata para Modo de Widget Único:** Ao remover um widget de uma pilha de dois, o launcher transita instantaneamente para a renderização direta de widget único (`SingleWidgetView`), sem estados de índice fora de limites (`out-of-bounds`) no carrossel (`HorizontalPager`).
+  - **Identificação Exata no Menu de Contexto (`activeWidgetId`):** As opções de remoção, redimensionamento, configuração e detalhes do app direcionam com exatidão matemática o widget ativo no momento, desregistrando apenas o seu ID correspondente no `AppWidgetHost` e nas preferências.
+
+- **Ajuste no Tempo do Indicador de Bolinhas (Dots Indicator):**
+  - **Desaparecimento Ágil (800ms):** Reduzido o tempo de exibição das bolinhas após a rolagem para 800ms (anteriormente 2.2s), acompanhado de uma animação suave de fade out (`250ms`).
+  - **Pílula com Contraste Aprimorado:** O indicador agora conta com um fundo translúcido sutil que assegura ótima visibilidade das bolinhas ativas e inativas em qualquer papel de parede.
+
+- **Nova Tela Seletora de Widgets dos Aplicativos (Visual e Organizada):**
+  - **Pré-visualizações Gráficas Reais:** Cada widget agora exibe sua prévia gráfica autêntica fornecida pelo app (`loadPreviewImage`), com proporções nítidas e fallback harmonioso para o ícone quando a prévia não existir.
+  - **Organização por Aplicativo em Acordeão:** Lista organizada em cartões expansíveis/recolhíveis por aplicativo, exibindo o ícone oficial, o nome do aplicativo e o total de widgets disponíveis.
+  - **Barra de Pesquisa Instantânea:** Filtro em tempo real por nome de aplicativo ou nome de widget, com expansão automática dos resultados correspondentes.
+  - **Distintivos de Dimensão e Descrições:** Badges visuais indicando a grade de tamanho (ex: `4 × 2`, `2 × 2`) e descrições detalhadas da função de cada widget no Android 12+.
+  - **Botão de Retorno na Barra Superior:** Acesso rápido para voltar à tela inicial a qualquer momento.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.56.1
 
 - **Correção da Rolagem / Deslize Horizontal entre Widgets no Carrossel:**

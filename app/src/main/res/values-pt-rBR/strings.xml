@@ -199,6 +199,10 @@
     <string name="widget_add_custom">Adicionar widget personalizado</string>
     <string name="widget_change_settings">Configurações do widget</string>
     <string name="widget_none_found">Nenhum widget encontrado neste dispositivo.</string>
+    <string name="widget_search_hint">Buscar widgets ou aplicativos…</string>
+    <string name="widget_count">%1$d widgets</string>
+    <string name="widget_count_single">1 widget</string>
+    <string name="widget_no_matches">Nenhum widget encontrado para “%1$s”.</string>
 
     <!-- Em Reprodução (Now Playing) -->
     <string name="now_playing_enable_access">Permitir acesso ao Em Reprodução</string>

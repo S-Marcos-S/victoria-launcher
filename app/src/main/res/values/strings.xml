@@ -198,6 +198,10 @@
     <string name="widget_add_custom">Add custom widget</string>
     <string name="widget_change_settings">Change widget settings</string>
     <string name="widget_none_found">No widgets found on this device.</string>
+    <string name="widget_search_hint">Search widgets or apps…</string>
+    <string name="widget_count">%1$d widgets</string>
+    <string name="widget_count_single">1 widget</string>
+    <string name="widget_no_matches">No widgets match “%1$s”.</string>
 
     <!-- Now Playing -->
     <string name="now_playing_enable_access">Enable Now Playing access</string>
