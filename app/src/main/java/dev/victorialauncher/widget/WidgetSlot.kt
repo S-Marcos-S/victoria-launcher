@@ -537,20 +537,24 @@ private fun SingleWidgetView(
                         onSlotSizeChanged(with(density) { size.width.toDp().value.toInt() to size.height.toDp().value.toInt() })
                     },
                 factory = { ctx ->
-                    val hostView = app.widgetHost.createView(ctx, widgetId, providerInfo).apply {
-                        setAppWidget(widgetId, providerInfo)
-                        setPadding(0, 0, 0, 0)
-                    }
+                    val hostView = runCatching {
+                        app.widgetHost.createView(ctx, widgetId, providerInfo).apply {
+                            setAppWidget(widgetId, providerInfo)
+                            setPadding(0, 0, 0, 0)
+                        }
+                    }.getOrNull()
                     LongPressFrameLayout(ctx).apply {
                         clipChildren = false
                         clipToPadding = false
-                        addView(
-                            hostView,
-                            android.widget.FrameLayout.LayoutParams(
-                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                            ),
-                        )
+                        if (hostView != null) {
+                            addView(
+                                hostView,
+                                android.widget.FrameLayout.LayoutParams(
+                                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                                ),
+                            )
+                        }
                         onLongPress = { x, y ->
                             HapticUtil.tick(this, hapticsEnabled)
                             onOpenMenu(widgetId, with(density) { DpOffset(x.toDp(), y.toDp()) })
@@ -559,15 +563,19 @@ private fun SingleWidgetView(
                 },
                 update = { container ->
                     val hostView = container.getChildAt(0) as? AppWidgetHostView
-                    hostView?.setPadding(0, 0, 0, 0)
-                    hostView?.setAppWidget(widgetId, providerInfo)
+                    runCatching {
+                        hostView?.setPadding(0, 0, 0, 0)
+                        hostView?.setAppWidget(widgetId, providerInfo)
+                    }
                     val (wDp, hDp) = slotSizeDp
                     if (hostView != null && wDp > 0 && hDp > 0 && reportedSizesDp[widgetId] != slotSizeDp) {
                         reportedSizesDp[widgetId] = slotSizeDp
                         val options = runCatching {
                             AppWidgetManager.getInstance(container.context).getAppWidgetOptions(widgetId)
                         }.getOrNull() ?: Bundle()
-                        hostView.updateAppWidgetSize(options, wDp, hDp, wDp, hDp)
+                        runCatching {
+                            hostView.updateAppWidgetSize(options, wDp, hDp, wDp, hDp)
+                        }
                     }
                     container.onLongPress = { x, y ->
                         HapticUtil.tick(container, hapticsEnabled)

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.widget
 
+import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.ActivityNotFoundException
@@ -10,6 +11,7 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -82,21 +84,32 @@ import dev.victorialauncher.R
 import dev.victorialauncher.VictoriaApp
 import dev.victorialauncher.ui.theme.VictoriaTheme
 
+private const val REQUEST_CONFIGURE_WIDGET = 1001
+private const val TAG = "WidgetPickerActivity"
+
 class WidgetPickerActivity : ComponentActivity() {
 
     private lateinit var appWidgetManager: AppWidgetManager
     private lateinit var widgetHost: VictoriaAppWidgetHost
     private var pendingWidgetId: Int = -1
 
-    private val configureLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) finishWithWidgetId(pendingWidgetId) else cancel()
-        }
-
     private val bindLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) proceedAfterBind(pendingWidgetId) else cancel()
         }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CONFIGURE_WIDGET) {
+            val configuredId = data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingWidgetId) ?: pendingWidgetId
+            if (resultCode == RESULT_OK) {
+                finishWithWidgetId(configuredId)
+            } else {
+                cancel()
+            }
+        }
+    }
 
     private data class AppGroup(
         val packageName: String,
@@ -516,15 +529,30 @@ class WidgetPickerActivity : ComponentActivity() {
     private fun pick(info: AppWidgetProviderInfo) {
         val id = widgetHost.allocateAppWidgetId()
         pendingWidgetId = id
-        val bound = appWidgetManager.bindAppWidgetIdIfAllowed(id, info.provider)
+        val bound = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && info.profile != null) {
+                appWidgetManager.bindAppWidgetIdIfAllowed(id, info.profile, info.provider, null)
+            } else {
+                appWidgetManager.bindAppWidgetIdIfAllowed(id, info.provider)
+            }
+        }.getOrDefault(false)
+
         if (bound) {
             proceedAfterBind(id)
         } else {
-            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, info.provider)
+            try {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, info.provider)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && info.profile != null) {
+                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER_PROFILE, info.profile)
+                    }
+                }
+                bindLauncher.launch(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error requesting widget bind permission for id $id", e)
+                cancel()
             }
-            bindLauncher.launch(intent)
         }
     }
 
@@ -532,13 +560,31 @@ class WidgetPickerActivity : ComponentActivity() {
         val info = appWidgetManager.getAppWidgetInfo(id)
         val configure = info?.configure
         if (configure != null) {
-            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
-                component = configure
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+            val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ActivityOptions.makeBasic().apply {
+                    setPendingIntentBackgroundActivityStartMode(
+                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                    )
+                }.toBundle()
+            } else {
+                null
             }
             try {
-                configureLauncher.launch(intent)
+                widgetHost.startAppWidgetConfigureActivityForResult(
+                    this,
+                    id,
+                    0,
+                    REQUEST_CONFIGURE_WIDGET,
+                    options
+                )
             } catch (e: ActivityNotFoundException) {
+                Log.w(TAG, "Configure activity not found for widget $id, adding directly", e)
+                finishWithWidgetId(id)
+            } catch (e: SecurityException) {
+                Log.e(TAG, "SecurityException starting configure activity for widget $id, completing bind", e)
+                finishWithWidgetId(id)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start widget configure activity for widget $id", e)
                 finishWithWidgetId(id)
             }
         } else {

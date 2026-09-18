@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui
 
+import android.app.Activity
 import android.app.Activity.RESULT_OK
+import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -241,11 +245,38 @@ fun VictoriaNavHost(
                 val info = AppWidgetManager.getInstance(context).getAppWidgetInfo(idToConfig)
                 val configure = info?.configure
                 if (configure != null) {
-                    val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
-                        component = configure
-                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, idToConfig)
+                    val activity = context as? Activity
+                    var started = false
+                    if (activity != null) {
+                        try {
+                            val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                ActivityOptions.makeBasic().apply {
+                                    setPendingIntentBackgroundActivityStartMode(
+                                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                                    )
+                                }.toBundle()
+                            } else {
+                                null
+                            }
+                            app.widgetHost.startAppWidgetConfigureActivityForResult(
+                                activity,
+                                idToConfig,
+                                0,
+                                0,
+                                options
+                            )
+                            started = true
+                        } catch (e: Exception) {
+                            Log.w("VictoriaNavHost", "startAppWidgetConfigureActivityForResult failed for widget $idToConfig", e)
+                        }
                     }
-                    runCatching { context.startActivity(intent) }
+                    if (!started) {
+                        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
+                            component = configure
+                            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, idToConfig)
+                        }
+                        runCatching { context.startActivity(intent) }
+                    }
                 }
             },
             onAppInfo = { targetId ->

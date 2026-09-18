@@ -1,3 +1,15 @@
+### 🚀 Novidades e Melhorias da Versão 0.56.4
+
+- **Correção Definitiva para Adição de Widgets com Configuração Privada (SecurityException):**
+  - **Uso do Fluxo Nativo do `AppWidgetHost` (`startAppWidgetConfigureActivityForResult`):** Corrigido o erro fatal (`SecurityException: Permission Denial ... not exported`) que ocorria ao tentar adicionar certos widgets de terceiros (como Battery Guru e outros aplicativos) cujas atividades de configuração não são exportadas (`android:exported="false"`).
+  - **Delegação Autorizada pelo Sistema:** O launcher agora delega a inicialização de telas de configuração de widgets ao framework do Android através do `AppWidgetHost`, permitindo que o sistema operacional crie um `IntentSender` com privilégios adequados para abrir telas de configuração privadas e cross-profile.
+  - **Compatibilidade com Android 14+ (API 34/35):** Inclusão de `ActivityOptions` com `MODE_BACKGROUND_ACTIVITY_START_ALLOWED`, garantindo conformidade com as restrições mais recentes do sistema operacional para início de atividades via `PendingIntent`.
+  - **Tratamento Resiliente e Sem Falhas (Zero Crash):** Caso a atividade de configuração de um widget falhe ao ser aberta por qualquer inconsistência do aplicativo de origem, o erro é capturado e tratado de forma silenciosa, concluindo o vínculo do widget com suas definições padrão em vez de interromper a launcher.
+  - **Configuração de Widgets Existentes no Menu de Contexto:** Aprimorada também a opção *Configurações* ao manter pressionado um widget na tela inicial para utilizar o `AppWidgetHost`, permitindo reconfigurar qualquer widget adicionado sem falhas.
+  - **Blindagem na Criação e Atualização de Visualizações (`WidgetSlot`):** Proteção adicional contra exceções de inflação e renderização de layouts remotos de widgets de terceiros instáveis.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.56.3
 
 - **Restauração da Rolagem Vertical de Conteúdo nos Widgets:**
