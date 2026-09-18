@@ -1151,6 +1151,8 @@ private fun RetroTerminalClockContent(
             }
         }
     }
+}
+
 @Composable
 private fun DailyReflectionClockContent(
     timeString: String,
@@ -1589,7 +1591,7 @@ fun ClockStylePreview(
                             )
                         }
                         Text(
-                            text = previewTime,
+                            text = timeString,
                             color = tint,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.SemiBold,
