@@ -224,7 +224,7 @@ class WidgetPickerActivity : ComponentActivity() {
                                 IconButton(onClick = { searchQuery = "" }) {
                                     Icon(
                                         imageVector = Icons.Filled.Clear,
-                                        contentDescription = stringResource(R.string.action_delete),
+                                        contentDescription = stringResource(R.string.action_reset),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
