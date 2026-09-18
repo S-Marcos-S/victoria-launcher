@@ -1775,26 +1775,9 @@ private fun BottomDailyQuoteBlock(
                     Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
                 },
             )
-            .padding(vertical = 8.dp),
+            .padding(vertical = 6.dp),
         horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
     ) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .background(contentColor.copy(alpha = 0.12f))
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.quote_of_the_day_tag).uppercase(),
-                color = contentColor.copy(alpha = 0.8f),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
-
         Text(
             text = "“${quote.quote}”",
             color = contentColor.copy(alpha = 0.9f),

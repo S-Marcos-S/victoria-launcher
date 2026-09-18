@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -279,9 +280,20 @@ fun NiagaraClockWidget(
             }
             ClockStyle.DAILY_REFLECTION -> {
                 val dailyQuote = remember(currentTime) { DailyQuoteManager.getQuoteForToday() }
+                val compactDatePattern = if (Locale.getDefault().language == "pt") {
+                    "EEE, d 'de' MMM"
+                } else {
+                    "EEE, MMM d"
+                }
+                val compactDateString = remember(currentTime) {
+                    SimpleDateFormat(compactDatePattern, Locale.getDefault())
+                        .format(currentTime)
+                        .replace(".", "")
+                        .uppercase()
+                }
                 DailyReflectionClockContent(
                     timeString = timeString,
-                    dateString = dateString,
+                    compactDateString = compactDateString,
                     quote = dailyQuote,
                     contentColor = contentColor,
                     alignRight = alignRight,
@@ -1156,7 +1168,7 @@ private fun RetroTerminalClockContent(
 @Composable
 private fun DailyReflectionClockContent(
     timeString: String,
-    dateString: String,
+    compactDateString: String,
     quote: DailyQuote,
     contentColor: Color,
     alignRight: Boolean,
@@ -1166,41 +1178,28 @@ private fun DailyReflectionClockContent(
 ) {
     val clockBlock: @Composable () -> Unit = {
         Column(
+            modifier = Modifier.width(IntrinsicSize.Min),
             horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDateClick,
-                ),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(contentColor.copy(alpha = 0.15f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                ) {
-                    Text(
-                        text = "REFLEXÃO",
-                        color = contentColor,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                    )
-                }
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = dateString.uppercase(),
-                    color = contentColor.copy(alpha = 0.7f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 0.5.sp,
-                )
-            }
+            Text(
+                text = compactDateString,
+                color = contentColor.copy(alpha = 0.7f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.5.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDateClick,
+                    ),
+                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+            )
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
 
             Text(
                 text = timeString,
@@ -1230,7 +1229,7 @@ private fun DailyReflectionClockContent(
             Text(
                 text = "“${quote.quote}”",
                 color = contentColor.copy(alpha = 0.9f),
-                fontSize = 12.5.sp,
+                fontSize = 13.sp,
                 fontStyle = FontStyle.Italic,
                 lineHeight = 17.sp,
                 maxLines = 4,
@@ -1256,25 +1255,25 @@ private fun DailyReflectionClockContent(
     ) {
         if (alignRight) {
             quoteBlock(Modifier.weight(1f))
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             Box(
                 modifier = Modifier
                     .width(1.dp)
-                    .height(56.dp)
-                    .background(contentColor.copy(alpha = 0.2f))
+                    .height(52.dp)
+                    .background(contentColor.copy(alpha = 0.18f))
             )
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             clockBlock()
         } else {
             clockBlock()
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             Box(
                 modifier = Modifier
                     .width(1.dp)
-                    .height(56.dp)
-                    .background(contentColor.copy(alpha = 0.2f))
+                    .height(52.dp)
+                    .background(contentColor.copy(alpha = 0.18f))
             )
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             quoteBlock(Modifier.weight(1f))
         }
     }
@@ -1576,26 +1575,25 @@ fun ClockStylePreview(
                     modifier = modifier.fillMaxWidth().padding(horizontal = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(tint.copy(alpha = 0.15f))
-                                .padding(horizontal = 4.dp, vertical = 1.dp),
-                        ) {
-                            Text(
-                                text = "REFLEXÃO",
-                                color = tint,
-                                fontSize = 6.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
+                    Column(
+                        modifier = Modifier.width(IntrinsicSize.Min),
+                    ) {
+                        Text(
+                            text = "SEX, 18 SET",
+                            color = tint.copy(alpha = 0.7f),
+                            fontSize = 6.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(1.dp))
                         Text(
                             text = timeString,
                             color = tint,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-1).sp,
+                            lineHeight = 24.sp,
                         )
                     }
                     Spacer(Modifier.width(6.dp))

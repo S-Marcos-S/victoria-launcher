@@ -1,3 +1,13 @@
+### 🚀 Novidades e Melhorias da Versão 0.57.2
+
+- **Refinamento Visual e Alinhamento do Widget de Frase Diária (`DAILY_REFLECTION`):**
+  - **Data Limitada Rigorosamente à Largura do Relógio:** A data agora utiliza medição intrínseca mínima (`IntrinsicSize.Min`) e preenchimento total (`fillMaxWidth`), fazendo com que ocupe exatamente a mesma largura dos dígitos do relógio abaixo dela, perfeitamente alinhada às bordas (à esquerda ou à direita no modo invertido).
+  - **Formatação Compacta e Elegante:** Implementada máscara de data otimizada (`EEE, d 'de' MMM` em português e `EEE, MMM d` em outros idiomas), em caixa alta e sem pontos de abreviação (ex: `SEX, 18 DE SET`), garantindo harmonia visual e eliminando quebras de linha.
+  - **Remoção da Tag "Reflexão":** Removido o badge com a palavra "REFLEXÃO" tanto do widget do relógio quanto do card inferior na tela inicial e da pré-visualização no seletor de estilos, proporcionando um design muito mais limpo e minimalista.
+  - **Harmonia de Espaçamentos e Tipografia:** Redução da distância entre data e hora para 2dp, ajuste na altura e opacidade da divisória vertical (52dp, 18% de opacidade), espaçamentos laterais calibrados para 12dp e tamanho da fonte da citação ajustado para 13sp para leitura confortável.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.57.1
 
 - **Ajuste de Posicionamento e Elevação da Frase de Reflexão Diária:**
