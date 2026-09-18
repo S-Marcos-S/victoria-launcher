@@ -816,7 +816,7 @@ fun HomeScreen(
                 }
             }
 
-            val showBottomDailyQuote = clockStyle != ClockStyle.DAILY_REFLECTION
+            val showBottomDailyQuote = clockStyle != ClockStyle.DAILY_REFLECTION && clockStyle != ClockStyle.DAILY_REFLECTION_STATS
 
             if (showBottomDailyQuote) {
                 // Spacer separating favorites from the daily quote

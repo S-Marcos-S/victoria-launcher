@@ -32,6 +32,7 @@ enum class ClockStyle {
     MINIMAL_SPECS,
     RETRO_TERMINAL,
     DAILY_REFLECTION,
+    DAILY_REFLECTION_STATS,
 }
 
 /** AUTO picks light or dark text from the wallpaper's own colours. */

@@ -1,3 +1,16 @@
+### 🚀 Novidades e Melhorias da Versão 0.57.3
+
+- **Novo Estilo de Relógio: Reflexão Diária + Métricas do Sistema (`DAILY_REFLECTION_STATS`):**
+  - **Cards Técnicos Integrados:** Adicionados 3 cards de telemetria dispostos harmoniosamente na mesma linha logo abaixo do relógio e da frase de reflexão diária:
+    - *Memória RAM:* Exibe a porcentagem atual de uso da memória RAM e a quantidade exata de gigabytes livres (toque abre as configurações de aplicativos/memória).
+    - *Temperatura da Bateria:* Monitora em tempo real a temperatura da bateria em graus Celsius, percentual de carga e status de carregamento (toque abre os detalhes de bateria do Android).
+    - *Armazenamento Interno:* Acompanha o consumo e espaço restante do armazenamento interno do dispositivo (toque abre o gerenciador de armazenamento).
+  - **Zero Consumo de Bateria:** Atualização sincronizada com o tique de minuto do próprio relógio (`rememberSystemStats(currentTime)`) e eventos de broadcast do sistema operacional, sem nenhum loop ativo, serviço em segundo plano ou consumo de bateria adicional.
+  - **Design Unificado e Responsivo:** Preserva toda a estética minimalista e alinhamento do relógio de reflexão diária (largura intrínseca da data, divisória e citação do dia), integrando perfeitamente os 3 cards translúcidos ao visual da tela inicial e ao seletor de estilos.
+  - **Ocultamento Inteligente na Base:** Assim como no estilo clássico de reflexão, a frase na base da tela inicial é ocultada automaticamente quando este estilo está ativo para evitar duplicidade.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.57.2
 
 - **Refinamento Visual e Alinhamento do Widget de Frase Diária (`DAILY_REFLECTION`):**

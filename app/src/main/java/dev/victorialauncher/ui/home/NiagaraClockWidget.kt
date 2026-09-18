@@ -306,6 +306,38 @@ fun NiagaraClockWidget(
                     },
                 )
             }
+            ClockStyle.DAILY_REFLECTION_STATS -> {
+                val dailyQuote = remember(currentTime) { DailyQuoteManager.getQuoteForToday() }
+                val compactDatePattern = if (Locale.getDefault().language == "pt") {
+                    "EEE, d 'de' MMM"
+                } else {
+                    "EEE, MMM d"
+                }
+                val compactDateString = remember(currentTime) {
+                    SimpleDateFormat(compactDatePattern, Locale.getDefault())
+                        .format(currentTime)
+                        .replace(".", "")
+                        .uppercase()
+                }
+                DailyReflectionStatsClockContent(
+                    timeString = timeString,
+                    compactDateString = compactDateString,
+                    quote = dailyQuote,
+                    stats = rememberSystemStats(currentTime),
+                    contentColor = contentColor,
+                    alignRight = alignRight,
+                    onClockClick = { launchClockApp(context) },
+                    onDateClick = { launchCalendarApp(context) },
+                    onQuoteClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                        clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${dailyQuote.quote}\"\n— ${dailyQuote.author}"))
+                        Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
+                    },
+                    onRamClick = { launchMemorySettings(context) },
+                    onBatteryClick = { launchBatterySettings(context) },
+                    onStorageClick = { launchStorageSettings(context) },
+                )
+            }
         }
     }
 }
@@ -758,10 +790,11 @@ private fun TechChip(
     icon: String,
     label: String,
     contentColor: Color,
+    modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(contentColor.copy(alpha = 0.08f))
             .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(8.dp))
@@ -774,16 +807,22 @@ private fun TechChip(
                     )
                 } else Modifier
             )
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
             Text(text = icon, fontSize = 11.sp)
             Spacer(Modifier.width(4.dp))
             Text(
                 text = label,
                 color = contentColor.copy(alpha = 0.9f),
-                fontSize = 12.sp,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -1279,6 +1318,66 @@ private fun DailyReflectionClockContent(
     }
 }
 
+@Composable
+private fun DailyReflectionStatsClockContent(
+    timeString: String,
+    compactDateString: String,
+    quote: DailyQuote,
+    stats: SystemStats,
+    contentColor: Color,
+    alignRight: Boolean,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+    onQuoteClick: () -> Unit,
+    onRamClick: () -> Unit,
+    onBatteryClick: () -> Unit,
+    onStorageClick: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        DailyReflectionClockContent(
+            timeString = timeString,
+            compactDateString = compactDateString,
+            quote = quote,
+            contentColor = contentColor,
+            alignRight = alignRight,
+            onClockClick = onClockClick,
+            onDateClick = onDateClick,
+            onQuoteClick = onQuoteClick,
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        // Telemetry chips na mesma linha, reaproveitando os mesmos chips do HUD Futurista
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TechChip(
+                icon = "💾",
+                label = "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G",
+                contentColor = contentColor,
+                modifier = Modifier.weight(1f),
+                onClick = onRamClick,
+            )
+            TechChip(
+                icon = "🌡️",
+                label = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
+                contentColor = contentColor,
+                modifier = Modifier.weight(1f),
+                onClick = onBatteryClick,
+            )
+            TechChip(
+                icon = "💽",
+                label = "ROM ${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G",
+                contentColor = contentColor,
+                modifier = Modifier.weight(1f),
+                onClick = onStorageClick,
+            )
+        }
+    }
+}
+
 /**
  * Scaled mini preview of a clock style used in the 2-column grid picker.
  */
@@ -1625,6 +1724,93 @@ fun ClockStylePreview(
                     }
                 }
             }
+            ClockStyle.DAILY_REFLECTION_STATS -> {
+                Column(
+                    modifier = modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier.width(IntrinsicSize.Min),
+                        ) {
+                            Text(
+                                text = "SEX, 18 SET",
+                                color = tint.copy(alpha = 0.7f),
+                                fontSize = 5.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(1.dp))
+                            Text(
+                                text = timeString,
+                                color = tint,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = (-1).sp,
+                                lineHeight = 20.sp,
+                            )
+                        }
+                        Spacer(Modifier.width(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(22.dp)
+                                .background(tint.copy(alpha = 0.25f))
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "“O segredo de progredir é começar.”",
+                                color = tint.copy(alpha = 0.85f),
+                                fontSize = 6.sp,
+                                fontStyle = FontStyle.Italic,
+                                lineHeight = 7.5.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Spacer(Modifier.height(1.dp))
+                            Text(
+                                text = "— Mark Twain",
+                                color = tint.copy(alpha = 0.6f),
+                                fontSize = 5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        listOf(
+                            "RAM ${stats.ramUsedPercent}%",
+                            "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
+                            "ROM ${stats.storageUsedPercent}%",
+                        ).forEach { label ->
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(tint.copy(alpha = 0.08f))
+                                    .padding(vertical = 2.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = tint.copy(alpha = 0.8f),
+                                    fontSize = 4.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -1642,6 +1828,22 @@ private fun launchStorageSettings(context: Context) {
     val candidates = listOf(
         Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS),
         Intent(Settings.ACTION_STORAGE_VOLUME_ACCESS_SETTINGS),
+        Intent(Settings.ACTION_SETTINGS),
+    )
+    for (intent in candidates) {
+        try {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            return
+        } catch (_: Exception) {}
+    }
+}
+
+/** Opens the device apps / memory settings */
+private fun launchMemorySettings(context: Context) {
+    val candidates = listOf(
+        Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS),
+        Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
         Intent(Settings.ACTION_SETTINGS),
     )
     for (intent in candidates) {
