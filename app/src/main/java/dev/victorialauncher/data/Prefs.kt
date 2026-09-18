@@ -27,6 +27,7 @@ enum class ClockStyle {
     DIGITAL_CARD,
     DAY_FOCUS,
     TECH_HUD,
+    TECH_HUD_PRO,
     SYSTEM_MONITOR,
     MINIMAL_SPECS,
     RETRO_TERMINAL,

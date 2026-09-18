@@ -1,3 +1,14 @@
+### 🚀 Novidades e Melhorias da Versão 0.55.0
+
+- **Novo Widget "HUD Futurista Pro" (Tech HUD Pro):**
+  - **Estética Cyberpunk Expandida:** Introduzido um novo estilo de relógio na tela inicial no estilo HUD futurista, com cabeçalho `SYS // HUD PRO`, tipografia cyberpunk de alto contraste e layout de telemetria estendido.
+  - **Novo Card de Armazenamento Interno (ROM):** Integrado um card dedicado de armazenamento (`ROM XG`) ao lado dos cards de memória RAM, temperatura da bateria e carga/carregamento, permitindo monitorar o espaço livre do dispositivo diretamente na tela inicial.
+  - **Atalho Interativo para Armazenamento:** Toque no card de armazenamento abre instantaneamente as configurações de armazenamento do dispositivo Android.
+  - **Badge Compacto de CPU (Arquitetura Eficiente):** Badge minimalista ao lado do relógio indicando a contagem de núcleos do processador (`CPU • X CORES`) sem sobrecarga operacional.
+  - **Eficiência Energética Absoluta (Zero Impacto na Bateria):** A telemetria de armazenamento (`StatFs`) e CPU utiliza leitura instantânea nativa sob demanda e orientada a eventos (`rememberSystemStats`), sem serviços em segundo plano, sem wakelocks e com consumo nulo de energia. O monitoramento dinâmico a cada segundo do uso por núcleo do processador não foi adotado por violar as restrições de sandbox do Android (bloqueio de `/proc/stat` para apps comuns desde o Android 8+) e para preservar rigorosamente a autonomia da bateria do usuário.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.54.1
 
 - **Correção da Instalação do APK ("Arquivo Inválido") e Ajuste de VersionCode:**

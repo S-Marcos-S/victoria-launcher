@@ -119,6 +119,7 @@
     <string name="clock_style_digital_card">Cartão Digital</string>
     <string name="clock_style_day_focus">Dia em Destaque</string>
     <string name="clock_style_tech_hud">HUD Futurista</string>
+    <string name="clock_style_tech_hud_pro">HUD Futurista Pro</string>
     <string name="clock_style_system_monitor">Monitor do Sistema</string>
     <string name="clock_style_minimal_specs">Minimalista com Métricas</string>
     <string name="clock_style_retro_terminal">Terminal Geek</string>

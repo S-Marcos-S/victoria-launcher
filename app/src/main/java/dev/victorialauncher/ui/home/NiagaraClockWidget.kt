@@ -7,10 +7,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.provider.AlarmClock
+import android.provider.Settings
 import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,6 +43,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
@@ -213,6 +216,19 @@ fun NiagaraClockWidget(
                     onClockClick = { launchClockApp(context) },
                     onDateClick = { launchCalendarApp(context) },
                     onStatsClick = { launchBatterySettings(context) },
+                )
+            }
+            ClockStyle.TECH_HUD_PRO -> {
+                TechHudProClockContent(
+                    timeString = timeString,
+                    dateString = dateString,
+                    stats = rememberSystemStats(currentTime),
+                    contentColor = contentColor,
+                    horizontalAlignment = horizontalAlignment,
+                    onClockClick = { launchClockApp(context) },
+                    onDateClick = { launchCalendarApp(context) },
+                    onBatteryStatsClick = { launchBatterySettings(context) },
+                    onStorageClick = { launchStorageSettings(context) },
                 )
             }
             ClockStyle.SYSTEM_MONITOR -> {
@@ -699,12 +715,26 @@ private fun TechHudClockContent(
 }
 
 @Composable
-private fun TechChip(icon: String, label: String, contentColor: Color) {
+private fun TechChip(
+    icon: String,
+    label: String,
+    contentColor: Color,
+    onClick: (() -> Unit)? = null,
+) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .background(contentColor.copy(alpha = 0.08f))
             .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(8.dp))
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClick,
+                    )
+                } else Modifier
+            )
             .padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -715,6 +745,144 @@ private fun TechChip(icon: String, label: String, contentColor: Color) {
                 color = contentColor.copy(alpha = 0.9f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TechHudProClockContent(
+    timeString: String,
+    dateString: String,
+    stats: SystemStats,
+    contentColor: Color,
+    horizontalAlignment: Alignment.Horizontal,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+    onBatteryStatsClick: () -> Unit,
+    onStorageClick: () -> Unit,
+) {
+    Column(horizontalAlignment = horizontalAlignment) {
+        // Tag / Sys header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDateClick,
+            ),
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(contentColor.copy(alpha = 0.15f))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    text = "SYS // HUD PRO",
+                    color = contentColor,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = dateString.uppercase(),
+                color = contentColor.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 1.sp,
+            )
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        // Big HUD Time + Compact CPU Core Telemetry Badge beside the clock
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = timeString,
+                color = contentColor,
+                fontSize = 54.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-1).sp,
+                lineHeight = 54.sp,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClockClick,
+                ),
+            )
+
+            // Compact CPU Cores Telemetry Badge (Static/zero battery drain)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(contentColor.copy(alpha = 0.08f))
+                    .border(1.dp, contentColor.copy(alpha = 0.16f), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 7.dp, vertical = 5.dp),
+            ) {
+                Column(horizontalAlignment = Alignment.Start) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(contentColor.copy(alpha = 0.8f)),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "CPU",
+                            color = contentColor.copy(alpha = 0.6f),
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                        )
+                    }
+                    Spacer(Modifier.height(1.dp))
+                    Text(
+                        text = "${Runtime.getRuntime().availableProcessors()} CORES",
+                        color = contentColor,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // Telemetry Chips Row: RAM, Storage (ROM), Temperature, Battery
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            TechChip(
+                icon = "💾",
+                label = "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G",
+                contentColor = contentColor,
+                onClick = onBatteryStatsClick,
+            )
+            TechChip(
+                icon = "💽",
+                label = "ROM ${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G",
+                contentColor = contentColor,
+                onClick = onStorageClick,
+            )
+            TechChip(
+                icon = "🌡️",
+                label = "${String.format(Locale.US, "%.0f", stats.batteryTempCelsius)}°C",
+                contentColor = contentColor,
+                onClick = onBatteryStatsClick,
+            )
+            TechChip(
+                icon = if (stats.isCharging) "⚡" else "🔋",
+                label = "${stats.batteryPercent}%",
+                contentColor = contentColor,
+                onClick = onBatteryStatsClick,
             )
         }
     }
@@ -1126,6 +1294,47 @@ fun ClockStylePreview(
                     )
                 }
             }
+            ClockStyle.TECH_HUD_PRO -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "SYS // HUD PRO",
+                        color = tint.copy(alpha = 0.6f),
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = timeString,
+                            color = tint,
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(tint.copy(alpha = 0.12f))
+                                .padding(horizontal = 3.dp, vertical = 1.dp),
+                        ) {
+                            Text(
+                                text = "${Runtime.getRuntime().availableProcessors()}C",
+                                color = tint,
+                                fontSize = 7.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = "RAM ${String.format(Locale.US, "%.1f", stats.ramAvailableGb)}G · ROM ${String.format(Locale.US, "%.0f", stats.storageAvailableGb)}G · ${stats.batteryPercent}%",
+                        color = tint.copy(alpha = 0.75f),
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
             ClockStyle.SYSTEM_MONITOR -> {
                 Box(
                     modifier = Modifier
@@ -1217,6 +1426,22 @@ private fun launchBatterySettings(context: Context) {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     runCatching { context.startActivity(intent) }
+}
+
+/** Opens the device storage settings */
+private fun launchStorageSettings(context: Context) {
+    val candidates = listOf(
+        Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS),
+        Intent(Settings.ACTION_STORAGE_VOLUME_ACCESS_SETTINGS),
+        Intent(Settings.ACTION_SETTINGS),
+    )
+    for (intent in candidates) {
+        try {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            return
+        } catch (_: Exception) {}
+    }
 }
 
 /** Attempts to launch the device clock or alarms activity. */

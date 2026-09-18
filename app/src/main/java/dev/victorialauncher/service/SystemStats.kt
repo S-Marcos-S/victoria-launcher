@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import android.os.Environment
+import android.os.StatFs
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +28,10 @@ data class SystemStats(
     val ramTotalGb: Float = 0f,
     val ramUsedGb: Float = 0f,
     val ramUsedPercent: Int = 0,
+    val storageAvailableGb: Float = 0f,
+    val storageTotalGb: Float = 0f,
+    val storageUsedGb: Float = 0f,
+    val storageUsedPercent: Int = 0,
     val batteryPercent: Int = 0,
     val batteryTempCelsius: Float = 0f,
     val isCharging: Boolean = false,
@@ -124,11 +130,37 @@ fun getSystemStats(context: Context, batteryIntent: Intent? = null): SystemStats
         }
     } catch (_: Exception) {}
 
+    // 3. Storage Information (ROM / Internal Storage)
+    var storageAvailGb = 0f
+    var storageTotalGb = 0f
+    var storageUsedGb = 0f
+    var storageUsedPercent = 0
+
+    try {
+        val path = Environment.getDataDirectory()
+        val stat = StatFs(path.path)
+        val blockSize = stat.blockSizeLong
+        val totalBytes = stat.blockCountLong * blockSize
+        val availBytes = stat.availableBlocksLong * blockSize
+        val bytesInGb = 1024f * 1024f * 1024f
+
+        storageAvailGb = (availBytes / bytesInGb)
+        storageTotalGb = (totalBytes / bytesInGb)
+        storageUsedGb = (storageTotalGb - storageAvailGb).coerceAtLeast(0f)
+        if (storageTotalGb > 0f) {
+            storageUsedPercent = ((storageUsedGb / storageTotalGb) * 100f).roundToInt().coerceIn(0, 100)
+        }
+    } catch (_: Exception) {}
+
     return SystemStats(
         ramAvailableGb = ramAvailGb,
         ramTotalGb = ramTotalGb,
         ramUsedGb = ramUsedGb,
         ramUsedPercent = ramUsedPercent,
+        storageAvailableGb = storageAvailGb,
+        storageTotalGb = storageTotalGb,
+        storageUsedGb = storageUsedGb,
+        storageUsedPercent = storageUsedPercent,
         batteryPercent = batteryPercent,
         batteryTempCelsius = batteryTempCelsius,
         isCharging = isCharging,
