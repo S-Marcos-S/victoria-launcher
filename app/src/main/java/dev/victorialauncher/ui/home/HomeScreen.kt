@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.home
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Build
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.window.DialogWindowProvider
+import dev.victorialauncher.data.DailyQuote
+import dev.victorialauncher.data.DailyQuoteManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.calculateTargetValue
@@ -810,22 +816,74 @@ fun HomeScreen(
                 }
             }
 
-            // Empty space below favorites
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .combinedClickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {},
-                        onDoubleClick = handleDoubleTapLock,
-                        onLongClick = {
-                            HapticUtil.tick(view, hapticsEnabled)
-                            onOpenHomeOptions()
-                        },
-                    )
-            )
+            val showBottomDailyQuote = clockStyle != ClockStyle.DAILY_REFLECTION
+
+            if (showBottomDailyQuote) {
+                val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+                val bottomQuoteSpacer = (screenHeightDp * 0.40f).coerceAtLeast(180.dp)
+
+                // Spacer pushing the quote down below the initial screen fold
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(bottomQuoteSpacer)
+                        .combinedClickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                            onDoubleClick = handleDoubleTapLock,
+                            onLongClick = {
+                                HapticUtil.tick(view, hapticsEnabled)
+                                onOpenHomeOptions()
+                            },
+                        )
+                )
+
+                val todayQuote = remember { DailyQuoteManager.getQuoteForToday() }
+
+                BottomDailyQuoteBlock(
+                    quote = todayQuote,
+                    contentColor = contentColor,
+                    contentStart = contentStart,
+                    contentEnd = contentEnd,
+                    alignRight = alignRight,
+                    hapticsEnabled = hapticsEnabled,
+                )
+
+                // Bottom breathing space for smooth drag up and spring bounce
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .combinedClickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                            onDoubleClick = handleDoubleTapLock,
+                            onLongClick = {
+                                HapticUtil.tick(view, hapticsEnabled)
+                                onOpenHomeOptions()
+                            },
+                        )
+                )
+            } else {
+                // Empty space below favorites when quote is displayed in clock widget
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .combinedClickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                            onDoubleClick = handleDoubleTapLock,
+                            onLongClick = {
+                                HapticUtil.tick(view, hapticsEnabled)
+                                onOpenHomeOptions()
+                            },
+                        )
+                )
+            }
         }
     }
 
@@ -1688,6 +1746,75 @@ private fun PaddingHandle(
             stringResource(R.string.handle_vertical, stringResource(label), value),
             color = Color.White.copy(alpha = 0.75f),
             fontSize = 11.sp,
+        )
+    }
+}
+
+@Composable
+private fun BottomDailyQuoteBlock(
+    quote: DailyQuote,
+    contentColor: Color,
+    contentStart: Dp,
+    contentEnd: Dp,
+    alignRight: Boolean,
+    hapticsEnabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val view = LocalView.current
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = contentStart, end = contentEnd)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {
+                    HapticUtil.tick(view, hapticsEnabled)
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                    clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${quote.quote}\"\n— ${quote.author}"))
+                    Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
+                },
+            )
+            .padding(vertical = 14.dp),
+        horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .background(contentColor.copy(alpha = 0.12f))
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.quote_of_the_day_tag).uppercase(),
+                color = contentColor.copy(alpha = 0.8f),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        Text(
+            text = "“${quote.quote}”",
+            color = contentColor.copy(alpha = 0.9f),
+            fontSize = 15.sp,
+            fontStyle = FontStyle.Italic,
+            lineHeight = 22.sp,
+            textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+        )
+
+        Spacer(Modifier.height(6.dp))
+
+        Text(
+            text = "— ${quote.author}",
+            color = contentColor.copy(alpha = 0.6f),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
         )
     }
 }

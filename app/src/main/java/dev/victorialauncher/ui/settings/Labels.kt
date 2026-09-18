@@ -50,6 +50,7 @@ fun ClockStyle.labelRes(): Int = when (this) {
     ClockStyle.SYSTEM_MONITOR -> R.string.clock_style_system_monitor
     ClockStyle.MINIMAL_SPECS -> R.string.clock_style_minimal_specs
     ClockStyle.RETRO_TERMINAL -> R.string.clock_style_retro_terminal
+    ClockStyle.DAILY_REFLECTION -> R.string.clock_style_daily_reflection
 }
 
 @StringRes

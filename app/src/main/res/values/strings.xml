@@ -122,6 +122,9 @@
     <string name="clock_style_system_monitor">System Monitor</string>
     <string name="clock_style_minimal_specs">Minimal Specs</string>
     <string name="clock_style_retro_terminal">Retro Terminal</string>
+    <string name="clock_style_daily_reflection">Daily Reflection</string>
+    <string name="quote_of_the_day_tag">Reflection</string>
+    <string name="quote_copied">Quote copied to clipboard</string>
     <string name="settings_hide_status_bar">Hide status bar</string>
     <string name="settings_dim_home">Dim wallpaper on home screen</string>
     <string name="settings_dim_applist">Dim wallpaper behind app list</string>

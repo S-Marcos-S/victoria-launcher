@@ -52,7 +52,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontFamily
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import dev.victorialauncher.R
 import dev.victorialauncher.data.ClockStyle
+import dev.victorialauncher.data.DailyQuote
+import dev.victorialauncher.data.DailyQuoteManager
 import dev.victorialauncher.service.SystemStats
 import dev.victorialauncher.service.rememberSystemStats
 import java.util.Calendar
@@ -266,6 +275,23 @@ fun NiagaraClockWidget(
                     onClockClick = { launchClockApp(context) },
                     onDateClick = { launchCalendarApp(context) },
                     onStatsClick = { launchBatterySettings(context) },
+                )
+            }
+            ClockStyle.DAILY_REFLECTION -> {
+                val dailyQuote = remember(currentTime) { DailyQuoteManager.getQuoteForToday() }
+                DailyReflectionClockContent(
+                    timeString = timeString,
+                    dateString = dateString,
+                    quote = dailyQuote,
+                    contentColor = contentColor,
+                    alignRight = alignRight,
+                    onClockClick = { launchClockApp(context) },
+                    onDateClick = { launchCalendarApp(context) },
+                    onQuoteClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                        clipboard?.setPrimaryClip(ClipData.newPlainText("Reflexão do dia", "\"${dailyQuote.quote}\"\n— ${dailyQuote.author}"))
+                        Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
+                    },
                 )
             }
         }
@@ -1125,6 +1151,131 @@ private fun RetroTerminalClockContent(
             }
         }
     }
+@Composable
+private fun DailyReflectionClockContent(
+    timeString: String,
+    dateString: String,
+    quote: DailyQuote,
+    contentColor: Color,
+    alignRight: Boolean,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+    onQuoteClick: () -> Unit,
+) {
+    val clockBlock: @Composable () -> Unit = {
+        Column(
+            horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDateClick,
+                ),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(contentColor.copy(alpha = 0.15f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = "REFLEXÃO",
+                        color = contentColor,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                    )
+                }
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = dateString.uppercase(),
+                    color = contentColor.copy(alpha = 0.7f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.5.sp,
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                text = timeString,
+                color = contentColor,
+                fontSize = 54.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-1).sp,
+                lineHeight = 54.sp,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClockClick,
+                ),
+            )
+        }
+    }
+
+    val quoteBlock: @Composable (Modifier) -> Unit = { mod ->
+        Column(
+            modifier = mod.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onQuoteClick,
+            ),
+            horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
+        ) {
+            Text(
+                text = "“${quote.quote}”",
+                color = contentColor.copy(alpha = 0.9f),
+                fontSize = 12.5.sp,
+                fontStyle = FontStyle.Italic,
+                lineHeight = 17.sp,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "— ${quote.author}",
+                color = contentColor.copy(alpha = 0.65f),
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+            )
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (alignRight) {
+            quoteBlock(Modifier.weight(1f))
+            Spacer(Modifier.width(14.dp))
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(56.dp)
+                    .background(contentColor.copy(alpha = 0.2f))
+            )
+            Spacer(Modifier.width(14.dp))
+            clockBlock()
+        } else {
+            clockBlock()
+            Spacer(Modifier.width(14.dp))
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(56.dp)
+                    .background(contentColor.copy(alpha = 0.2f))
+            )
+            Spacer(Modifier.width(14.dp))
+            quoteBlock(Modifier.weight(1f))
+        }
+    }
 }
 
 /**
@@ -1414,6 +1565,62 @@ fun ClockStylePreview(
                             color = tint.copy(alpha = 0.8f),
                             fontSize = 8.sp,
                             fontFamily = FontFamily.Monospace,
+                        )
+                    }
+                }
+            }
+            ClockStyle.DAILY_REFLECTION -> {
+                Row(
+                    modifier = modifier.fillMaxWidth().padding(horizontal = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(tint.copy(alpha = 0.15f))
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                        ) {
+                            Text(
+                                text = "REFLEXÃO",
+                                color = tint,
+                                fontSize = 6.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                        Text(
+                            text = previewTime,
+                            color = tint,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = (-1).sp,
+                        )
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .height(28.dp)
+                            .background(tint.copy(alpha = 0.25f))
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "“O segredo de progredir é começar.”",
+                            color = tint.copy(alpha = 0.85f),
+                            fontSize = 7.sp,
+                            fontStyle = FontStyle.Italic,
+                            lineHeight = 9.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "— Mark Twain",
+                            color = tint.copy(alpha = 0.6f),
+                            fontSize = 6.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
                         )
                     }
                 }

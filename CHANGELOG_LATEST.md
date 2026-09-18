@@ -1,3 +1,22 @@
+### 🚀 Novidades e Melhorias da Versão 0.57.0
+
+- **Sistema Local de Frases Diárias de Reflexão (100% Offline e Sem Consumo de Bateria):**
+  - **Curadoria Temática por Dias da Semana:** Implementado o novo `DailyQuoteManager` com acervo offline de frases e pensamentos de grandes autores (como Sêneca, Marco Aurélio, Aristóteles, Confúcio, Machado de Assis, Fernando Pessoa, Mário Quintana, etc.), distribuídas e filtradas de acordo com o espírito de cada dia:
+    - *Segunda-feira:* Frases focadas em novos começos, coragem, iniciativa, energia e determinação para iniciar a semana.
+    - *Terça-feira:* Constância, disciplina, foco em hábitos sustentáveis e execução prática.
+    - *Quarta-feira:* Equilíbrio no meio da jornada, clareza mental, resiliência e perspectiva.
+    - *Quinta-feira:* Perseverança, sabedoria, aprendizado e superação na reta final.
+    - *Sexta-feira:* Gratidão, celebração dos passos dados, contentamento e leveza.
+    - *Sábado:* Desaceleração, presença, descanso ativo, afetos e contemplação.
+    - *Domingo:* Paz interior, renovação profunda de energias, silêncio e esperança para o novo ciclo.
+  - **Exibição por Padrão na Parte Inferior da Tela Inicial:** Por padrão, a frase de reflexão do dia posiciona-se discretamente na base da tela inicial. O usuário precisa realizar o gesto suave de puxar a tela para cima (`drag up`) para revelar a frase e seu autor.
+  - **Novo Estilo de Relógio / Widget "Reflexão Diária" (`DAILY_REFLECTION`):**
+    - Criado um novo estilo visual de relógio que combina o display de hora imponente no padrão HUD Futurista (`54sp`) com a frase de reflexão do dia disposta harmoniosamente ao lado.
+    - **Ocultamento Inteligente na Base:** Ao selecionar esse novo widget de relógio, a frase na parte inferior da tela inicial é automaticamente removida para evitar duplicidade e manter a tela limpa.
+  - **Interatividade Direta:** Toque sobre a frase na tela inicial ou no widget copia o texto e autor instantaneamente para a área de transferência com feedback háptico e confirmação em tela.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.56.4
 
 - **Correção Definitiva para Adição de Widgets com Configuração Privada (SecurityException):**
