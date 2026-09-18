@@ -31,8 +31,8 @@ android {
         applicationId = "dev.victorialauncher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 65
-        versionName = "0.56.2"
+        versionCode = 66
+        versionName = "0.56.3"
 
         buildConfigField("String", "GIT_SHA", "\"$gitCommitSha\"")
         buildConfigField("Long", "BUILD_TIME_MILLIS", "${buildTimeMillis}L")

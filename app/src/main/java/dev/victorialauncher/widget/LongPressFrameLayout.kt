@@ -34,6 +34,13 @@ class LongPressFrameLayout(context: Context) : FrameLayout(context) {
     )
 
 
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            parent?.requestDisallowInterceptTouchEvent(true)
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             longPressFired = false

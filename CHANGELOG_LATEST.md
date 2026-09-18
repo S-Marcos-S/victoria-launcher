@@ -1,3 +1,12 @@
+### 🚀 Novidades e Melhorias da Versão 0.56.3
+
+- **Restauração da Rolagem Vertical de Conteúdo nos Widgets:**
+  - **Correção da Rolagem Interna (Cima/Baixo):** Restaurada a capacidade de rolar o conteúdo interno de widgets roláveis (como listas de tarefas, e-mails, notícias, eventos de agenda e calendário).
+  - **Arbitragem Não-Conflitante com a Tela Inicial:** Reativada a desautorização de interceptação (`requestDisallowInterceptTouchEvent(true)`) em `LongPressFrameLayout`, impedindo que os gestos verticais do Compose na tela inicial (`HomeScreen.draggable`) roubem e cancelem o fluxo de toque do widget interno.
+  - **Harmonia entre Deslize Lateral e Rolagem Vertical:** O carrossel de múltiplos widgets continua respondendo perfeitamente ao deslize horizontal para troca de páginas (`PointerEventPass.Initial`), enquanto gestos de rolagem vertical fluem 100% livres para o widget ativo.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.56.2
 
 - **Correção da Remoção Individual de Widgets do Carrossel:**
