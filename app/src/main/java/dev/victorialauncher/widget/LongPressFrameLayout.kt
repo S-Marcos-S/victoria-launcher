@@ -4,9 +4,7 @@ package dev.victorialauncher.widget
 import android.content.Context
 import android.view.GestureDetector
 import android.view.MotionEvent
-import android.view.ViewConfiguration
 import android.widget.FrameLayout
-import kotlin.math.abs
 
 /**
  * Wraps an embedded AppWidgetHostView so a genuine long-press (finger held still) opens our
@@ -24,9 +22,6 @@ class LongPressFrameLayout(context: Context) : FrameLayout(context) {
     var onLongPress: ((x: Float, y: Float) -> Unit)? = null
 
     private var longPressFired = false
-    private var startX = 0f
-    private var startY = 0f
-    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
     private val gestureDetector = GestureDetector(
         context,
@@ -38,29 +33,6 @@ class LongPressFrameLayout(context: Context) : FrameLayout(context) {
         },
     )
 
-    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                startX = ev.x
-                startY = ev.y
-                longPressFired = false
-                parent?.requestDisallowInterceptTouchEvent(true)
-            }
-            MotionEvent.ACTION_MOVE -> {
-                val dx = abs(ev.x - startX)
-                val dy = abs(ev.y - startY)
-                if (dx > touchSlop && dx > dy * 1.1f) {
-                    val child = getChildAt(0)
-                    val direction = if (ev.x > startX) -1 else 1
-                    val childCanScroll = child?.canScrollHorizontally(direction) == true
-                    if (!childCanScroll) {
-                        parent?.requestDisallowInterceptTouchEvent(false)
-                    }
-                }
-            }
-        }
-        return super.dispatchTouchEvent(ev)
-    }
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {

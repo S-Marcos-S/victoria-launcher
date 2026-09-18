@@ -1,3 +1,13 @@
+### 🚀 Novidades e Melhorias da Versão 0.56.1
+
+- **Correção da Rolagem / Deslize Horizontal entre Widgets no Carrossel:**
+  - **Intercepção Direta de Gestos no Nível do Container (`PointerEventPass.Initial`):** Resolvido o problema em que o deslize lateral sobre os widgets não trocava de página. As visualizações de widgets do Android (`AppWidgetHostView`) consomem nativamente eventos de toque durante a fase principal do Compose, impedindo o detector padrão do pager de receber os movimentos de arrasto. Implementado interceptor de alta prioridade que detecta o deslize horizontal com precisão matemática antes do consumo pelas views filhas.
+  - **Transição e Arraste em Tempo Real:** O carrossel acompanha o movimento do dedo em tempo real (`dispatchRawDelta`) com física de inércia (`VelocityTracker`) e animação de desaceleração suave (`animateScrollToPage`), garantindo troca instantânea com resposta tátil impecável.
+  - **Remoção de Bloqueios Involuntários de Toque:** Eliminada a chamada antecipada a `requestDisallowInterceptTouchEvent(true)` no início do toque em `LongPressFrameLayout`, restaurando a capacidade do Compose de alternar os widgets fluidamente.
+  - **Preservação Integral de Toques e Botões Internos:** Toques simples em botões de players, relógios e atalhos de widgets continuam funcionando perfeitamente sem falso disparo de rolagem, assim como o pressionamento longo para abrir as opções do widget.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.56.0
 
 - **Suporte a Múltiplos Widgets na Tela Inicial (Carrossel / Stack Inteligente):**

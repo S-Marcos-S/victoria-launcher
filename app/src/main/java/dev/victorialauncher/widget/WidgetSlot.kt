@@ -11,6 +11,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -62,11 +64,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
@@ -137,10 +143,13 @@ fun WidgetSlot(
     var liveHeightDp by remember(heightDp) { mutableFloatStateOf(heightDp.toFloat()) }
     val effectiveHeightDp = if (isResizing) liveHeightDp.roundToInt() else heightDp
 
+    var isSwiping by remember { mutableStateOf(false) }
+    val viewConfig = LocalViewConfiguration.current
+
     // Dots indicator visibility: appears during scrolling or in editMode, fades out after 2.2s
     var showDots by remember { mutableStateOf(false) }
-    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress, editMode) {
-        if (pagerState.isScrollInProgress || editMode) {
+    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress, isSwiping, editMode) {
+        if (isSwiping || pagerState.isScrollInProgress || editMode) {
             showDots = true
         } else {
             showDots = true
@@ -153,7 +162,81 @@ fun WidgetSlot(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(modifier = Modifier.fillMaxWidth().height(effectiveHeightDp.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(effectiveHeightDp.dp)
+                .then(
+                    if (validWidgetIds.size > 1) {
+                        Modifier.pointerInput(validWidgetIds.size, pagerState) {
+                            val touchSlop = viewConfig.touchSlop
+                            val pageCount = validWidgetIds.size
+                            awaitEachGesture {
+                                val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
+                                val startPage = pagerState.currentPage
+                                var isHorizontalDrag = false
+                                var totalDx = 0f
+                                var totalDy = 0f
+                                val velocityTracker = VelocityTracker()
+                                velocityTracker.addPointerInputChange(down)
+
+                                while (true) {
+                                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                    velocityTracker.addPointerInputChange(change)
+
+                                    if (!change.pressed) {
+                                        if (isHorizontalDrag) {
+                                            change.consume()
+                                            isSwiping = false
+                                            val velocityX = velocityTracker.calculateVelocity().x
+                                            val currentOffset = (pagerState.currentPage - startPage) + pagerState.currentPageOffsetFraction
+
+                                            val targetPage = when {
+                                                velocityX < -600f -> (startPage + 1).coerceAtMost(pageCount - 1)
+                                                velocityX > 600f -> (startPage - 1).coerceAtLeast(0)
+                                                else -> {
+                                                    val sign = if (currentOffset >= 0f) 1 else -1
+                                                    val absOffset = abs(currentOffset)
+                                                    val wholePages = absOffset.toInt()
+                                                    val frac = absOffset - wholePages
+                                                    val extra = if (frac >= 0.25f) 1 else 0
+                                                    (startPage + sign * (wholePages + extra)).coerceIn(0, pageCount - 1)
+                                                }
+                                            }
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(targetPage)
+                                            }
+                                        }
+                                        break
+                                    }
+
+                                    val dx = change.position.x - change.previousPosition.x
+                                    val dy = change.position.y - change.previousPosition.y
+                                    totalDx += dx
+                                    totalDy += dy
+
+                                    if (!isHorizontalDrag) {
+                                        if (abs(totalDx) > touchSlop && abs(totalDx) > abs(totalDy) * 1.15f) {
+                                            isHorizontalDrag = true
+                                            isSwiping = true
+                                        } else if (abs(totalDy) > touchSlop && abs(totalDy) > abs(totalDx) * 1.15f) {
+                                            break
+                                        }
+                                    }
+
+                                    if (isHorizontalDrag) {
+                                        change.consume()
+                                        pagerState.dispatchRawDelta(-dx)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Modifier
+                    }
+                ),
+        ) {
             if (validWidgetIds.isNotEmpty()) {
                 HorizontalPager(
                     state = pagerState,
