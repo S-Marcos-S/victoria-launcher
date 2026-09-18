@@ -166,7 +166,8 @@ fun HomeScreen(
     sidePaddingDp: Int,
     onSetSidePadding: (Int) -> Unit,
     paddings: HomePaddings,
-    widgetId: Int,
+    widgetId: Int = -1,
+    widgetIds: List<Int> = emptyList(),
     widgetPosition: Int,
     widgetHeightDp: Int,
     hapticsEnabled: Boolean,
@@ -267,7 +268,12 @@ fun HomeScreen(
         ).show()
     }
 
-    val hasWidget = widgetId > 0
+    val effectiveWidgetIds = remember(widgetIds, widgetId) {
+        if (widgetIds.isNotEmpty()) widgetIds.filter { it > 0 }
+        else if (widgetId > 0) listOf(widgetId)
+        else emptyList()
+    }
+    val hasWidget = effectiveWidgetIds.isNotEmpty()
     val showWidgetSlot = hasWidget || editMode
 
     var dragOrder by remember { mutableStateOf<List<HomeItem>?>(null) }
@@ -535,11 +541,13 @@ fun HomeScreen(
                 if (showWidgetSlot) {
                     Spacer(Modifier.height(14.dp))
                     WidgetSlot(
-                        widgetId = widgetId,
+                        widgetIds = effectiveWidgetIds,
                         heightDp = widgetHeightDp,
                         hapticsEnabled = hapticsEnabled,
                         onEditLayout = { onEditModeChange(true) },
                         actions = widgetActions,
+                        editMode = editMode,
+                        contentColor = contentColor,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(start = contentStart, end = contentEnd),
@@ -548,7 +556,8 @@ fun HomeScreen(
 
                 // Space favorites to begin from the middle of the screen downwards
                 val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-                val widgetOccupied = if (showWidgetSlot && hasWidget) widgetHeightDp.dp + 14.dp else 0.dp
+                val hasMultipleWidgets = effectiveWidgetIds.size > 1
+                val widgetOccupied = if (showWidgetSlot && hasWidget) widgetHeightDp.dp + 14.dp + (if (hasMultipleWidgets) 16.dp else 0.dp) else 0.dp
                 val favoritesTopSpacer = (screenHeightDp * 0.50f - CLOCK_TOP_PADDING_DP - 90.dp - widgetOccupied).coerceAtLeast(16.dp)
 
                 Spacer(
@@ -680,11 +689,13 @@ fun HomeScreen(
                 ) {
                     when (item) {
                         HomeItem.Widget -> WidgetSlot(
-                            widgetId = widgetId,
+                            widgetIds = effectiveWidgetIds,
                             heightDp = widgetHeightDp,
                             hapticsEnabled = hapticsEnabled,
                             onEditLayout = { onEditModeChange(true) },
                             actions = widgetActions,
+                            editMode = editMode,
+                            contentColor = contentColor,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(start = contentStart, end = contentEnd),

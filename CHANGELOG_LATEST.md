@@ -1,3 +1,23 @@
+### 🚀 Novidades e Melhorias da Versão 0.56.0
+
+- **Suporte a Múltiplos Widgets na Tela Inicial (Carrossel / Stack Inteligente):**
+  - **Empilhamento de Widgets com Visual Limpo:** Agora é possível adicionar múltiplos widgets à tela inicial sem poluir o visual. Os widgets ficam organizados em um carrossel em pilha ocupando uma única área (slot), mantendo apenas um widget visível por vez, preservando a estética limpa e minimalista do Victoria Launcher.
+  - **Transição Suave por Deslize Horizontal:** Deslize o dedo para os lados sobre o widget para alternar fluidamente entre os widgets configurados.
+  - **Animações de Troca Fluidas:** Transição moderna com interpolação de escala, profundidade e fade suave de opacidade (`scale` e `alpha`) durante o deslize entre widgets adjacentes.
+  - **Indicador Dinâmico em Bolinhas (Dots Indicator):**
+    - Pequenas bolinhas elegantes posicionadas discretamente logo abaixo do widget indicam a quantidade total de widgets na tela inicial.
+    - A bolinha correspondente ao widget ativo assume uma tonalidade mais escura e destaque em formato pílula alongada.
+    - Animação contínua e suave da bolinha acompanhando a fração exata do movimento do dedo na tela.
+    - Ocultamento inteligente: as bolinhas somem suavemente após 2.2 segundos de inatividade e permanecem visíveis durante o modo de edição para fácil navegação e gerenciamento.
+  - **Gestão Individual e Controles Independentes:**
+    - Ao pressionar e segurar qualquer widget, o menu de contexto permite configurar o widget exibido no momento, abrir as informações do app de origem, redimensionar a altura do container ou remover especificamente aquele widget do carrossel.
+    - Nova opção *"Adicionar widget a esta pilha"* no menu de contexto, permitindo empilhar novos widgets a qualquer momento.
+    - Limpeza de recursos: ao remover um widget, seu ID é desregistrado com segurança do `AppWidgetHost` do sistema Android para não deixar processos órfãos consumindo bateria ou memória.
+  - **Arbitragem de Toques Inteligente (`LongPressFrameLayout`):**
+    - Toques comuns, botões internos de widgets e rolagem vertical dos favoritos continuam funcionando perfeitamente; o deslize horizontal é acionado de forma suave após ultrapassar o touch slop quando o widget interno não consumir a rolagem lateral.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.55.0
 
 - **Novo Widget "HUD Futurista Pro" (Tech HUD Pro):**

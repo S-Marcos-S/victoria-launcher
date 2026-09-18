@@ -79,6 +79,7 @@ class Prefs(private val context: Context) {
         val FOLDER_WINDOW_POPUP = booleanPreferencesKey("folder_window_popup")
         val CLOCK_STYLE = stringPreferencesKey("clock_style")
         val WIDGET_ID = intPreferencesKey("widget_id")
+        val WIDGET_IDS = stringPreferencesKey("widget_ids_csv")
         val WIDGET_POSITION = intPreferencesKey("widget_position")
         val WIDGET_HEIGHT_DP = intPreferencesKey("widget_height_dp")
         val DYNAMIC_BUTTON_ENABLED = booleanPreferencesKey("dynamic_button_enabled")
@@ -188,6 +189,17 @@ class Prefs(private val context: Context) {
     }.distinctUntilChanged()
 
     val widgetId: Flow<Int> = data.map { it[Keys.WIDGET_ID] ?: -1 }.distinctUntilChanged()
+    val widgetIds: Flow<List<Int>> = data.map { pref ->
+        val csv = pref[Keys.WIDGET_IDS]
+        if (csv != null) {
+            csv.split(",")
+                .mapNotNull { it.trim().toIntOrNull() }
+                .filter { it > 0 }
+        } else {
+            val legacy = pref[Keys.WIDGET_ID] ?: -1
+            if (legacy > 0) listOf(legacy) else emptyList()
+        }
+    }.distinctUntilChanged()
     /** Index into the merged (favorites + widget) home list where the widget sits. 0 = top. */
     val widgetPosition: Flow<Int> = data.map { it[Keys.WIDGET_POSITION] ?: 0 }.distinctUntilChanged()
     val widgetHeightDp: Flow<Int> = data.map { it[Keys.WIDGET_HEIGHT_DP] ?: 180 }.distinctUntilChanged()
@@ -408,7 +420,43 @@ class Prefs(private val context: Context) {
     }
 
     suspend fun setWidgetId(id: Int) {
-        context.dataStore.edit { it[Keys.WIDGET_ID] = id }
+        context.dataStore.edit { pref ->
+            pref[Keys.WIDGET_ID] = id
+            pref[Keys.WIDGET_IDS] = if (id > 0) id.toString() else ""
+        }
+    }
+
+    suspend fun setWidgetIds(ids: List<Int>) {
+        context.dataStore.edit { pref ->
+            val valid = ids.filter { it > 0 }
+            pref[Keys.WIDGET_IDS] = valid.joinToString(",")
+            pref[Keys.WIDGET_ID] = valid.firstOrNull() ?: -1
+        }
+    }
+
+    suspend fun addWidgetId(id: Int) {
+        if (id <= 0) return
+        context.dataStore.edit { pref ->
+            val current = pref[Keys.WIDGET_IDS]?.split(",")
+                ?.mapNotNull { it.trim().toIntOrNull() }
+                ?.filter { it > 0 }
+                ?: (pref[Keys.WIDGET_ID]?.takeIf { it > 0 }?.let { listOf(it) } ?: emptyList())
+            val updated = current + id
+            pref[Keys.WIDGET_IDS] = updated.joinToString(",")
+            pref[Keys.WIDGET_ID] = updated.first()
+        }
+    }
+
+    suspend fun removeWidgetId(id: Int) {
+        context.dataStore.edit { pref ->
+            val current = pref[Keys.WIDGET_IDS]?.split(",")
+                ?.mapNotNull { it.trim().toIntOrNull() }
+                ?.filter { it > 0 }
+                ?: (pref[Keys.WIDGET_ID]?.takeIf { it > 0 }?.let { listOf(it) } ?: emptyList())
+            val updated = current.filter { it != id }
+            pref[Keys.WIDGET_IDS] = updated.joinToString(",")
+            pref[Keys.WIDGET_ID] = updated.firstOrNull() ?: -1
+        }
     }
 
     suspend fun setNowPlayingEnabled(v: Boolean) {
