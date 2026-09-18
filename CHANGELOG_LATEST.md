@@ -1,3 +1,12 @@
+### 🚀 Novidades e Melhorias da Versão 0.57.1
+
+- **Ajuste de Posicionamento e Elevação da Frase de Reflexão Diária:**
+  - **Elevação Harmônica na Tela Inicial:** A frase do dia agora fica posicionada significativamente mais para cima na tela inicial, eliminando o espaçamento excessivo que havia anteriormente abaixo dos aplicativos favoritos.
+  - **Acesso Natural com Deslize Suave:** Com o espaçamento superior refinado para 28dp (equivalente a uma distância equilibrada logo abaixo dos favoritos), um leve gesto de subida revela imediatamente a frase e seu autor sem necessidade de arrastar excessivamente a tela.
+  - **Card Compacto e Elegante:** Otimização dos paddings internos e entrelinhas do bloco de reflexão, garantindo leitura agradável e espaçamento seguro acima da barra de navegação.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.57.0
 
 - **Sistema Local de Frases Diárias de Reflexão (100% Offline e Sem Consumo de Bateria):**

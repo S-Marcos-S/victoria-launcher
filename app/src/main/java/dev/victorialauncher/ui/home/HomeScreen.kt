@@ -819,14 +819,11 @@ fun HomeScreen(
             val showBottomDailyQuote = clockStyle != ClockStyle.DAILY_REFLECTION
 
             if (showBottomDailyQuote) {
-                val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-                val bottomQuoteSpacer = (screenHeightDp * 0.40f).coerceAtLeast(180.dp)
-
-                // Spacer pushing the quote down below the initial screen fold
+                // Spacer separating favorites from the daily quote
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(bottomQuoteSpacer)
+                        .height(28.dp)
                         .combinedClickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -854,7 +851,7 @@ fun HomeScreen(
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp)
+                        .height(160.dp)
                         .combinedClickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -1778,7 +1775,7 @@ private fun BottomDailyQuoteBlock(
                     Toast.makeText(context, context.getString(R.string.quote_copied), Toast.LENGTH_SHORT).show()
                 },
             )
-            .padding(vertical = 14.dp),
+            .padding(vertical = 8.dp),
         horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
     ) {
         Box(
@@ -1796,18 +1793,18 @@ private fun BottomDailyQuoteBlock(
             )
         }
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
 
         Text(
             text = "“${quote.quote}”",
             color = contentColor.copy(alpha = 0.9f),
             fontSize = 15.sp,
             fontStyle = FontStyle.Italic,
-            lineHeight = 22.sp,
+            lineHeight = 21.sp,
             textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
         )
 
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
 
         Text(
             text = "— ${quote.author}",
