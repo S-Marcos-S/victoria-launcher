@@ -119,6 +119,7 @@ fun WidgetSlot(
     val viewConfig = LocalViewConfiguration.current
 
     val validWidgetIds = remember(widgetIds) { widgetIds.filter { it > 0 } }
+    if (validWidgetIds.isEmpty()) return
 
     var menuExpanded by remember { mutableStateOf(false) }
     var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
@@ -158,53 +159,6 @@ fun WidgetSlot(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when {
-            validWidgetIds.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(effectiveHeightDp.dp),
-                ) {
-                    EmptyWidgetSlot(
-                        onAddWidget = actions.onAddWidget,
-                        onOpenMenu = { offset ->
-                            selectedMenuWidgetId = -1
-                            menuOffset = offset
-                            menuExpanded = true
-                        },
-                        hapticsEnabled = hapticsEnabled,
-                        density = density,
-                        view = view,
-                    )
-
-                    if (isResizing) {
-                        ResizeOverlay(
-                            liveHeightDp = liveHeightDp,
-                            onLiveHeightChange = { liveHeightDp = it },
-                            onFinishResize = {
-                                actions.onResize(liveHeightDp.roundToInt())
-                                isResizing = false
-                            },
-                            hapticsEnabled = hapticsEnabled,
-                            view = view,
-                            density = density,
-                        )
-                    }
-
-                    WidgetContextMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
-                        offset = menuOffset,
-                        activeWidgetId = -1,
-                        heightDp = heightDp,
-                        onStartResize = {
-                            liveHeightDp = heightDp.toFloat()
-                            isResizing = true
-                        },
-                        onEditLayout = onEditLayout,
-                        actions = actions,
-                    )
-                }
-            }
             validWidgetIds.size == 1 -> {
                 val singleId = validWidgetIds.first()
                 val providerInfo = remember(singleId) { appWidgetManager.getAppWidgetInfo(singleId) }
@@ -583,65 +537,6 @@ private fun SingleWidgetView(
                     }
                 },
             )
-        } else {
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(widgetId) {
-                        detectTapGestures(
-                            onTap = { onAddWidget() },
-                            onLongPress = { offset ->
-                                onOpenMenu(widgetId, with(density) { DpOffset(offset.x.toDp(), offset.y.toDp()) })
-                            },
-                        )
-                    },
-                color = Color.Black.copy(alpha = 0.25f),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.widget_add), tint = Color.White)
-                    Text(stringResource(R.string.widget_add), color = Color.White.copy(alpha = 0.8f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyWidgetSlot(
-    onAddWidget: () -> Unit,
-    onOpenMenu: (DpOffset) -> Unit,
-    hapticsEnabled: Boolean,
-    density: Density,
-    view: View,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { onAddWidget() },
-                    onLongPress = { offset ->
-                        HapticUtil.tick(view, hapticsEnabled)
-                        onOpenMenu(with(density) { DpOffset(offset.x.toDp(), offset.y.toDp()) })
-                    },
-                )
-            },
-        color = Color.Black.copy(alpha = 0.25f),
-        shape = RoundedCornerShape(16.dp),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.widget_add), tint = Color.White)
-            Text(stringResource(R.string.widget_add), color = Color.White.copy(alpha = 0.8f))
         }
     }
 }

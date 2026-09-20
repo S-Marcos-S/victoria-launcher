@@ -81,6 +81,8 @@ class Prefs(private val context: Context) {
         val THEMED_ICONS = booleanPreferencesKey("themed_icons")
         val THEMED_ICON_STYLE = stringPreferencesKey("themed_icon_style")
         val NOW_PLAYING_ENABLED = booleanPreferencesKey("now_playing_enabled")
+        val NOW_PLAYING_PROMPT_DISMISSED = booleanPreferencesKey("now_playing_prompt_dismissed")
+        val MUSIC_PLAYBACK_DETECTED = booleanPreferencesKey("music_playback_detected")
         val SHOW_APP_NOTIFICATIONS = booleanPreferencesKey("show_app_notifications")
         val FOLDER_WINDOW_POPUP = booleanPreferencesKey("folder_window_popup")
         val CLOCK_STYLE = stringPreferencesKey("clock_style")
@@ -203,6 +205,8 @@ class Prefs(private val context: Context) {
     }.distinctUntilChanged()
 
     val nowPlayingEnabled: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_ENABLED] ?: true }.distinctUntilChanged()
+    val nowPlayingPromptDismissed: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_PROMPT_DISMISSED] ?: false }.distinctUntilChanged()
+    val musicPlaybackDetected: Flow<Boolean> = data.map { it[Keys.MUSIC_PLAYBACK_DETECTED] ?: false }.distinctUntilChanged()
     val showAppNotifications: Flow<Boolean> = data.map { it[Keys.SHOW_APP_NOTIFICATIONS] ?: true }.distinctUntilChanged()
     val folderWindowPopup: Flow<Boolean> = data.map { it[Keys.FOLDER_WINDOW_POPUP] ?: true }.distinctUntilChanged()
     val clockStyle: Flow<ClockStyle> = data.map {
@@ -506,7 +510,20 @@ class Prefs(private val context: Context) {
     }
 
     suspend fun setNowPlayingEnabled(v: Boolean) {
-        context.dataStore.edit { it[Keys.NOW_PLAYING_ENABLED] = v }
+        context.dataStore.edit {
+            it[Keys.NOW_PLAYING_ENABLED] = v
+            if (v) {
+                it[Keys.NOW_PLAYING_PROMPT_DISMISSED] = false
+            }
+        }
+    }
+
+    suspend fun setNowPlayingPromptDismissed(v: Boolean) {
+        context.dataStore.edit { it[Keys.NOW_PLAYING_PROMPT_DISMISSED] = v }
+    }
+
+    suspend fun setMusicPlaybackDetected(v: Boolean) {
+        context.dataStore.edit { it[Keys.MUSIC_PLAYBACK_DETECTED] = v }
     }
 
     suspend fun setShowAppNotifications(v: Boolean) {

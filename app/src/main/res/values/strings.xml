@@ -219,6 +219,9 @@
 
     <!-- Now Playing -->
     <string name="now_playing_enable_access">Enable Now Playing access</string>
+    <string name="now_playing_prompt_title">Display music?</string>
+    <string name="now_playing_prompt_grant">Allow</string>
+    <string name="now_playing_prompt_deny">No</string>
     <string name="now_playing_open_failed">Can\'t open the app that\'s playing</string>
     <string name="now_playing_unknown_title">Unknown title</string>
     <string name="now_playing_previous">Previous</string>

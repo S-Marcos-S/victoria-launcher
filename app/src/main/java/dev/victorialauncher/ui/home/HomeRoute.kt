@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.home
 
+import android.content.Context
 import android.graphics.Rect
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.AudioPlaybackConfiguration
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -167,9 +174,65 @@ fun HomeRoute(
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val notificationsByPackage by dev.victorialauncher.notification.NotificationBus.notifications.collectAsState()
     val listenerGranted = remember(homeIntentTick) { isListenerEnabled(context) }
-    // Don't reserve the block (or its padding) unless there is something to render:
-    // no live session means the whole thing collapses, padding included.
-    val nowPlayingHasContent = settings.nowPlayingEnabled && (!listenerGranted || nowPlaying != null)
+    val nowPlayingPromptDismissed by app.prefs.nowPlayingPromptDismissed.collectAsState(initial = false)
+    val musicPlaybackDetected by app.prefs.musicPlaybackDetected.collectAsState(initial = false)
+
+    val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager }
+    DisposableEffect(listenerGranted, nowPlayingPromptDismissed, musicPlaybackDetected, settings.nowPlayingEnabled) {
+        if (listenerGranted || nowPlayingPromptDismissed || musicPlaybackDetected || !settings.nowPlayingEnabled) {
+            return@DisposableEffect onDispose {}
+        }
+
+        fun checkPlayback() {
+            if (audioManager?.isMusicActive == true) {
+                scope.launch { app.prefs.setMusicPlaybackDetected(true) }
+            }
+        }
+
+        checkPlayback()
+
+        val lifecycleOwner = context as? androidx.lifecycle.LifecycleOwner
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                checkPlayback()
+            }
+        }
+        lifecycleOwner?.lifecycle?.addObserver(lifecycleObserver)
+
+        var playbackCallback: AudioManager.AudioPlaybackCallback? = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioManager != null) {
+            val callback = object : AudioManager.AudioPlaybackCallback() {
+                override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>?) {
+                    val hasActiveMedia = configs?.any { config ->
+                        val usage = config.audioAttributes.usage
+                        usage == AudioAttributes.USAGE_MEDIA ||
+                            usage == AudioAttributes.USAGE_GAME ||
+                            usage == AudioAttributes.USAGE_UNKNOWN
+                    } == true
+                    if (hasActiveMedia || audioManager.isMusicActive) {
+                        scope.launch { app.prefs.setMusicPlaybackDetected(true) }
+                    }
+                }
+            }
+            playbackCallback = callback
+            audioManager.registerAudioPlaybackCallback(callback, Handler(Looper.getMainLooper()))
+        }
+
+        onDispose {
+            lifecycleOwner?.lifecycle?.removeObserver(lifecycleObserver)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && playbackCallback != null && audioManager != null) {
+                runCatching { audioManager.unregisterAudioPlaybackCallback(playbackCallback) }
+            }
+        }
+    }
+
+    // Only show now playing if there is an active session (when permission granted)
+    // or when music playback was detected for the first time and user hasn't dismissed the prompt.
+    val nowPlayingHasContent = settings.nowPlayingEnabled && if (listenerGranted) {
+        nowPlaying != null
+    } else {
+        musicPlaybackDetected && !nowPlayingPromptDismissed
+    }
     val density = LocalDensity.current
     val screenHeightPx = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val effectiveViewportHeight = if (viewportHeightPx > 0) viewportHeightPx.toFloat() else screenHeightPx
@@ -363,6 +426,9 @@ fun HomeRoute(
                     // Scrubber band is computed independently to ensure consistent vertical centering
                 },
                 nowPlayingHasContent = nowPlayingHasContent,
+                onDismissPermissionPrompt = {
+                    scope.launch { app.prefs.setNowPlayingPromptDismissed(true) }
+                },
                 contentColor = settings.contentColor,
                 showFavoriteLabels = settings.showFavoriteLabels,
                 alignRight = settings.alignRight,

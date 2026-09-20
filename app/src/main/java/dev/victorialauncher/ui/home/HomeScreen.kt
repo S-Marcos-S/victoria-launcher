@@ -117,6 +117,7 @@ import dev.victorialauncher.data.HomePaddings
 import dev.victorialauncher.data.folderToken
 import dev.victorialauncher.data.PaddingSlot
 import dev.victorialauncher.media.NowPlayingWidget
+import dev.victorialauncher.media.isListenerEnabled
 import dev.victorialauncher.media.openNowPlayingApp
 import dev.victorialauncher.ui.common.AppIcon
 import dev.victorialauncher.ui.common.EditAppDialog
@@ -202,6 +203,7 @@ fun HomeScreen(
     onResetAlignments: () -> Unit = {},
     onFavoritesBoundsChanged: (topPx: Float, bottomPx: Float) -> Unit,
     nowPlayingHasContent: Boolean,
+    onDismissPermissionPrompt: () -> Unit = {},
     contentColor: Color,
     showFavoriteLabels: Boolean,
     alignRight: Boolean,
@@ -285,7 +287,7 @@ fun HomeScreen(
         else emptyList()
     }
     val hasWidget = effectiveWidgetIds.isNotEmpty()
-    val showWidgetSlot = hasWidget || editMode
+    val showWidgetSlot = hasWidget
 
     var dragOrder by remember { mutableStateOf<List<HomeItem>?>(null) }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
@@ -624,8 +626,8 @@ fun HomeScreen(
                     endPaddingDp = contentEnd.value.toInt(),
                 )
 
-                // Widget slot placed between clock and favorites
-                if (showWidgetSlot) {
+                // Widget slot placed between clock and favorites - only if a widget is added
+                if (hasWidget) {
                     Spacer(Modifier.height(14.dp))
                     WidgetSlot(
                         widgetIds = effectiveWidgetIds,
@@ -644,7 +646,7 @@ fun HomeScreen(
                 // Space favorites to begin from the middle of the screen downwards
                 val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
                 val hasMultipleWidgets = effectiveWidgetIds.size > 1
-                val widgetOccupied = if (showWidgetSlot && hasWidget) widgetHeightDp.dp + 14.dp + (if (hasMultipleWidgets) 16.dp else 0.dp) else 0.dp
+                val widgetOccupied = if (hasWidget) widgetHeightDp.dp + 14.dp + (if (hasMultipleWidgets) 16.dp else 0.dp) else 0.dp
                 val favoritesTopSpacer = (screenHeightDp * 0.50f - CLOCK_TOP_PADDING_DP - 90.dp - widgetOccupied).coerceAtLeast(16.dp)
 
                 Spacer(
@@ -663,7 +665,7 @@ fun HomeScreen(
                         )
                 )
             } else {
-                if (showWidgetSlot && hasWidget) {
+                if (hasWidget) {
                     PaddingHandle(
                         editMode = true,
                         label = R.string.handle_widget_top,
@@ -703,7 +705,7 @@ fun HomeScreen(
             }
 
             // Now Playing widget block: rendered below clock / widget and above favorites
-            if (nowPlayingHasContent || editMode) {
+            if (nowPlayingHasContent || (editMode && nowPlayingEnabled)) {
                 NowPlayingBlock(
                     editMode = editMode,
                     heightDp = nowPlayingHeightDp,
@@ -727,6 +729,7 @@ fun HomeScreen(
                     onDragPadding = { slot, v -> liveSlot = slot; liveValue = v },
                     currentPadding = { slot -> padOf(slot) },
                     onCommitPadding = { slot, v -> onCommitPadding(slot, v); liveSlot = null },
+                    onDismissPermissionPrompt = onDismissPermissionPrompt,
                 )
             }
 
@@ -813,18 +816,20 @@ fun HomeScreen(
                         ),
                 ) {
                     when (item) {
-                        HomeItem.Widget -> WidgetSlot(
-                            widgetIds = effectiveWidgetIds,
-                            heightDp = widgetHeightDp,
-                            hapticsEnabled = hapticsEnabled,
-                            onEditLayout = { onEditModeChange(true) },
-                            actions = widgetActions,
-                            editMode = editMode,
-                            contentColor = contentColor,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = contentStart, end = contentEnd),
-                        )
+                        HomeItem.Widget -> if (hasWidget) {
+                            WidgetSlot(
+                                widgetIds = effectiveWidgetIds,
+                                heightDp = widgetHeightDp,
+                                hapticsEnabled = hapticsEnabled,
+                                onEditLayout = { onEditModeChange(true) },
+                                actions = widgetActions,
+                                editMode = editMode,
+                                contentColor = contentColor,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = contentStart, end = contentEnd),
+                            )
+                        }
 
                         is HomeItem.FolderItem -> FolderRow(
                             folder = item.folder,
@@ -1477,6 +1482,7 @@ private fun NowPlayingBlock(
     onCommitPadding: (PaddingSlot, Int) -> Unit,
     contentStart: Dp = sidePaddingDp.dp,
     contentEnd: Dp = sidePaddingDp.dp,
+    onDismissPermissionPrompt: () -> Unit = {},
 ) {
     val density = LocalDensity.current
     val context = LocalContext.current
@@ -1497,6 +1503,7 @@ private fun NowPlayingBlock(
             contentColor = contentColor,
             alignRight = alignRight,
             editMode = editMode,
+            onDismissPermissionPrompt = onDismissPermissionPrompt,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = contentStart, end = contentEnd)
@@ -1506,12 +1513,14 @@ private fun NowPlayingBlock(
                     // card itself — which should get you to what is playing. Say so when it
                     // can't, rather than leaving a tap that looks ignored.
                     onClick = {
-                        if (!openNowPlayingApp(context)) {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.now_playing_open_failed),
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                        if (isListenerEnabled(context)) {
+                            if (!openNowPlayingApp(context)) {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.now_playing_open_failed),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         }
                     },
                     onLongClick = {

@@ -220,6 +220,9 @@
 
     <!-- Em Reprodução (Now Playing) -->
     <string name="now_playing_enable_access">Permitir acesso ao Em Reprodução</string>
+    <string name="now_playing_prompt_title">Visualizar música?</string>
+    <string name="now_playing_prompt_grant">Permitir</string>
+    <string name="now_playing_prompt_deny">Não</string>
     <string name="now_playing_open_failed">Não foi possível abrir o app em reprodução</string>
     <string name="now_playing_unknown_title">Título desconhecido</string>
     <string name="now_playing_previous">Anterior</string>

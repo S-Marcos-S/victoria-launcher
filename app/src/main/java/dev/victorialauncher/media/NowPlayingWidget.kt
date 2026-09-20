@@ -8,13 +8,16 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -22,10 +25,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
@@ -33,12 +38,17 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -110,6 +120,7 @@ fun NowPlayingWidget(
     contentColor: Color = Color.White,
     alignRight: Boolean = false,
     editMode: Boolean = false,
+    onDismissPermissionPrompt: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -132,52 +143,135 @@ fun NowPlayingWidget(
         Surface(
             modifier = modifier
                 .fillMaxWidth()
-                .height(heightDp.dp),
+                .heightIn(min = heightDp.dp),
             color = contentColor.copy(alpha = 0.08f),
             shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, contentColor.copy(alpha = 0.12f)),
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxHeight(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (alignRight) {
-                    IconButton(onClick = {
-                        context.startActivity(
-                            Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        )
-                    }) {
-                        Icon(
-                            Icons.Filled.MusicNote,
-                            contentDescription = stringResource(R.string.settings_open_settings),
-                            tint = contentColor,
+                    Button(
+                        onClick = {
+                            context.startActivity(
+                                Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.height(34.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.now_playing_prompt_grant),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
+                    if (onDismissPermissionPrompt != null) {
+                        Spacer(Modifier.width(4.dp))
+                        TextButton(
+                            onClick = onDismissPermissionPrompt,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(34.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.now_playing_prompt_deny),
+                                color = contentColor.copy(alpha = 0.75f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.weight(1f))
                     Text(
-                        stringResource(R.string.now_playing_enable_access),
+                        text = stringResource(R.string.now_playing_prompt_title),
                         color = contentColor,
-                        modifier = Modifier.weight(1f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
                     )
-                } else {
-                    Text(
-                        stringResource(R.string.now_playing_enable_access),
-                        color = contentColor,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    IconButton(onClick = {
-                        context.startActivity(
-                            Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        )
-                    }) {
+                    Spacer(Modifier.width(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(contentColor.copy(alpha = 0.12f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Icon(
                             Icons.Filled.MusicNote,
-                            contentDescription = stringResource(R.string.settings_open_settings),
+                            contentDescription = null,
                             tint = contentColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(contentColor.copy(alpha = 0.12f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Filled.MusicNote,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = stringResource(R.string.now_playing_prompt_title),
+                        color = contentColor,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    if (onDismissPermissionPrompt != null) {
+                        TextButton(
+                            onClick = onDismissPermissionPrompt,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(34.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.now_playing_prompt_deny),
+                                color = contentColor.copy(alpha = 0.75f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    Button(
+                        onClick = {
+                            context.startActivity(
+                                Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.height(34.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.now_playing_prompt_grant),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
