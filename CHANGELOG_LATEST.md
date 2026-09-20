@@ -1,3 +1,35 @@
+### 🚀 Novidades e Melhorias da Versão 0.58.0
+
+- **Novo Botão Flutuante de Pesquisa na Lista de Aplicativos (`AppListScreen`):**
+  - **Aparecimento Inteligente Durante a Rolagem:** O botão de pesquisa permanece discretamente oculto no topo da lista e surge com uma animação fluida de mola (`Spring.DampingRatioMediumBouncy`) e fade quando o usuário começa a rolar a lista de aplicativos, permanecendo acessível durante a navegação e recolhendo-se suavemente ao retornar ao início da lista.
+  - **Posicionamento Idêntico ao Botão Dinâmico da Tela Inicial:** Alinhado rigorosamente nas mesmas coordenadas e medidas do botão de ação dinâmico da tela inicial (`dynamicBtnAlignment`, recuo lateral calibrado para o lado ativo do alfabeto e espaçamento seguro acima da barra de navegação).
+  - **Design Squircle e Física de Compressão Tátil:** Construído com recipiente em cantos arredondados de 22dp, fundo translúcido tingido pelo Material You, contorno sutil na cor primária, compressão elástica com amortecimento ao toque e vibração háptica (`HapticUtil.tick`).
+  - **Acionamento Suave:** Ao tocar no botão, a lista de aplicativos é suavemente dispensada e a nova tela de pesquisa universal é aberta com transição de alta performance.
+
+- **Nova Tela de Pesquisa Universal Dinâmica e Completa (`SearchScreen`):**
+  - **Animação Suave e Profissional:** Entrada com deslizamento vertical e desvanecimento suave (`slideInVertically` + `fadeIn`), proporcionando abertura instantânea sem engasgos.
+  - **Barra de Pesquisa com Foco Automático:** Campo de texto arredondado com abertura opcional e automática do teclado do sistema, ícone de pesquisa destacado e botão de limpeza rápida de texto ('X').
+  - **Filtros por Categorias em Chips Interativos:** Chips horizontais para alternar rapidamente entre *Todos*, *Apps*, *Contatos*, *Configurações* e *Web*.
+  - **Múltiplos Provedores de Pesquisa Integrados:**
+    - *Aplicativos:* Busca instantânea insensível a acentos (normalização Unicode NFD), com classificação ponderada por início de nome, palavras compostas e pacote.
+    - *Contatos:* Busca 100% offline e privada de contatos e telefones cadastrados no dispositivo via `ContactsContract.CommonDataKinds.Phone.CONTENT_FILTER_URI`, com inicial colorida no avatar e botão dedicado para efetuar ligação imediata (`ACTION_DIAL`).
+    - *Configurações do Celular:* Atalhos rápidos com suporte bilíngue (PT/EN) para mais de 20 telas essenciais do sistema Android (Wi-Fi, Bluetooth, Bateria, Tela, Som, Armazenamento, Notificações, Segurança, Acessibilidade, Desenvolvedor, Modo Avião, etc.).
+    - *Calculadora Integrada:* Reconhecimento automático de expressões aritméticas (adição, subtração, multiplicação, divisão, porcentagem) com exibição imediata do resultado e toque para copiar para a área de transferência.
+    - *Pesquisa na Web e na Play Store:* Ações rápidas para buscar diretamente no navegador padrão através do buscador configurado ou pesquisar novos aplicativos na Google Play Store.
+  - **Tratamento Elegante e Seguro de Permissões de Usuário:**
+    - Caso a permissão de leitura de contatos (`READ_CONTACTS`) ainda não tenha sido concedida, um card não intrusivo e elegante surge na tela de pesquisa explicando a finalidade e oferecendo um botão *"Ativar"* que abre diretamente o diálogo padrão de permissões do Android.
+    - Caso o usuário não conceda ou prefira manter a permissão negada, a pesquisa continua funcionando perfeitamente para aplicativos, configurações, calculadora e web, sem mensagens intrusivas ou travamentos.
+
+- **Configurações Dedicadas de Pesquisa nas Configurações da Launcher (`SearchSettingsScreen`):**
+  - Nova seção em *Configurações → Pesquisa*, permitindo personalizar integralmente a experiência:
+    - Alternar a exibição do botão flutuante de busca na lista de apps.
+    - Ativar ou desativar fontes individuais de pesquisa (Aplicativos, Contatos, Configurações do celular, Web, Play Store).
+    - Status visual em tempo real da permissão de contatos com atalho para concessão.
+    - Seletor de mecanismo de pesquisa na Web (Google, DuckDuckGo, Bing ou Ecosia).
+    - Opção para abrir ou não o teclado automaticamente ao entrar na pesquisa.
+
+---
+
 ### 🚀 Novidades e Melhorias da Versão 0.57.3
 
 - **Novo Estilo de Relógio: Reflexão Diária + Métricas do Sistema (`DAILY_REFLECTION_STATS`):**

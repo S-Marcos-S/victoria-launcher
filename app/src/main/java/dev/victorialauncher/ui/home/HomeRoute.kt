@@ -435,6 +435,12 @@ fun HomeRoute(
                 notificationsByPackage = notificationsByPackage,
                 onDoubleTapLock = handleDoubleTapLock,
                 sidePaddingDp = settings.sidePaddingDp,
+                searchButtonEnabled = settings.searchButtonEnabled,
+                hapticsEnabled = settings.hapticsEnabled,
+                onOpenSearch = {
+                    closeAppList()
+                    onNavigate("search")
+                },
             )
         }
 
@@ -613,4 +619,5 @@ data class HomeSettings(
     val dynamicButtonClickApp: String? = null,
     val dynamicButtonSwipeUpApp: String? = null,
     val dynamicButtonSwipeDownApp: String? = null,
+    val searchButtonEnabled: Boolean = true,
 )

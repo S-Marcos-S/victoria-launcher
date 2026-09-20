@@ -88,6 +88,14 @@ class Prefs(private val context: Context) {
         val DYNAMIC_BUTTON_CLICK_APP = stringPreferencesKey("dynamic_button_click_app")
         val DYNAMIC_BUTTON_SWIPE_UP_APP = stringPreferencesKey("dynamic_button_swipe_up_app")
         val DYNAMIC_BUTTON_SWIPE_DOWN_APP = stringPreferencesKey("dynamic_button_swipe_down_app")
+        val SEARCH_BUTTON_ENABLED = booleanPreferencesKey("search_button_enabled")
+        val SEARCH_INCLUDE_APPS = booleanPreferencesKey("search_include_apps")
+        val SEARCH_INCLUDE_CONTACTS = booleanPreferencesKey("search_include_contacts")
+        val SEARCH_INCLUDE_SETTINGS = booleanPreferencesKey("search_include_settings")
+        val SEARCH_INCLUDE_WEB = booleanPreferencesKey("search_include_web")
+        val SEARCH_INCLUDE_PLAY_STORE = booleanPreferencesKey("search_include_play_store")
+        val SEARCH_ENGINE = stringPreferencesKey("search_engine")
+        val SEARCH_AUTO_KEYBOARD = booleanPreferencesKey("search_auto_keyboard")
     }
 
     private val data get() = context.dataStore.data
@@ -210,6 +218,14 @@ class Prefs(private val context: Context) {
     val dynamicButtonClickApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_CLICK_APP] }.distinctUntilChanged()
     val dynamicButtonSwipeUpApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_SWIPE_UP_APP] }.distinctUntilChanged()
     val dynamicButtonSwipeDownApp: Flow<String?> = data.map { it[Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP] }.distinctUntilChanged()
+    val searchButtonEnabled: Flow<Boolean> = data.map { it[Keys.SEARCH_BUTTON_ENABLED] ?: true }.distinctUntilChanged()
+    val searchIncludeApps: Flow<Boolean> = data.map { it[Keys.SEARCH_INCLUDE_APPS] ?: true }.distinctUntilChanged()
+    val searchIncludeContacts: Flow<Boolean> = data.map { it[Keys.SEARCH_INCLUDE_CONTACTS] ?: true }.distinctUntilChanged()
+    val searchIncludeSettings: Flow<Boolean> = data.map { it[Keys.SEARCH_INCLUDE_SETTINGS] ?: true }.distinctUntilChanged()
+    val searchIncludeWeb: Flow<Boolean> = data.map { it[Keys.SEARCH_INCLUDE_WEB] ?: true }.distinctUntilChanged()
+    val searchIncludePlayStore: Flow<Boolean> = data.map { it[Keys.SEARCH_INCLUDE_PLAY_STORE] ?: true }.distinctUntilChanged()
+    val searchEngine: Flow<String> = data.map { it[Keys.SEARCH_ENGINE] ?: "GOOGLE" }.distinctUntilChanged()
+    val searchAutoKeyboard: Flow<Boolean> = data.map { it[Keys.SEARCH_AUTO_KEYBOARD] ?: true }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->
@@ -511,6 +527,38 @@ class Prefs(private val context: Context) {
         context.dataStore.edit { pref ->
             if (key.isNullOrBlank()) pref.remove(Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP) else pref[Keys.DYNAMIC_BUTTON_SWIPE_DOWN_APP] = key
         }
+    }
+
+    suspend fun setSearchButtonEnabled(v: Boolean) {
+        context.dataStore.edit { it[Keys.SEARCH_BUTTON_ENABLED] = v }
+    }
+
+    suspend fun setSearchIncludeApps(v: Boolean) {
+        context.dataStore.edit { it[Keys.SEARCH_INCLUDE_APPS] = v }
+    }
+
+    suspend fun setSearchIncludeContacts(v: Boolean) {
+        context.dataStore.edit { it[Keys.SEARCH_INCLUDE_CONTACTS] = v }
+    }
+
+    suspend fun setSearchIncludeSettings(v: Boolean) {
+        context.dataStore.edit { it[Keys.SEARCH_INCLUDE_SETTINGS] = v }
+    }
+
+    suspend fun setSearchIncludeWeb(v: Boolean) {
+        context.dataStore.edit { it[Keys.SEARCH_INCLUDE_WEB] = v }
+    }
+
+    suspend fun setSearchIncludePlayStore(v: Boolean) {
+        context.dataStore.edit { it[Keys.SEARCH_INCLUDE_PLAY_STORE] = v }
+    }
+
+    suspend fun setSearchEngine(v: String) {
+        context.dataStore.edit { it[Keys.SEARCH_ENGINE] = v }
+    }
+
+    suspend fun setSearchAutoKeyboard(v: Boolean) {
+        context.dataStore.edit { it[Keys.SEARCH_AUTO_KEYBOARD] = v }
     }
 
     private fun jsonToMap(json: String?): Map<String, String> {

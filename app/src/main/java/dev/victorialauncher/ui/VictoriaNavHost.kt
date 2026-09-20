@@ -28,10 +28,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.victorialauncher.VictoriaApp
+import dev.victorialauncher.ui.search.SearchConfig
+import dev.victorialauncher.ui.search.SearchEngine
+import dev.victorialauncher.ui.search.SearchScreen
+import dev.victorialauncher.ui.settings.SearchSettingsScreen
 import dev.victorialauncher.data.AppFont
 import dev.victorialauncher.data.AppInfo
 import dev.victorialauncher.data.ClockStyle
@@ -150,6 +161,37 @@ fun VictoriaNavHost(
     val dynamicButtonSwipeUpApp by app.prefs.dynamicButtonSwipeUpApp.collectAsState(initial = null)
     val dynamicButtonSwipeDownApp by app.prefs.dynamicButtonSwipeDownApp.collectAsState(initial = null)
 
+    val searchButtonEnabled by app.prefs.searchButtonEnabled.collectAsState(initial = true)
+    val searchIncludeApps by app.prefs.searchIncludeApps.collectAsState(initial = true)
+    val searchIncludeContacts by app.prefs.searchIncludeContacts.collectAsState(initial = true)
+    val searchIncludeSettings by app.prefs.searchIncludeSettings.collectAsState(initial = true)
+    val searchIncludeWeb by app.prefs.searchIncludeWeb.collectAsState(initial = true)
+    val searchIncludePlayStore by app.prefs.searchIncludePlayStore.collectAsState(initial = true)
+    val searchEngineName by app.prefs.searchEngine.collectAsState(initial = "GOOGLE")
+    val searchAutoKeyboard by app.prefs.searchAutoKeyboard.collectAsState(initial = true)
+
+    val searchConfig = remember(
+        searchButtonEnabled,
+        searchIncludeApps,
+        searchIncludeContacts,
+        searchIncludeSettings,
+        searchIncludeWeb,
+        searchIncludePlayStore,
+        searchEngineName,
+        searchAutoKeyboard,
+    ) {
+        SearchConfig(
+            buttonEnabled = searchButtonEnabled,
+            includeApps = searchIncludeApps,
+            includeContacts = searchIncludeContacts,
+            includeSettings = searchIncludeSettings,
+            includeWeb = searchIncludeWeb,
+            includePlayStore = searchIncludePlayStore,
+            searchEngine = SearchEngine.fromId(searchEngineName),
+            autoKeyboard = searchAutoKeyboard,
+        )
+    }
+
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
     val foldersById = remember(folders) { folders.associateBy { it.id } }
 
@@ -199,6 +241,7 @@ fun VictoriaNavHost(
         dynamicButtonClickApp = dynamicButtonClickApp,
         dynamicButtonSwipeUpApp = dynamicButtonSwipeUpApp,
         dynamicButtonSwipeDownApp = dynamicButtonSwipeDownApp,
+        searchButtonEnabled = searchButtonEnabled,
     )
 
     var pendingIconTarget by remember { mutableStateOf<String?>(null) }
@@ -387,6 +430,59 @@ fun VictoriaNavHost(
                     )
                 },
                 onOpenDynamicButtonSettings = { navController.navigate("settings/dynamic_button") },
+                onOpenSearchSettings = { navController.navigate("settings/search") },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = "search",
+            enterTransition = {
+                slideInVertically(
+                    initialOffsetY = { fullHeight -> (fullHeight * 0.12f).toInt() },
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
+                ) + fadeIn(animationSpec = tween(220))
+            },
+            exitTransition = {
+                slideOutVertically(
+                    targetOffsetY = { fullHeight -> (fullHeight * 0.12f).toInt() },
+                    animationSpec = tween(180),
+                ) + fadeOut(animationSpec = tween(150))
+            },
+            popEnterTransition = { fadeIn(animationSpec = tween(180)) },
+            popExitTransition = {
+                slideOutVertically(
+                    targetOffsetY = { fullHeight -> (fullHeight * 0.12f).toInt() },
+                    animationSpec = tween(180),
+                ) + fadeOut(animationSpec = tween(150))
+            },
+        ) {
+            SearchScreen(
+                allApps = allApps,
+                nameOverrides = nameOverrides,
+                config = searchConfig,
+                onLaunchApp = { appInfo ->
+                    app.appRepository.launch(appInfo.componentName)
+                    navController.popBackStack()
+                },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable("settings/search") {
+            SearchSettingsScreen(
+                config = searchConfig,
+                onSetButtonEnabled = { scope.launch { app.prefs.setSearchButtonEnabled(it) } },
+                onSetIncludeApps = { scope.launch { app.prefs.setSearchIncludeApps(it) } },
+                onSetIncludeContacts = { scope.launch { app.prefs.setSearchIncludeContacts(it) } },
+                onSetIncludeSettings = { scope.launch { app.prefs.setSearchIncludeSettings(it) } },
+                onSetIncludeWeb = { scope.launch { app.prefs.setSearchIncludeWeb(it) } },
+                onSetIncludePlayStore = { scope.launch { app.prefs.setSearchIncludePlayStore(it) } },
+                onSetSearchEngine = { scope.launch { app.prefs.setSearchEngine(it.idName) } },
+                onSetAutoKeyboard = { scope.launch { app.prefs.setSearchAutoKeyboard(it) } },
                 onBack = { navController.popBackStack() },
             )
         }

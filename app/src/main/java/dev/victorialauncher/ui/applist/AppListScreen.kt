@@ -35,9 +35,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -56,6 +67,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -63,6 +75,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.zIndex
+import dev.victorialauncher.service.HapticUtil
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
@@ -148,6 +165,9 @@ fun AppListScreen(
     showAppNotifications: Boolean = false,
     notificationsByPackage: Map<String, List<dev.victorialauncher.notification.AppNotificationItem>> = emptyMap(),
     sidePaddingDp: Int = 20,
+    searchButtonEnabled: Boolean = true,
+    hapticsEnabled: Boolean = true,
+    onOpenSearch: () -> Unit = {},
 ) {
     var activeDialogNotification by remember { mutableStateOf<Pair<dev.victorialauncher.notification.AppNotificationItem, AppInfo>?>(null) }
     var appMenuFor by remember { mutableStateOf<AppInfo?>(null) }
@@ -851,6 +871,119 @@ fun AppListScreen(
                 }
             }
         }
+
+        if (searchButtonEnabled && visible) {
+            val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            val searchButtonBottom = maxOf(80.dp, navBarBottom + 68.dp)
+            val isLeft = activeSide == EdgeSide.LEFT
+            val searchBtnAlignment = if (isLeft) Alignment.BottomStart else Alignment.BottomEnd
+            val searchBtnSidePadding = (sidePaddingDp + 38).coerceAtLeast(58).dp
+
+            val isScrolling by remember { derivedStateOf { listState.isScrollInProgress } }
+            val isScrolled by remember {
+                derivedStateOf {
+                    listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 30
+                }
+            }
+            val showButton = (isScrolling || isScrolled) && scrubLetter == null
+
+            AnimatedVisibility(
+                visible = showButton,
+                enter = fadeIn(animationSpec = tween(200)) + scaleIn(
+                    initialScale = 0.65f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
+                ),
+                exit = fadeOut(animationSpec = tween(160)) + scaleOut(
+                    targetScale = 0.65f,
+                    animationSpec = tween(160),
+                ),
+                modifier = Modifier
+                    .align(searchBtnAlignment)
+                    .padding(
+                        start = if (isLeft) searchBtnSidePadding else 0.dp,
+                        end = if (!isLeft) searchBtnSidePadding else 0.dp,
+                        bottom = searchButtonBottom,
+                    )
+                    .zIndex(2f),
+            ) {
+                AppListFloatingSearchButton(
+                    hapticsEnabled = hapticsEnabled,
+                    onClick = onOpenSearch,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppListFloatingSearchButton(
+    hapticsEnabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    val pressScale = remember { Animatable(1f) }
+    val pressSpring = remember {
+        spring<Float>(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        )
+    }
+
+    val buttonSizeDp = 54.dp
+    val surfaceColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.88f)
+    val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+
+    Box(
+        modifier = modifier
+            .size(buttonSizeDp)
+            .graphicsLayer {
+                scaleX = pressScale.value
+                scaleY = pressScale.value
+            }
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = Color.Black.copy(alpha = 0.25f),
+                spotColor = Color.Black.copy(alpha = 0.35f),
+            )
+            .clip(RoundedCornerShape(22.dp))
+            .background(surfaceColor)
+            .border(
+                BorderStroke(1.dp, borderColor),
+                shape = RoundedCornerShape(22.dp),
+            )
+            .pointerInput(hapticsEnabled) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    down.consume()
+                    scope.launch { pressScale.animateTo(0.88f, pressSpring) }
+                    val up = waitForUpOrCancellation()
+                    if (up != null) {
+                        up.consume()
+                        HapticUtil.tick(view, hapticsEnabled)
+                        scope.launch {
+                            pressScale.animateTo(1.08f, pressSpring)
+                            pressScale.animateTo(1.0f, pressSpring)
+                        }
+                        onClick()
+                    } else {
+                        scope.launch { pressScale.animateTo(1.0f, pressSpring) }
+                    }
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Search,
+            contentDescription = stringResource(R.string.settings_search_title),
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
     }
 }
 
