@@ -114,6 +114,8 @@ fun SettingsScreen(
     onOpenNotificationSettings: () -> Unit,
     onOpenDynamicButtonSettings: () -> Unit,
     onOpenSearchSettings: () -> Unit = {},
+    isDefaultLauncher: Boolean = false,
+    onOpenDefaultLauncherSettings: () -> Unit = {},
     onBack: () -> Unit,
 ) {
     val surface = MaterialTheme.colorScheme.surface
@@ -225,6 +227,15 @@ fun SettingsScreen(
 
             item {
                 Section(stringResource(R.string.settings_section_behavior)) {
+                    NavigationRow(
+                        label = stringResource(R.string.settings_default_launcher),
+                        detail = stringResource(
+                            if (isDefaultLauncher) R.string.settings_default_launcher_is_default
+                            else R.string.settings_default_launcher_set
+                        ),
+                        onClick = onOpenDefaultLauncherSettings,
+                    )
+                    RowDivider()
                     SwitchRowWithDetail(
                         label = stringResource(R.string.settings_haptics),
                         detail = stringResource(R.string.settings_haptics_detail),

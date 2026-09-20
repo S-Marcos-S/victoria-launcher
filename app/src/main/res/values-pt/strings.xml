@@ -24,6 +24,16 @@
     <string name="action_move_to_folder">Mover para pasta…</string>
     <string name="action_change_icon">Alterar ícone…</string>
     <string name="action_open_settings">Configurações do Victoria Launcher</string>
+    <string name="action_not_now">Agora não</string>
+    <string name="action_set_default">Definir como padrão</string>
+    <string name="default_launcher_dialog_title">Definir como inicializador padrão</string>
+    <string name="default_launcher_dialog_message">Defina o Victoria Launcher como seu aplicativo de tela inicial padrão para desfrutar de uma experiência limpa, ultra rápida e sem distrações sempre que pressionar o botão Home ou desbloquear o aparelho.</string>
+    <string name="default_launcher_feature_home">Acesso instantâneo ao pressionar o botão Home</string>
+    <string name="default_launcher_feature_apps">Navegação A-Z fluida e pesquisa universal</string>
+    <string name="default_launcher_feature_minimal">Interface limpa, focada e personalizável</string>
+    <string name="settings_default_launcher">Inicializador padrão</string>
+    <string name="settings_default_launcher_is_default">Victoria Launcher é o app padrão</string>
+    <string name="settings_default_launcher_set">Toque para definir como padrão</string>
 
     <!-- Tela inicial -->
     <string name="options_title">Opções</string>

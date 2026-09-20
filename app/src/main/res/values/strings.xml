@@ -23,6 +23,16 @@
     <string name="action_move_to_folder">Move to folder…</string>
     <string name="action_change_icon">Change icon…</string>
     <string name="action_open_settings">Victoria Launcher settings</string>
+    <string name="action_not_now">Not now</string>
+    <string name="action_set_default">Set as default</string>
+    <string name="default_launcher_dialog_title">Set as default launcher</string>
+    <string name="default_launcher_dialog_message">Set Victoria Launcher as your default home app to enjoy a clean, fast, and distraction-free experience every time you press Home or unlock your device.</string>
+    <string name="default_launcher_feature_home">Instant return when pressing Home</string>
+    <string name="default_launcher_feature_apps">Smooth A-Z navigation and universal search</string>
+    <string name="default_launcher_feature_minimal">Clean, focused, and customizable setup</string>
+    <string name="settings_default_launcher">Default launcher</string>
+    <string name="settings_default_launcher_is_default">Victoria Launcher is set as default</string>
+    <string name="settings_default_launcher_set">Tap to set Victoria Launcher as default</string>
 
     <!-- Home screen -->
     <string name="options_title">Options</string>

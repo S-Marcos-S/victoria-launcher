@@ -55,6 +55,7 @@ import dev.victorialauncher.data.PaddingSlot
 import dev.victorialauncher.data.folderToken
 import dev.victorialauncher.media.NowPlayingBus
 import dev.victorialauncher.media.isListenerEnabled
+import dev.victorialauncher.service.DefaultLauncherUtil
 import dev.victorialauncher.service.SystemUi
 import dev.victorialauncher.ui.applist.AppListModel
 import dev.victorialauncher.ui.applist.AppListScreen
@@ -141,6 +142,20 @@ fun HomeRoute(
     var folderPickerFor by remember { mutableStateOf<AppInfo?>(null) }
     var showHomeOptions by remember { mutableStateOf(false) }
     var lockTargetOffset by remember { mutableStateOf<Offset?>(null) }
+
+    val hasPromptedDefaultLauncher by app.prefs.hasPromptedDefaultLauncher.collectAsState(initial = true)
+    var showDefaultLauncherDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(hasPromptedDefaultLauncher) {
+        if (!hasPromptedDefaultLauncher) {
+            if (DefaultLauncherUtil.isDefaultLauncher(context)) {
+                app.prefs.setHasPromptedDefaultLauncher(true)
+            } else {
+                delay(500)
+                showDefaultLauncherDialog = true
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         dev.victorialauncher.update.UpdateManager.checkForUpdates(this, context = context)
@@ -585,6 +600,24 @@ fun HomeRoute(
                 onDownload = { useRoot ->
                     dev.victorialauncher.update.UpdateManager.dismissChangelogRequest()
                     dev.victorialauncher.update.UpdateManager.startDownload(context, currentUpdate, autoInstallWithRoot = useRoot)
+                },
+            )
+        }
+
+        if (showDefaultLauncherDialog) {
+            SetDefaultLauncherDialog(
+                onDismissRequest = {
+                    showDefaultLauncherDialog = false
+                    scope.launch {
+                        app.prefs.setHasPromptedDefaultLauncher(true)
+                    }
+                },
+                onConfirm = {
+                    showDefaultLauncherDialog = false
+                    scope.launch {
+                        app.prefs.setHasPromptedDefaultLauncher(true)
+                    }
+                    DefaultLauncherUtil.requestSetDefaultLauncher(context)
                 },
             )
         }

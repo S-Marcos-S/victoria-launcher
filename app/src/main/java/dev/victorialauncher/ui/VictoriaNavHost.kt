@@ -366,6 +366,9 @@ fun VictoriaNavHost(
         composable("settings") {
             val iconPacks = remember { app.iconPackRepository.getInstalledIconPacks() }
             val listenerEnabled = remember(homeIntentTick) { isListenerEnabled(context) }
+            val isDefaultLauncher = remember(homeIntentTick) {
+                dev.victorialauncher.service.DefaultLauncherUtil.isDefaultLauncher(context)
+            }
             SettingsScreen(
                 hiddenCount = hiddenApps.size,
                 iconPacks = iconPacks,
@@ -431,6 +434,10 @@ fun VictoriaNavHost(
                 },
                 onOpenDynamicButtonSettings = { navController.navigate("settings/dynamic_button") },
                 onOpenSearchSettings = { navController.navigate("settings/search") },
+                isDefaultLauncher = isDefaultLauncher,
+                onOpenDefaultLauncherSettings = {
+                    dev.victorialauncher.service.DefaultLauncherUtil.requestSetDefaultLauncher(context)
+                },
                 onBack = { navController.popBackStack() },
             )
         }

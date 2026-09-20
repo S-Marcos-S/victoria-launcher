@@ -96,6 +96,7 @@ class Prefs(private val context: Context) {
         val SEARCH_INCLUDE_PLAY_STORE = booleanPreferencesKey("search_include_play_store")
         val SEARCH_ENGINE = stringPreferencesKey("search_engine")
         val SEARCH_AUTO_KEYBOARD = booleanPreferencesKey("search_auto_keyboard")
+        val HAS_PROMPTED_DEFAULT_LAUNCHER = booleanPreferencesKey("has_prompted_default_launcher")
     }
 
     private val data get() = context.dataStore.data
@@ -226,6 +227,7 @@ class Prefs(private val context: Context) {
     val searchIncludePlayStore: Flow<Boolean> = data.map { it[Keys.SEARCH_INCLUDE_PLAY_STORE] ?: true }.distinctUntilChanged()
     val searchEngine: Flow<String> = data.map { it[Keys.SEARCH_ENGINE] ?: "GOOGLE" }.distinctUntilChanged()
     val searchAutoKeyboard: Flow<Boolean> = data.map { it[Keys.SEARCH_AUTO_KEYBOARD] ?: true }.distinctUntilChanged()
+    val hasPromptedDefaultLauncher: Flow<Boolean> = data.map { it[Keys.HAS_PROMPTED_DEFAULT_LAUNCHER] ?: false }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->
@@ -559,6 +561,10 @@ class Prefs(private val context: Context) {
 
     suspend fun setSearchAutoKeyboard(v: Boolean) {
         context.dataStore.edit { it[Keys.SEARCH_AUTO_KEYBOARD] = v }
+    }
+
+    suspend fun setHasPromptedDefaultLauncher(v: Boolean) {
+        context.dataStore.edit { it[Keys.HAS_PROMPTED_DEFAULT_LAUNCHER] = v }
     }
 
     private fun jsonToMap(json: String?): Map<String, String> {

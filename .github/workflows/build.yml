@@ -115,9 +115,17 @@ jobs:
             echo "IS_NEW_VERSION=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Append download links to changelog
+      - name: Prepare Release Notes
         run: |
-          cat >> CHANGELOG_LATEST.md <<EOF
+          # Extrai apenas a seção da versão mais recente de CHANGELOG_LATEST.md (até o primeiro separador '---')
+          awk 'BEGIN{p=1} /^---/{p=0} p{print}' CHANGELOG_LATEST.md > RELEASE_NOTES.md
+
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "### Victoria Launcher ${{ steps.version_check.outputs.TAG_NAME }}" > RELEASE_NOTES.md
+            echo "Atualizações e melhorias de estabilidade." >> RELEASE_NOTES.md
+          fi
+
+          cat >> RELEASE_NOTES.md <<EOF
 
           ### Direct APK Download
           - [Download Release APK](https://github.com/${{ github.repository }}/releases/download/latest/victoria-launcher-release.apk)
@@ -132,7 +140,7 @@ jobs:
         with:
           tag_name: ${{ steps.version_check.outputs.TAG_NAME }}
           name: "Victoria Launcher ${{ steps.version_check.outputs.TAG_NAME }}"
-          body_path: CHANGELOG_LATEST.md
+          body_path: RELEASE_NOTES.md
           prerelease: false
           files: |
             artifacts/victoria-launcher-release.apk
@@ -146,7 +154,7 @@ jobs:
         with:
           tag_name: latest
           name: "Victoria Launcher - Latest APKs (${{ steps.version_check.outputs.TAG_NAME }})"
-          body_path: CHANGELOG_LATEST.md
+          body_path: RELEASE_NOTES.md
           prerelease: false
           files: |
             artifacts/victoria-launcher-release.apk

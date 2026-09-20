@@ -16,6 +16,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +30,10 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -457,61 +462,135 @@ fun HomeScreen(
                 .onSizeChanged { contentHeight = it.height },
         ) {
             if (editMode) {
-                Row(
+                val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+                val editTopPadding = maxOf(statusBarTop, 24.dp) + 8.dp
+
+                Spacer(Modifier.height(editTopPadding))
+
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 72.dp, top = 4.dp, bottom = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                        .padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = colorScheme.surfaceContainer.copy(alpha = 0.85f),
+                    border = BorderStroke(1.dp, dynamicBorderColor().copy(alpha = 0.45f)),
+                    tonalElevation = 4.dp,
                 ) {
-                    Text(
-                        stringResource(R.string.home_reorder_hint),
-                        color = contentColor.copy(alpha = 0.7f),
-                        fontSize = 11.sp,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        TextButton(
-                            onClick = handleResetAlignments,
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = colorScheme.primary,
-                            ),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(colorScheme.primaryContainer),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Tune,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = colorScheme.onPrimaryContainer,
+                                    )
+                                }
+                                Text(
+                                    stringResource(R.string.action_edit_layout),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorScheme.onSurface,
+                                )
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
+                                    border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.25f)),
+                                    modifier = Modifier.clickable { handleResetAlignments() },
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.AlignHorizontalLeft,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp),
+                                            tint = colorScheme.primary,
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            stringResource(R.string.action_align_elements),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = colorScheme.onSurface,
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = colorScheme.primary,
+                                    modifier = Modifier.clickable { onEditModeChange(false) },
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Done,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(15.dp),
+                                            tint = colorScheme.onPrimary,
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            stringResource(R.string.action_done),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = colorScheme.onPrimary,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Icon(
-                                Icons.Filled.AlignHorizontalLeft,
+                                Icons.Filled.Info,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(14.dp),
+                                tint = colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                             )
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.width(6.dp))
                             Text(
-                                stringResource(R.string.action_align_elements),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                        TextButton(
-                            onClick = { onEditModeChange(false) },
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = colorScheme.primary,
-                            ),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                        ) {
-                            Icon(Icons.Filled.Done, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                stringResource(R.string.action_done),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
+                                stringResource(R.string.home_reorder_hint),
+                                color = colorScheme.onSurfaceVariant,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
                             )
                         }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
                 SidePaddingHandle(sidePaddingDp = sidePaddingDp, onSetSidePadding = onSetSidePadding)
                 Spacer(Modifier.height(6.dp))
             }
@@ -880,6 +959,11 @@ fun HomeScreen(
                             },
                         )
                 )
+            }
+
+            if (editMode) {
+                val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                Spacer(Modifier.height(navBarBottom + 64.dp))
             }
         }
     }
@@ -1657,12 +1741,15 @@ private fun FolderEditDialog(
 @Composable
 private fun SidePaddingHandle(sidePaddingDp: Int, onSetSidePadding: (Int) -> Unit) {
     val density = LocalDensity.current
+    val colorScheme = MaterialTheme.colorScheme
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(26.dp)
-            .padding(horizontal = 12.dp)
-            .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(8.dp))
+            .height(28.dp)
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(colorScheme.surfaceContainer.copy(alpha = 0.75f))
+            .border(BorderStroke(1.dp, dynamicBorderColor().copy(alpha = 0.35f)), RoundedCornerShape(10.dp))
             .draggable(
                 orientation = Orientation.Horizontal,
                 state = rememberDraggableState { delta ->
@@ -1672,7 +1759,12 @@ private fun SidePaddingHandle(sidePaddingDp: Int, onSetSidePadding: (Int) -> Uni
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Text(stringResource(R.string.handle_side_padding, sidePaddingDp), color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
+        Text(
+            stringResource(R.string.handle_side_padding, sidePaddingDp),
+            color = colorScheme.onSurface,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 
@@ -1685,12 +1777,15 @@ private fun HeightHandle(
     onResize: (Int) -> Unit,
 ) {
     val density = LocalDensity.current
+    val colorScheme = MaterialTheme.colorScheme
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(26.dp)
-            .padding(horizontal = 12.dp)
-            .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(8.dp))
+            .height(28.dp)
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(colorScheme.surfaceContainer.copy(alpha = 0.75f))
+            .border(BorderStroke(1.dp, dynamicBorderColor().copy(alpha = 0.35f)), RoundedCornerShape(10.dp))
             .draggable(
                 orientation = Orientation.Vertical,
                 state = rememberDraggableState { delta ->
@@ -1700,7 +1795,12 @@ private fun HeightHandle(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Text(stringResource(R.string.handle_vertical, stringResource(label), heightDp), color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
+        Text(
+            stringResource(R.string.handle_vertical, stringResource(label), heightDp),
+            color = colorScheme.onSurface,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 
@@ -1723,12 +1823,15 @@ private fun PaddingHandle(
     }
 
     val density = LocalDensity.current
+    val colorScheme = MaterialTheme.colorScheme
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(maxOf(value, 28).dp)
-            .padding(horizontal = 12.dp)
-            .background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(8.dp))
+            .height(maxOf(value, 30).dp)
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(colorScheme.surfaceContainer.copy(alpha = 0.65f))
+            .border(BorderStroke(1.dp, dynamicBorderColor().copy(alpha = 0.35f)), RoundedCornerShape(10.dp))
             .draggable(
                 orientation = Orientation.Vertical,
                 state = rememberDraggableState { delta ->
@@ -1741,8 +1844,9 @@ private fun PaddingHandle(
     ) {
         Text(
             stringResource(R.string.handle_vertical, stringResource(label), value),
-            color = Color.White.copy(alpha = 0.75f),
+            color = colorScheme.onSurface,
             fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
         )
     }
 }
