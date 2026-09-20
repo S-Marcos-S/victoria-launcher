@@ -339,4 +339,12 @@
     <string name="backup_confirm_delete_title">Delete backup?</string>
     <string name="backup_confirm_delete_msg">Are you sure you want to permanently delete this backup file?</string>
     <string name="backup_deleted_success">Backup deleted</string>
+    <string name="backup_dest_folder_title">Destination Folder</string>
+    <string name="backup_dest_folder_desc">Select a folder on your device where backups will be stored so they stay safe even if the app is uninstalled.</string>
+    <string name="backup_dest_folder_select">Select backup folder</string>
+    <string name="backup_dest_folder_change">Change folder</string>
+    <string name="backup_dest_folder_active">Active folder: %1$s</string>
+    <string name="backup_dest_folder_required">Destination folder required to create backups</string>
+    <string name="backup_dest_folder_need_selection">Select a destination folder above first</string>
+    <string name="backup_dest_folder_saved_toast">Backup folder selected</string>
 </resources>

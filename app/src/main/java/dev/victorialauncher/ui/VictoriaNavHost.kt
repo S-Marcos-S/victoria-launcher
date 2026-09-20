@@ -176,6 +176,8 @@ fun VictoriaNavHost(
     val backupMaxKeep by app.prefs.backupMaxKeep.collectAsState(initial = 5)
     val backupIncludeWallpaper by app.prefs.backupIncludeWallpaper.collectAsState(initial = true)
     val lastAutoBackupTimestamp by app.prefs.lastAutoBackupTimestamp.collectAsState(initial = 0L)
+    val backupFolderUri by app.prefs.backupFolderUri.collectAsState(initial = null)
+    val backupFolderName by app.prefs.backupFolderName.collectAsState(initial = null)
 
     val searchConfig = remember(
         searchButtonEnabled,
@@ -534,11 +536,16 @@ fun VictoriaNavHost(
         composable("settings/backup") {
             BackupSettingsScreen(
                 prefs = app.prefs,
+                backupFolderUri = backupFolderUri,
+                backupFolderName = backupFolderName,
                 autoBackupEnabled = autoBackupEnabled,
                 autoBackupFrequency = autoBackupFrequency,
                 backupMaxKeep = backupMaxKeep,
                 backupIncludeWallpaper = backupIncludeWallpaper,
                 lastAutoBackupTimestamp = lastAutoBackupTimestamp,
+                onSetBackupFolder = { uri, name ->
+                    scope.launch { app.prefs.setBackupFolder(uri, name) }
+                },
                 onSetAutoBackupEnabled = { scope.launch { app.prefs.setAutoBackupEnabled(it) } },
                 onSetAutoBackupFrequency = { scope.launch { app.prefs.setAutoBackupFrequency(it) } },
                 onSetBackupMaxKeep = { scope.launch { app.prefs.setBackupMaxKeep(it) } },

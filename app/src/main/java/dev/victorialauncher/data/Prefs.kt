@@ -106,6 +106,8 @@ class Prefs(private val context: Context) {
         val BACKUP_MAX_KEEP = intPreferencesKey("backup_max_keep")
         val BACKUP_INCLUDE_WALLPAPER = booleanPreferencesKey("backup_include_wallpaper")
         val BACKUP_LAST_AUTO_TIMESTAMP = longPreferencesKey("backup_last_auto_timestamp")
+        val BACKUP_FOLDER_URI = stringPreferencesKey("backup_folder_uri")
+        val BACKUP_FOLDER_NAME = stringPreferencesKey("backup_folder_name")
     }
 
     private val data get() = context.dataStore.data
@@ -244,6 +246,8 @@ class Prefs(private val context: Context) {
     val backupMaxKeep: Flow<Int> = data.map { it[Keys.BACKUP_MAX_KEEP] ?: 5 }.distinctUntilChanged()
     val backupIncludeWallpaper: Flow<Boolean> = data.map { it[Keys.BACKUP_INCLUDE_WALLPAPER] ?: true }.distinctUntilChanged()
     val lastAutoBackupTimestamp: Flow<Long> = data.map { it[Keys.BACKUP_LAST_AUTO_TIMESTAMP] ?: 0L }.distinctUntilChanged()
+    val backupFolderUri: Flow<String?> = data.map { it[Keys.BACKUP_FOLDER_URI] }.distinctUntilChanged()
+    val backupFolderName: Flow<String?> = data.map { it[Keys.BACKUP_FOLDER_NAME] }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->
@@ -601,6 +605,21 @@ class Prefs(private val context: Context) {
 
     suspend fun setLastAutoBackupTimestamp(v: Long) {
         context.dataStore.edit { it[Keys.BACKUP_LAST_AUTO_TIMESTAMP] = v }
+    }
+
+    suspend fun setBackupFolder(uri: String?, name: String?) {
+        context.dataStore.edit { pref ->
+            if (uri != null) {
+                pref[Keys.BACKUP_FOLDER_URI] = uri
+            } else {
+                pref.remove(Keys.BACKUP_FOLDER_URI)
+            }
+            if (name != null) {
+                pref[Keys.BACKUP_FOLDER_NAME] = name
+            } else {
+                pref.remove(Keys.BACKUP_FOLDER_NAME)
+            }
+        }
     }
 
     suspend fun exportAllPreferencesJson(): String {

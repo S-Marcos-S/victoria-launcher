@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.backup
 
+import android.net.Uri
 import dev.victorialauncher.R
 import java.io.File
 
@@ -36,8 +37,11 @@ data class BackupMeta(
 )
 
 data class BackupItem(
-    val file: File,
+    val uri: Uri,
+    val displayName: String,
     val meta: BackupMeta?,
     val sizeBytes: Long,
     val formattedSize: String,
+    val lastModified: Long,
+    val file: File? = null,
 )

@@ -340,4 +340,12 @@
     <string name="backup_confirm_delete_title">Excluir backup?</string>
     <string name="backup_confirm_delete_msg">Tem certeza de que deseja excluir permanentemente este arquivo de backup?</string>
     <string name="backup_deleted_success">Backup excluído</string>
+    <string name="backup_dest_folder_title">Pasta de destino</string>
+    <string name="backup_dest_folder_desc">Escolha onde os backups serão guardados no aparelho para ficarem preservados mesmo ao desinstalar o app.</string>
+    <string name="backup_dest_folder_select">Selecionar pasta de backup</string>
+    <string name="backup_dest_folder_change">Alterar pasta</string>
+    <string name="backup_dest_folder_active">Pasta ativa: %1$s</string>
+    <string name="backup_dest_folder_required">Pasta de destino necessária para criar backups</string>
+    <string name="backup_dest_folder_need_selection">Selecione uma pasta de destino acima primeiro</string>
+    <string name="backup_dest_folder_saved_toast">Pasta de backup selecionada com sucesso</string>
 </resources>

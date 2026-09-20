@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.core.content.FileProvider
 import dev.victorialauncher.BuildConfig
 import dev.victorialauncher.data.Prefs
@@ -41,6 +42,50 @@ object BackupManager {
     }
 
     /**
+     * Persists read and write permissions for a selected tree directory URI.
+     */
+    fun takePersistablePermission(context: Context, treeUri: Uri): Boolean {
+        return runCatching {
+            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            context.contentResolver.takePersistableUriPermission(treeUri, flags)
+            true
+        }.getOrDefault(false)
+    }
+
+    /**
+     * Checks whether we still hold valid persisted permissions for the directory URI.
+     */
+    fun hasFolderPermission(context: Context, treeUri: Uri): Boolean {
+        return runCatching {
+            context.contentResolver.persistedUriPermissions.any {
+                it.uri == treeUri && it.isWritePermission && it.isReadPermission
+            }
+        }.getOrDefault(false)
+    }
+
+    /**
+     * Retrieves a human-readable display name for the selected folder.
+     */
+    fun getFolderDisplayName(context: Context, treeUri: Uri): String {
+        return runCatching {
+            val docId = DocumentsContract.getTreeDocumentId(treeUri)
+            val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
+            context.contentResolver.query(
+                docUri,
+                arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                    if (idx != -1) cursor.getString(idx) else null
+                } else null
+            }
+        }.getOrNull() ?: treeUri.lastPathSegment?.substringAfterLast(':') ?: "Pasta Selecionada"
+    }
+
+    /**
      * Extracts current wallpaper bitmap if accessible.
      */
     fun extractWallpaperBitmap(context: Context): Bitmap? {
@@ -62,25 +107,38 @@ object BackupManager {
     }
 
     /**
-     * Creates a full backup containing all preferences and optionally the wallpaper.
+     * Creates a full backup containing all preferences and optionally the wallpaper into the user-selected folder.
      */
     suspend fun createBackup(
         context: Context,
         prefs: Prefs,
+        folderUriStr: String?,
         type: BackupType = BackupType.MANUAL,
         includeWallpaper: Boolean = true,
         maxKeep: Int = 5,
-    ): Result<File> = withContext(Dispatchers.IO) {
+    ): Result<BackupItem> = withContext(Dispatchers.IO) {
         runCatching {
+            if (folderUriStr.isNullOrBlank()) {
+                throw IllegalStateException("Destination folder not selected")
+            }
+            val treeUri = Uri.parse(folderUriStr)
             val now = System.currentTimeMillis()
             val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
             val prettyFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             val dateStr = dateFormat.format(Date(now))
             val prettyDateStr = prettyFormat.format(Date(now))
 
-            val dir = getBackupsDir(context)
             val prefix = if (type == BackupType.AUTOMATIC) "victoria_autobackup_" else "victoria_backup_"
-            val targetFile = File(dir, "$prefix$dateStr$BACKUP_EXTENSION")
+            val fileName = "$prefix$dateStr$BACKUP_EXTENSION"
+
+            val docId = DocumentsContract.getTreeDocumentId(treeUri)
+            val parentDocUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
+            val docUri = DocumentsContract.createDocument(
+                context.contentResolver,
+                parentDocUri,
+                "application/octet-stream",
+                fileName,
+            ) ?: throw IllegalStateException("Could not create backup file in selected folder")
 
             // 1. Export DataStore preferences to JSON
             val preferencesJson = prefs.exportAllPreferencesJson()
@@ -90,18 +148,27 @@ object BackupManager {
             val hasWallpaper = wallpaperBitmap != null
 
             // 3. Build metadata
+            val meta = BackupMeta(
+                versionCode = BuildConfig.VERSION_CODE,
+                versionName = BuildConfig.VERSION_NAME,
+                timestamp = now,
+                formattedDate = prettyDateStr,
+                hasWallpaper = hasWallpaper,
+                type = type,
+                preferenceCount = 0,
+            )
             val metaJson = JSONObject().apply {
-                put("versionCode", BuildConfig.VERSION_CODE)
-                put("versionName", BuildConfig.VERSION_NAME)
-                put("timestamp", now)
-                put("formattedDate", prettyDateStr)
-                put("hasWallpaper", hasWallpaper)
-                put("type", type.name)
+                put("versionCode", meta.versionCode)
+                put("versionName", meta.versionName)
+                put("timestamp", meta.timestamp)
+                put("formattedDate", meta.formattedDate)
+                put("hasWallpaper", meta.hasWallpaper)
+                put("type", meta.type.name)
             }.toString()
 
-            // 4. Write zip archive
-            FileOutputStream(targetFile).use { fos ->
-                ZipOutputStream(fos).use { zos ->
+            // 4. Write zip archive to OutputStream
+            context.contentResolver.openOutputStream(docUri)?.use { os ->
+                ZipOutputStream(os).use { zos ->
                     // Entry 1: meta.json
                     zos.putNextEntry(ZipEntry(META_ENTRY))
                     zos.write(metaJson.toByteArray(Charsets.UTF_8))
@@ -121,12 +188,22 @@ object BackupManager {
                         zos.closeEntry()
                     }
                 }
-            }
+            } ?: throw IllegalStateException("Could not open output stream for created backup")
 
-            // 5. Prune backups to respect user retention limit
-            pruneOldBackups(context, maxKeep)
+            // 5. Prune backups in the tree folder
+            pruneOldBackupsInTree(context, treeUri, maxKeep)
 
-            targetFile
+            // 6. Query size
+            val size = getDocumentSize(context, docUri)
+
+            BackupItem(
+                uri = docUri,
+                displayName = fileName,
+                meta = meta,
+                sizeBytes = size,
+                formattedSize = formatFileSize(size),
+                lastModified = now,
+            )
         }
     }
 
@@ -146,7 +223,7 @@ object BackupManager {
     }
 
     /**
-     * Restores preferences and wallpaper from an external content URI.
+     * Restores preferences and wallpaper from a content URI.
      */
     suspend fun restoreBackupFromUri(
         context: Context,
@@ -237,48 +314,91 @@ object BackupManager {
     }
 
     /**
-     * Lists all local backup files sorted by creation date descending.
+     * Lists backup files. If folderUriStr is provided and valid, lists from that SAF tree folder.
      */
-    fun listBackups(context: Context): List<BackupItem> {
-        val dir = getBackupsDir(context)
-        val files = dir.listFiles { file ->
-            file.isFile && (file.name.endsWith(BACKUP_EXTENSION) || file.name.endsWith(".zip"))
-        } ?: return emptyList()
+    fun listBackups(context: Context, folderUriStr: String?): List<BackupItem> {
+        if (folderUriStr.isNullOrBlank()) return emptyList()
 
-        return files.map { file ->
-            val meta = readMetaOnly(file)
-            val size = file.length()
-            BackupItem(
-                file = file,
-                meta = meta,
-                sizeBytes = size,
-                formattedSize = formatFileSize(size),
-            )
-        }.sortedByDescending { it.meta?.timestamp ?: it.file.lastModified() }
+        val treeUri = runCatching { Uri.parse(folderUriStr) }.getOrNull() ?: return emptyList()
+        val list = listBackupsInTree(context, treeUri)
+
+        return list.sortedByDescending { it.meta?.timestamp ?: it.lastModified }
     }
 
     /**
-     * Reads metadata without fully decompressing the entire backup.
+     * Lists backups in a SAF tree directory.
      */
-    fun readMetaOnly(file: File): BackupMeta? {
-        return runCatching {
-            ZipInputStream(FileInputStream(file)).use { zis ->
-                var entry = zis.nextEntry
-                while (entry != null) {
-                    if (entry.name == META_ENTRY) {
-                        val text = zis.bufferedReader(Charsets.UTF_8).readText()
-                        val json = JSONObject(text)
-                        return BackupMeta(
-                            versionCode = json.optInt("versionCode", 1),
-                            versionName = json.optString("versionName", ""),
-                            timestamp = json.optLong("timestamp", file.lastModified()),
-                            formattedDate = json.optString("formattedDate", ""),
-                            hasWallpaper = json.optBoolean("hasWallpaper", false),
-                            type = BackupType.fromName(json.optString("type")),
-                            preferenceCount = json.optInt("itemCount", 0),
+    private fun listBackupsInTree(context: Context, treeUri: Uri): List<BackupItem> {
+        val list = mutableListOf<BackupItem>()
+        runCatching {
+            val docId = DocumentsContract.getTreeDocumentId(treeUri)
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, docId)
+            context.contentResolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_SIZE,
+                    DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                ),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                val nameCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                val sizeCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE)
+                val modCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(nameCol) ?: continue
+                    if (name.endsWith(BACKUP_EXTENSION) || name.endsWith(".zip")) {
+                        val childDocId = cursor.getString(idCol)
+                        val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocId)
+                        val size = if (sizeCol != -1) cursor.getLong(sizeCol) else 0L
+                        val mod = if (modCol != -1) cursor.getLong(modCol) else 0L
+                        val meta = readMetaFromUri(context, docUri)
+                        list.add(
+                            BackupItem(
+                                uri = docUri,
+                                displayName = name,
+                                meta = meta,
+                                sizeBytes = size,
+                                formattedSize = formatFileSize(size),
+                                lastModified = meta?.timestamp ?: mod,
+                            )
                         )
                     }
-                    entry = zis.nextEntry
+                }
+            }
+        }
+        return list
+    }
+
+    /**
+     * Reads metadata without fully decompressing the backup from URI.
+     */
+    fun readMetaFromUri(context: Context, uri: Uri): BackupMeta? {
+        return runCatching {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                ZipInputStream(stream).use { zis ->
+                    var entry = zis.nextEntry
+                    while (entry != null) {
+                        if (entry.name == META_ENTRY) {
+                            val text = zis.bufferedReader(Charsets.UTF_8).readText()
+                            val json = JSONObject(text)
+                            return BackupMeta(
+                                versionCode = json.optInt("versionCode", 1),
+                                versionName = json.optString("versionName", ""),
+                                timestamp = json.optLong("timestamp", 0L),
+                                formattedDate = json.optString("formattedDate", ""),
+                                hasWallpaper = json.optBoolean("hasWallpaper", false),
+                                type = BackupType.fromName(json.optString("type")),
+                                preferenceCount = json.optInt("itemCount", 0),
+                            )
+                        }
+                        entry = zis.nextEntry
+                    }
                 }
             }
             null
@@ -286,56 +406,79 @@ object BackupManager {
     }
 
     /**
-     * Deletes a local backup file.
+     * Deletes a backup item.
      */
-    fun deleteBackup(file: File): Boolean {
-        return runCatching { file.delete() }.getOrDefault(false)
+    fun deleteBackup(context: Context, item: BackupItem): Boolean {
+        return runCatching {
+            DocumentsContract.deleteDocument(context.contentResolver, item.uri)
+        }.getOrElse {
+            if (item.file != null) item.file.delete() else false
+        }
     }
 
     /**
-     * Shares a backup file via Android system share sheet.
+     * Shares a backup item via Android system share sheet.
      */
-    fun shareBackup(context: Context, file: File) {
+    fun shareBackup(context: Context, item: BackupItem) {
         runCatching {
-            val uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                file,
-            )
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/zip"
-                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_STREAM, item.uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(intent, file.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            context.startActivity(Intent.createChooser(intent, item.displayName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }
 
     /**
-     * Enforces the maximum retention limit of backups.
+     * Enforces the maximum retention limit of backups in a tree folder.
      */
-    fun pruneOldBackups(context: Context, maxKeep: Int) {
+    private fun pruneOldBackupsInTree(context: Context, treeUri: Uri, maxKeep: Int) {
         if (maxKeep <= 0) return
-        val dir = getBackupsDir(context)
-        val files = dir.listFiles { file ->
-            file.isFile && (file.name.endsWith(BACKUP_EXTENSION) || file.name.endsWith(".zip"))
-        } ?: return
-
-        if (files.size > maxKeep) {
-            val sorted = files.sortedByDescending { it.lastModified() }
-            val toRemove = sorted.drop(maxKeep)
-            toRemove.forEach { it.delete() }
+        runCatching {
+            val backups = listBackupsInTree(context, treeUri)
+            if (backups.size > maxKeep) {
+                val toDelete = backups.drop(maxKeep)
+                toDelete.forEach { item ->
+                    runCatching {
+                        DocumentsContract.deleteDocument(context.contentResolver, item.uri)
+                    }
+                }
+            }
         }
     }
 
+    private fun getDocumentSize(context: Context, docUri: Uri): Long {
+        return runCatching {
+            context.contentResolver.query(
+                docUri,
+                arrayOf(DocumentsContract.Document.COLUMN_SIZE),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE)
+                    if (idx != -1) cursor.getLong(idx) else 0L
+                } else 0L
+            } ?: 0L
+        }.getOrDefault(0L)
+    }
+
     /**
-     * Checks if an automatic backup is due and runs it if enabled.
+     * Checks if an automatic backup is due and runs it if enabled and destination folder is set.
      */
     suspend fun checkAndRunAutoBackup(context: Context, prefs: Prefs) = withContext(Dispatchers.IO) {
         runCatching {
             val enabled = prefs.autoBackupEnabled.first()
             if (!enabled) return@runCatching
+
+            val folderUriStr = prefs.backupFolderUri.first()
+            if (folderUriStr.isNullOrBlank()) return@runCatching
+
+            val treeUri = Uri.parse(folderUriStr)
+            if (!hasFolderPermission(context, treeUri)) return@runCatching
 
             val freq = prefs.autoBackupFrequency.first()
             val lastTime = prefs.lastAutoBackupTimestamp.first()
@@ -345,19 +488,22 @@ object BackupManager {
             if (now - lastTime >= intervalMillis) {
                 val includeWallpaper = prefs.backupIncludeWallpaper.first()
                 val maxKeep = prefs.backupMaxKeep.first()
-                createBackup(
+                val result = createBackup(
                     context = context,
                     prefs = prefs,
+                    folderUriStr = folderUriStr,
                     type = BackupType.AUTOMATIC,
                     includeWallpaper = includeWallpaper,
                     maxKeep = maxKeep,
                 )
-                prefs.setLastAutoBackupTimestamp(now)
+                if (result.isSuccess) {
+                    prefs.setLastAutoBackupTimestamp(now)
+                }
             }
         }
     }
 
-    private fun formatFileSize(bytes: Long): String {
+    fun formatFileSize(bytes: Long): String {
         return when {
             bytes < 1024 -> "$bytes B"
             bytes < 1024 * 1024 -> String.format(Locale.US, "%.1f KB", bytes / 1024f)
