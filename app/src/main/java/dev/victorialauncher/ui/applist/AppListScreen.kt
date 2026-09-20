@@ -835,17 +835,43 @@ fun AppListScreen(
             )
         }
 
-        // Liquid Glass letter indicator for the current scrubbed letter.
+        // Bubble for the current letter, dragged out from the strip and springing back.
         if (scrubLetter != null) {
-            LiquidGlassLetterIndicator(
-                letter = scrubLetter,
-                activeSide = activeSide,
-                pullPx = pullPx,
-                scrubY = scrubY,
-                modifier = Modifier.align(
-                    if (activeSide == EdgeSide.LEFT) Alignment.TopStart else Alignment.TopEnd
-                ),
-            )
+            val bubble = 72.dp
+            val halfPx = with(density) { (bubble / 2).toPx() }
+            val insetPx = with(density) { 122.dp.toPx() }
+            Surface(
+                color = Color.Black.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(22.dp),
+                modifier = Modifier
+                    .align(if (activeSide == EdgeSide.LEFT) Alignment.TopStart else Alignment.TopEnd)
+                    .offset {
+                        val x = insetPx + pullPx()
+                        IntOffset(
+                            x = if (activeSide == EdgeSide.LEFT) x.roundToInt() else -x.roundToInt(),
+                            y = ((scrubY() ?: 0f) - halfPx).roundToInt(),
+                        )
+                    }
+                    .size(bubble),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    if (scrubLetter == SCRUBBER_STAR) {
+                        Icon(
+                            imageVector = Icons.Rounded.Star,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(38.dp),
+                        )
+                    } else {
+                        Text(
+                            scrubLetter.toString(),
+                            color = Color.White,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
         }
 
         if (searchButtonEnabled && visible) {
