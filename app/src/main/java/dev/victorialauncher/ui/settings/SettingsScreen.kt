@@ -116,6 +116,7 @@ fun SettingsScreen(
     onOpenSearchSettings: () -> Unit = {},
     isDefaultLauncher: Boolean = false,
     onOpenDefaultLauncherSettings: () -> Unit = {},
+    onOpenBackupSettings: () -> Unit = {},
     onBack: () -> Unit,
 ) {
     val surface = MaterialTheme.colorScheme.surface
@@ -446,6 +447,16 @@ fun SettingsScreen(
                         onCheckedChange = onSetFolderWindowPopup,
                     )
                   }
+                }
+            }
+
+            item {
+                Section(stringResource(R.string.settings_section_backup)) {
+                    NavigationRow(
+                        label = stringResource(R.string.settings_backup_title),
+                        detail = stringResource(R.string.settings_backup_subtitle),
+                        onClick = onOpenBackupSettings,
+                    )
                 }
             }
 

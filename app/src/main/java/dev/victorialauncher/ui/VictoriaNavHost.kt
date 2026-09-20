@@ -57,9 +57,11 @@ import dev.victorialauncher.ui.common.IconPickerScreen
 import dev.victorialauncher.ui.common.clearIconCache
 import dev.victorialauncher.ui.common.encodePackOverride
 import dev.victorialauncher.ui.common.warmIconCache
+import dev.victorialauncher.backup.BackupFrequency
 import dev.victorialauncher.ui.home.FavoriteEntry
 import dev.victorialauncher.ui.home.HomeRoute
 import dev.victorialauncher.ui.home.HomeSettings
+import dev.victorialauncher.ui.settings.BackupSettingsScreen
 import dev.victorialauncher.ui.settings.ClockStylePickerScreen
 import dev.victorialauncher.ui.settings.DynamicButtonSettingsScreen
 import dev.victorialauncher.ui.settings.FolderAppsScreen
@@ -169,6 +171,11 @@ fun VictoriaNavHost(
     val searchIncludePlayStore by app.prefs.searchIncludePlayStore.collectAsState(initial = true)
     val searchEngineName by app.prefs.searchEngine.collectAsState(initial = "GOOGLE")
     val searchAutoKeyboard by app.prefs.searchAutoKeyboard.collectAsState(initial = true)
+    val autoBackupEnabled by app.prefs.autoBackupEnabled.collectAsState(initial = false)
+    val autoBackupFrequency by app.prefs.autoBackupFrequency.collectAsState(initial = BackupFrequency.WEEKLY)
+    val backupMaxKeep by app.prefs.backupMaxKeep.collectAsState(initial = 5)
+    val backupIncludeWallpaper by app.prefs.backupIncludeWallpaper.collectAsState(initial = true)
+    val lastAutoBackupTimestamp by app.prefs.lastAutoBackupTimestamp.collectAsState(initial = 0L)
 
     val searchConfig = remember(
         searchButtonEnabled,
@@ -438,6 +445,7 @@ fun VictoriaNavHost(
                 onOpenDefaultLauncherSettings = {
                     dev.victorialauncher.service.DefaultLauncherUtil.requestSetDefaultLauncher(context)
                 },
+                onOpenBackupSettings = { navController.navigate("settings/backup") },
                 onBack = { navController.popBackStack() },
             )
         }
@@ -519,6 +527,22 @@ fun VictoriaNavHost(
                 onSelectStyle = { selected ->
                     scope.launch { app.prefs.setClockStyle(selected) }
                 },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable("settings/backup") {
+            BackupSettingsScreen(
+                prefs = app.prefs,
+                autoBackupEnabled = autoBackupEnabled,
+                autoBackupFrequency = autoBackupFrequency,
+                backupMaxKeep = backupMaxKeep,
+                backupIncludeWallpaper = backupIncludeWallpaper,
+                lastAutoBackupTimestamp = lastAutoBackupTimestamp,
+                onSetAutoBackupEnabled = { scope.launch { app.prefs.setAutoBackupEnabled(it) } },
+                onSetAutoBackupFrequency = { scope.launch { app.prefs.setAutoBackupFrequency(it) } },
+                onSetBackupMaxKeep = { scope.launch { app.prefs.setBackupMaxKeep(it) } },
+                onSetBackupIncludeWallpaper = { scope.launch { app.prefs.setBackupIncludeWallpaper(it) } },
                 onBack = { navController.popBackStack() },
             )
         }

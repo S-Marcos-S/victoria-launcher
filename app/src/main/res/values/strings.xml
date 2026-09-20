@@ -298,4 +298,45 @@
     <string name="search_empty_title">Universal Search</string>
     <string name="search_empty_body">Type to find apps, contacts, system settings, or search the web.</string>
     <string name="search_failed_open_browser">Failed to open browser</string>
+
+    <!-- Backup and Restore -->
+    <string name="settings_section_backup">Backup and Restore</string>
+    <string name="settings_backup_title">Backup and Restore</string>
+    <string name="settings_backup_subtitle">Back up preferences, layout, and wallpaper</string>
+    <string name="backup_create_card_title">Create Backup</string>
+    <string name="backup_create_card_desc">Saves all your favorites, folders, customized settings, and wallpaper.</string>
+    <string name="backup_create_now">Create backup now</string>
+    <string name="backup_creating">Creating backup…</string>
+    <string name="backup_created_success">Backup created successfully</string>
+    <string name="backup_create_failed">Failed to create backup</string>
+    <string name="backup_restore_from_file">Restore from file…</string>
+    <string name="backup_restoring">Restoring backup…</string>
+    <string name="backup_restore_success">Backup restored successfully!</string>
+    <string name="backup_restore_failed">Failed to restore backup</string>
+    <string name="backup_auto_title">Automatic backup</string>
+    <string name="backup_auto_subtitle">Periodically create backups of your configuration in the background</string>
+    <string name="backup_frequency">Backup frequency</string>
+    <string name="backup_freq_daily">Daily</string>
+    <string name="backup_freq_weekly">Weekly</string>
+    <string name="backup_freq_monthly">Monthly</string>
+    <string name="backup_max_keep">Backups to keep</string>
+    <string name="backup_max_keep_desc">Maximum number of backup files to keep (older files are deleted)</string>
+    <string name="backup_last_auto">Last auto backup: %1$s</string>
+    <string name="backup_last_auto_none">No automatic backup created yet</string>
+    <string name="backup_include_wallpaper">Include wallpaper</string>
+    <string name="backup_include_wallpaper_desc">Saves a copy of the current wallpaper in the backup file for automatic restoration</string>
+    <string name="backup_saved_backups">Saved Backups (%1$d)</string>
+    <string name="backup_no_backups">No local backups found</string>
+    <string name="backup_no_backups_desc">Create a new backup above or restore from an external file.</string>
+    <string name="backup_tag_manual">Manual</string>
+    <string name="backup_tag_auto">Auto</string>
+    <string name="backup_has_wallpaper">Wallpaper included</string>
+    <string name="backup_action_restore">Restore</string>
+    <string name="backup_action_share">Share</string>
+    <string name="backup_action_delete">Delete</string>
+    <string name="backup_confirm_restore_title">Restore this backup?</string>
+    <string name="backup_confirm_restore_msg">Your current favorites, home screen layout, and settings will be replaced by the contents of this backup.</string>
+    <string name="backup_confirm_delete_title">Delete backup?</string>
+    <string name="backup_confirm_delete_msg">Are you sure you want to permanently delete this backup file?</string>
+    <string name="backup_deleted_success">Backup deleted</string>
 </resources>

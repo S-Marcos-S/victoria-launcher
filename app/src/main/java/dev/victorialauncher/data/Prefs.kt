@@ -6,14 +6,18 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import org.json.JSONArray
 import org.json.JSONObject
 
 enum class EdgeSide { LEFT, RIGHT, BOTH }
@@ -97,6 +101,11 @@ class Prefs(private val context: Context) {
         val SEARCH_ENGINE = stringPreferencesKey("search_engine")
         val SEARCH_AUTO_KEYBOARD = booleanPreferencesKey("search_auto_keyboard")
         val HAS_PROMPTED_DEFAULT_LAUNCHER = booleanPreferencesKey("has_prompted_default_launcher")
+        val BACKUP_AUTO_ENABLED = booleanPreferencesKey("backup_auto_enabled")
+        val BACKUP_AUTO_FREQUENCY = stringPreferencesKey("backup_auto_frequency")
+        val BACKUP_MAX_KEEP = intPreferencesKey("backup_max_keep")
+        val BACKUP_INCLUDE_WALLPAPER = booleanPreferencesKey("backup_include_wallpaper")
+        val BACKUP_LAST_AUTO_TIMESTAMP = longPreferencesKey("backup_last_auto_timestamp")
     }
 
     private val data get() = context.dataStore.data
@@ -228,6 +237,13 @@ class Prefs(private val context: Context) {
     val searchEngine: Flow<String> = data.map { it[Keys.SEARCH_ENGINE] ?: "GOOGLE" }.distinctUntilChanged()
     val searchAutoKeyboard: Flow<Boolean> = data.map { it[Keys.SEARCH_AUTO_KEYBOARD] ?: true }.distinctUntilChanged()
     val hasPromptedDefaultLauncher: Flow<Boolean> = data.map { it[Keys.HAS_PROMPTED_DEFAULT_LAUNCHER] ?: false }.distinctUntilChanged()
+    val autoBackupEnabled: Flow<Boolean> = data.map { it[Keys.BACKUP_AUTO_ENABLED] ?: false }.distinctUntilChanged()
+    val autoBackupFrequency: Flow<dev.victorialauncher.backup.BackupFrequency> = data.map {
+        dev.victorialauncher.backup.BackupFrequency.fromName(it[Keys.BACKUP_AUTO_FREQUENCY])
+    }.distinctUntilChanged()
+    val backupMaxKeep: Flow<Int> = data.map { it[Keys.BACKUP_MAX_KEEP] ?: 5 }.distinctUntilChanged()
+    val backupIncludeWallpaper: Flow<Boolean> = data.map { it[Keys.BACKUP_INCLUDE_WALLPAPER] ?: true }.distinctUntilChanged()
+    val lastAutoBackupTimestamp: Flow<Long> = data.map { it[Keys.BACKUP_LAST_AUTO_TIMESTAMP] ?: 0L }.distinctUntilChanged()
 
     suspend fun setHidden(componentKey: String, hidden: Boolean) {
         context.dataStore.edit { pref ->
@@ -565,6 +581,125 @@ class Prefs(private val context: Context) {
 
     suspend fun setHasPromptedDefaultLauncher(v: Boolean) {
         context.dataStore.edit { it[Keys.HAS_PROMPTED_DEFAULT_LAUNCHER] = v }
+    }
+
+    suspend fun setAutoBackupEnabled(v: Boolean) {
+        context.dataStore.edit { it[Keys.BACKUP_AUTO_ENABLED] = v }
+    }
+
+    suspend fun setAutoBackupFrequency(v: dev.victorialauncher.backup.BackupFrequency) {
+        context.dataStore.edit { it[Keys.BACKUP_AUTO_FREQUENCY] = v.name }
+    }
+
+    suspend fun setBackupMaxKeep(v: Int) {
+        context.dataStore.edit { it[Keys.BACKUP_MAX_KEEP] = v }
+    }
+
+    suspend fun setBackupIncludeWallpaper(v: Boolean) {
+        context.dataStore.edit { it[Keys.BACKUP_INCLUDE_WALLPAPER] = v }
+    }
+
+    suspend fun setLastAutoBackupTimestamp(v: Long) {
+        context.dataStore.edit { it[Keys.BACKUP_LAST_AUTO_TIMESTAMP] = v }
+    }
+
+    suspend fun exportAllPreferencesJson(): String {
+        val prefsMap = context.dataStore.data.first().asMap()
+        val root = JSONObject()
+        val arr = JSONArray()
+
+        for ((key, value) in prefsMap) {
+            val item = JSONObject()
+            item.put("key", key.name)
+            when (value) {
+                is String -> {
+                    item.put("type", "STRING")
+                    item.put("value", value)
+                }
+                is Int -> {
+                    item.put("type", "INT")
+                    item.put("value", value)
+                }
+                is Boolean -> {
+                    item.put("type", "BOOLEAN")
+                    item.put("value", value)
+                }
+                is Float -> {
+                    item.put("type", "FLOAT")
+                    item.put("value", value.toDouble())
+                }
+                is Long -> {
+                    item.put("type", "LONG")
+                    item.put("value", value)
+                }
+                is Double -> {
+                    item.put("type", "DOUBLE")
+                    item.put("value", value)
+                }
+                is Set<*> -> {
+                    item.put("type", "STRING_SET")
+                    val setArr = JSONArray()
+                    for (s in value) {
+                        if (s is String) setArr.put(s)
+                    }
+                    item.put("value", setArr)
+                }
+            }
+            arr.put(item)
+        }
+        root.put("preferences", arr)
+        return root.toString()
+    }
+
+    suspend fun importPreferencesJson(jsonStr: String): Int {
+        val root = JSONObject(jsonStr)
+        val arr = root.optJSONArray("preferences") ?: return 0
+        var count = 0
+
+        context.dataStore.edit { prefs ->
+            for (i in 0 until arr.length()) {
+                val item = arr.getJSONObject(i)
+                val keyName = item.getString("key")
+                val type = item.getString("type")
+
+                when (type) {
+                    "STRING" -> {
+                        prefs[stringPreferencesKey(keyName)] = item.getString("value")
+                        count++
+                    }
+                    "INT" -> {
+                        prefs[intPreferencesKey(keyName)] = item.getInt("value")
+                        count++
+                    }
+                    "BOOLEAN" -> {
+                        prefs[booleanPreferencesKey(keyName)] = item.getBoolean("value")
+                        count++
+                    }
+                    "FLOAT" -> {
+                        prefs[floatPreferencesKey(keyName)] = item.getDouble("value").toFloat()
+                        count++
+                    }
+                    "LONG" -> {
+                        prefs[longPreferencesKey(keyName)] = item.getLong("value")
+                        count++
+                    }
+                    "DOUBLE" -> {
+                        prefs[doublePreferencesKey(keyName)] = item.getDouble("value")
+                        count++
+                    }
+                    "STRING_SET" -> {
+                        val setArr = item.getJSONArray("value")
+                        val set = mutableSetOf<String>()
+                        for (j in 0 until setArr.length()) {
+                            set.add(setArr.getString(j))
+                        }
+                        prefs[stringSetPreferencesKey(keyName)] = set
+                        count++
+                    }
+                }
+            }
+        }
+        return count
     }
 
     private fun jsonToMap(json: String?): Map<String, String> {

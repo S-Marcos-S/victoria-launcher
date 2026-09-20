@@ -251,4 +251,45 @@
     <string name="settings_root_unavailable">Dispositivo sem permissão root</string>
     <string name="settings_root_badge_detected">ROOT ATIVO</string>
     <string name="settings_root_badge_none">SEM ROOT</string>
+
+    <!-- Backup e Restauração -->
+    <string name="settings_section_backup">Backup e restauração</string>
+    <string name="settings_backup_title">Backup e restauração</string>
+    <string name="settings_backup_subtitle">Faça backup de preferências, layout e papel de parede</string>
+    <string name="backup_create_card_title">Criar Backup</string>
+    <string name="backup_create_card_desc">Salva todos os seus aplicativos favoritos, pastas, configurações personalizadas e papel de parede.</string>
+    <string name="backup_create_now">Criar backup agora</string>
+    <string name="backup_creating">Criando backup…</string>
+    <string name="backup_created_success">Backup criado com sucesso</string>
+    <string name="backup_create_failed">Falha ao criar backup</string>
+    <string name="backup_restore_from_file">Restaurar de arquivo…</string>
+    <string name="backup_restoring">Restaurando backup…</string>
+    <string name="backup_restore_success">Backup restaurado com sucesso!</string>
+    <string name="backup_restore_failed">Falha ao restaurar backup</string>
+    <string name="backup_auto_title">Backup automático</string>
+    <string name="backup_auto_subtitle">Cria backups periódicos das suas configurações em segundo plano</string>
+    <string name="backup_frequency">Frequência do backup</string>
+    <string name="backup_freq_daily">Diário</string>
+    <string name="backup_freq_weekly">Semanal</string>
+    <string name="backup_freq_monthly">Mensal</string>
+    <string name="backup_max_keep">Backups mantidos</string>
+    <string name="backup_max_keep_desc">Número máximo de arquivos de backup a manter (os mais antigos são removidos)</string>
+    <string name="backup_last_auto">Último backup automático: %1$s</string>
+    <string name="backup_last_auto_none">Nenhum backup automático realizado ainda</string>
+    <string name="backup_include_wallpaper">Incluir papel de parede</string>
+    <string name="backup_include_wallpaper_desc">Armazena o papel de parede atual no arquivo de backup para restauração automática</string>
+    <string name="backup_saved_backups">Backups Salvos (%1$d)</string>
+    <string name="backup_no_backups">Nenhum backup local encontrado</string>
+    <string name="backup_no_backups_desc">Crie um novo backup acima ou restaure de um arquivo externo.</string>
+    <string name="backup_tag_manual">Manual</string>
+    <string name="backup_tag_auto">Automático</string>
+    <string name="backup_has_wallpaper">Papel de parede incluso</string>
+    <string name="backup_action_restore">Restaurar</string>
+    <string name="backup_action_share">Compartilhar</string>
+    <string name="backup_action_delete">Excluir</string>
+    <string name="backup_confirm_restore_title">Restaurar este backup?</string>
+    <string name="backup_confirm_restore_msg">Seus favoritos, layout e configurações atuais serão substituídos pelo conteúdo deste backup.</string>
+    <string name="backup_confirm_delete_title">Excluir backup?</string>
+    <string name="backup_confirm_delete_msg">Tem certeza de que deseja excluir permanentemente este arquivo de backup?</string>
+    <string name="backup_deleted_success">Backup excluído</string>
 </resources>

@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
 import dev.victorialauncher.data.AppFont
 import dev.victorialauncher.data.ThemedIconStyle
 import dev.victorialauncher.service.StatusBarFader
@@ -20,7 +21,9 @@ import dev.victorialauncher.ui.VictoriaNavHost
 import dev.victorialauncher.ui.common.IconConfig
 import dev.victorialauncher.ui.common.LocalIconConfig
 import dev.victorialauncher.ui.theme.VictoriaTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** How long a pull-down keeps the status bar on screen before it fades away again. */
 private const val STATUS_BAR_PEEK_MS = 5000L
@@ -101,7 +104,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        (application as VictoriaApp).widgetHost.startListening()
+        val app = application as VictoriaApp
+        app.widgetHost.startListening()
+        lifecycleScope.launch(Dispatchers.IO) {
+            dev.victorialauncher.backup.BackupManager.checkAndRunAutoBackup(this@MainActivity, app.prefs)
+        }
     }
 
     override fun onStop() {
