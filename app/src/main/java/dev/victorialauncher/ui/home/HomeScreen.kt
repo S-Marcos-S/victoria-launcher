@@ -482,6 +482,7 @@ fun HomeScreen(
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        // Linha 1: Título "Editar layout" à esquerda e Botão "Concluído" à direita (sempre cabe em uma só linha)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -513,60 +514,61 @@ fun HomeScreen(
                                 )
                             }
 
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = colorScheme.primary,
+                                modifier = Modifier.clickable { onEditModeChange(false) },
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Done,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = colorScheme.onPrimary,
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        stringResource(R.string.action_done),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colorScheme.onPrimary,
+                                    )
+                                }
+                            }
+                        }
+
+                        // Linha 2: Botão para alinhar elementos
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
+                            border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.25f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { handleResetAlignments() },
+                        ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
-                                    border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.25f)),
-                                    modifier = Modifier.clickable { handleResetAlignments() },
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Icon(
-                                            Icons.Filled.AlignHorizontalLeft,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp),
-                                            tint = colorScheme.primary,
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            stringResource(R.string.action_align_elements),
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = colorScheme.onSurface,
-                                        )
-                                    }
-                                }
-
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = colorScheme.primary,
-                                    modifier = Modifier.clickable { onEditModeChange(false) },
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Icon(
-                                            Icons.Filled.Done,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(15.dp),
-                                            tint = colorScheme.onPrimary,
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            stringResource(R.string.action_done),
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = colorScheme.onPrimary,
-                                        )
-                                    }
-                                }
+                                Icon(
+                                    Icons.Filled.AlignHorizontalLeft,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp),
+                                    tint = colorScheme.primary,
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    stringResource(R.string.action_align_elements),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = colorScheme.onSurface,
+                                )
                             }
                         }
 
@@ -660,10 +662,48 @@ fun HomeScreen(
                             },
                         )
                 )
+            } else {
+                if (showWidgetSlot && hasWidget) {
+                    PaddingHandle(
+                        editMode = true,
+                        label = R.string.handle_widget_top,
+                        value = padOf(PaddingSlot.WIDGET_TOP),
+                        onDrag = { d -> liveSlot = PaddingSlot.WIDGET_TOP; liveValue = d },
+                        current = { padOf(PaddingSlot.WIDGET_TOP) },
+                        onCommit = { onCommitPadding(PaddingSlot.WIDGET_TOP, it); liveSlot = null },
+                    )
+                    WidgetSlot(
+                        widgetIds = effectiveWidgetIds,
+                        heightDp = widgetHeightDp,
+                        hapticsEnabled = hapticsEnabled,
+                        onEditLayout = { onEditModeChange(true) },
+                        actions = widgetActions,
+                        editMode = true,
+                        contentColor = contentColor,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = contentStart, end = contentEnd),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    HeightHandle(
+                        label = R.string.handle_widget_height,
+                        heightDp = widgetHeightDp,
+                        range = 80..900,
+                        onResize = { widgetActions.onResize(it) },
+                    )
+                    PaddingHandle(
+                        editMode = true,
+                        label = R.string.handle_widget_bottom,
+                        value = padOf(PaddingSlot.WIDGET_BOTTOM),
+                        onDrag = { d -> liveSlot = PaddingSlot.WIDGET_BOTTOM; liveValue = d },
+                        current = { padOf(PaddingSlot.WIDGET_BOTTOM) },
+                        onCommit = { onCommitPadding(PaddingSlot.WIDGET_BOTTOM, it); liveSlot = null },
+                    )
+                }
             }
 
             // Now Playing widget block: rendered below clock / widget and above favorites
-            if (nowPlayingHasContent || (editMode && nowPlayingEnabled)) {
+            if (nowPlayingHasContent || editMode) {
                 NowPlayingBlock(
                     editMode = editMode,
                     heightDp = nowPlayingHeightDp,
@@ -1456,6 +1496,7 @@ private fun NowPlayingBlock(
             labelSizeSp = labelSizeSp,
             contentColor = contentColor,
             alignRight = alignRight,
+            editMode = editMode,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = contentStart, end = contentEnd)
@@ -1778,6 +1819,8 @@ private fun HeightHandle(
 ) {
     val density = LocalDensity.current
     val colorScheme = MaterialTheme.colorScheme
+    var currentHeight by remember(heightDp) { mutableFloatStateOf(heightDp.toFloat()) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1790,13 +1833,17 @@ private fun HeightHandle(
                 orientation = Orientation.Vertical,
                 state = rememberDraggableState { delta ->
                     val deltaDp = with(density) { delta.toDp().value }
-                    onResize((heightDp + deltaDp).roundToInt().coerceIn(range.first, range.last))
+                    currentHeight = (currentHeight + deltaDp).coerceIn(range.first.toFloat(), range.last.toFloat())
+                    onResize(currentHeight.roundToInt())
+                },
+                onDragStopped = {
+                    onResize(currentHeight.roundToInt())
                 },
             ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            stringResource(R.string.handle_vertical, stringResource(label), heightDp),
+            stringResource(R.string.handle_vertical, stringResource(label), currentHeight.roundToInt()),
             color = colorScheme.onSurface,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,

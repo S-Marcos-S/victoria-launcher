@@ -146,7 +146,7 @@ fun VictoriaNavHost(
     val widgetIds by app.prefs.widgetIds.collectAsState(initial = emptyList())
     val widgetPosition by app.prefs.widgetPosition.collectAsState(initial = 0)
     val widgetHeightDp by app.prefs.widgetHeightDp.collectAsState(initial = 180)
-    val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = false)
+    val nowPlayingEnabled by app.prefs.nowPlayingEnabled.collectAsState(initial = true)
     val showAppNotifications by app.prefs.showAppNotifications.collectAsState(initial = true)
     val folderWindowPopup by app.prefs.folderWindowPopup.collectAsState(initial = true)
     val clockStyle by app.prefs.clockStyle.collectAsState(initial = ClockStyle.CLASSIC)

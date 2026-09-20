@@ -191,7 +191,7 @@ class Prefs(private val context: Context) {
             .getOrDefault(ThemedIconStyle.MATERIAL_YOU)
     }.distinctUntilChanged()
 
-    val nowPlayingEnabled: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_ENABLED] ?: false }.distinctUntilChanged()
+    val nowPlayingEnabled: Flow<Boolean> = data.map { it[Keys.NOW_PLAYING_ENABLED] ?: true }.distinctUntilChanged()
     val showAppNotifications: Flow<Boolean> = data.map { it[Keys.SHOW_APP_NOTIFICATIONS] ?: true }.distinctUntilChanged()
     val folderWindowPopup: Flow<Boolean> = data.map { it[Keys.FOLDER_WINDOW_POPUP] ?: true }.distinctUntilChanged()
     val clockStyle: Flow<ClockStyle> = data.map {

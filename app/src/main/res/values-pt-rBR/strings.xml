@@ -81,9 +81,9 @@
     <string name="handle_widget_height">Altura do widget</string>
     <string name="handle_favorites_top">Topo dos favoritos</string>
     <string name="handle_favorites_bottom">Base dos favoritos</string>
-    <string name="handle_now_playing_top">Topo do Em Reprodução</string>
-    <string name="handle_now_playing_bottom">Base do Em Reprodução</string>
-    <string name="handle_now_playing_height">Altura do Em Reprodução</string>
+    <string name="handle_now_playing_top">Topo do player de música</string>
+    <string name="handle_now_playing_bottom">Base do player de música</string>
+    <string name="handle_now_playing_height">Altura do player de música</string>
 
     <!-- Lista de aplicativos -->
     <string name="applist_add_favorite">Adicionar aos favoritos</string>

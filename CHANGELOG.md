@@ -1,3 +1,19 @@
+### 🚀 Novidades e Melhorias da Versão 0.58.1
+
+- **Correção e Redesign da Tela de Editar Layout (`HomeScreen`):**
+  - **Respeito aos Insets da Barra de Status:** Adicionado recuo superior automático baseado em `WindowInsets.statusBars`, evitando que os botões e textos do modo de edição fiquem sob a barra de notificações, notch ou recorte da câmera.
+  - **Eliminação do Espaçamento Rígido Lateral:** Removido o padding desnecessário de 72dp no canto direito que espremia as informações no topo.
+  - **Alças de Ajuste e Espaçamento com Alto Contraste:** As alças de arrasto de padding lateral, vertical e de altura de widgets agora utilizam o tema do sistema (`surfaceContainer`, `onSurface` e `dynamicBorderColor`).
+  - **Espaçamento Inferior Seguro:** Adicionada folga na base da lista para que as últimas alças não sejam encobertas pela barra de navegação.
+
+- **Solicitação de Inicializador Padrão na Primeira Abertura (`SetDefaultLauncherDialog`):**
+  - **Detecção Automática de Primeiro Acesso:** Ao abrir o Victoria Launcher pela primeira vez, a aplicação detecta se já é o inicializador padrão do sistema antes de exibir qualquer diálogo.
+  - **Design Translúcido em Vidro Fosco (Frosted Glass & Blur):** Diálogo flutuante moderno com suporte a desfoque de fundo nativo (`FLAG_BLUR_BEHIND` e `blurBehindRadius = 32`), cantos arredondados de 24dp e contorno suave tingido pelo tema dinâmico Material You.
+  - **Integração com Android Q+ (RoleManager) e Legados:** Acionamento do seletor nativo do sistema via `RoleManager.ROLE_HOME` em aparelhos com Android 10+, com fallback para configurações de apps padrão em versões anteriores.
+
+- **Opção de Definir Inicializador Padrão nas Configurações (`SettingsScreen`):**
+  - Nova opção na seção *Comportamento* exibindo o status em tempo real e permitindo alterar a qualquer momento.
+
 ### 🚀 Novidades e Melhorias da Versão 0.58.0
 
 - **Novo Botão Flutuante de Pesquisa na Lista de Aplicativos (`AppListScreen`):**

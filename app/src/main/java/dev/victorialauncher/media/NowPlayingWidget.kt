@@ -109,6 +109,7 @@ fun NowPlayingWidget(
     labelSizeSp: Int = 14,
     contentColor: Color = Color.White,
     alignRight: Boolean = false,
+    editMode: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -127,7 +128,7 @@ fun NowPlayingWidget(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    if (!listenerEnabled) {
+    if (!listenerEnabled && !editMode) {
         Surface(
             modifier = modifier
                 .fillMaxWidth()
@@ -190,7 +191,7 @@ fun NowPlayingWidget(
     val nowPlaying by NowPlayingBus.state.collectAsState()
     val current = nowPlaying
 
-    val isEditModePlaceholder = current == null
+    val isEditModePlaceholder = current == null || (!listenerEnabled && editMode)
 
     val scope = rememberCoroutineScope()
     val dismissX = remember(current?.controller?.sessionToken) { Animatable(0f) }
