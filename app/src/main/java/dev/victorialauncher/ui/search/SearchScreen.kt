@@ -271,6 +271,14 @@ fun SearchScreen(
             }
 
             // Filter Category Chips
+            val categories = listOf(
+                SearchCategory.ALL to stringResource(R.string.search_category_all),
+                SearchCategory.APPS to stringResource(R.string.search_category_apps),
+                SearchCategory.CONTACTS to stringResource(R.string.search_category_contacts),
+                SearchCategory.SETTINGS to stringResource(R.string.search_category_settings),
+                SearchCategory.WEB to stringResource(R.string.search_category_web),
+            )
+
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -278,14 +286,6 @@ fun SearchScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val categories = listOf(
-                    SearchCategory.ALL to stringResource(R.string.search_category_all),
-                    SearchCategory.APPS to stringResource(R.string.search_category_apps),
-                    SearchCategory.CONTACTS to stringResource(R.string.search_category_contacts),
-                    SearchCategory.SETTINGS to stringResource(R.string.search_category_settings),
-                    SearchCategory.WEB to stringResource(R.string.search_category_web),
-                )
-
                 items(categories) { (category, label) ->
                     val isSelected = selectedCategory == category
                     Surface(

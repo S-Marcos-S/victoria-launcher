@@ -307,7 +307,7 @@ object SearchRepository {
             titlePt = "Papel de Parede",
             titleEn = "Wallpaper",
             keywords = listOf("papel de parede", "fundo", "wallpaper", "plano de fundo"),
-            action = Settings.ACTION_SET_WALLPAPER,
+            action = Intent.ACTION_SET_WALLPAPER,
             icon = Icons.Filled.Wallpaper,
         ),
         RawSetting(
@@ -421,14 +421,18 @@ object SearchRepository {
      */
     private object SimpleMathParser {
         fun eval(str: String): Double {
-            var pos = -1
-            var ch = -1
+            return Parser(str).parse()
+        }
 
-            fun nextChar() {
+        private class Parser(private val str: String) {
+            private var pos = -1
+            private var ch = -1
+
+            private fun nextChar() {
                 ch = if (++pos < str.length) str[pos].code else -1
             }
 
-            fun eat(charToEat: Int): Boolean {
+            private fun eat(charToEat: Int): Boolean {
                 while (ch == ' '.code) nextChar()
                 if (ch == charToEat) {
                     nextChar()
@@ -437,7 +441,13 @@ object SearchRepository {
                 return false
             }
 
-            fun parseExpression(): Double {
+            fun parse(): Double {
+                nextChar()
+                val result = parseExpression()
+                return if (pos < str.length) Double.NaN else result
+            }
+
+            private fun parseExpression(): Double {
                 var x = parseTerm()
                 while (true) {
                     when {
@@ -448,7 +458,7 @@ object SearchRepository {
                 }
             }
 
-            fun parseTerm(): Double {
+            private fun parseTerm(): Double {
                 var x = parseFactor()
                 while (true) {
                     when {
@@ -468,7 +478,7 @@ object SearchRepository {
                 }
             }
 
-            fun parseFactor(): Double {
+            private fun parseFactor(): Double {
                 if (eat('+'.code)) return parseFactor()
                 if (eat('-'.code)) return -parseFactor()
 
@@ -486,10 +496,6 @@ object SearchRepository {
 
                 return x
             }
-
-            nextChar()
-            val result = parseExpression()
-            return if (pos < str.length) Double.NaN else result
         }
     }
 }
