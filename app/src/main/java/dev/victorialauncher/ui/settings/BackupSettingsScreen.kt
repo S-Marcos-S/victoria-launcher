@@ -281,9 +281,8 @@ fun BackupSettingsScreen(
                             ) {
                                 Row(
                                     modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
-                                    horizontalArrangement = Arrangement.Center,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
                                     Icon(
                                         Icons.Filled.FolderOpen,
