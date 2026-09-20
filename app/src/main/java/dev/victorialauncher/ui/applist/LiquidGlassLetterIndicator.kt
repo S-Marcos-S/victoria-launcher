@@ -5,9 +5,11 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Star
@@ -38,25 +40,23 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.victorialauncher.data.EdgeSide
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Mostrador de letra em "Liquid Glass" fiel à linguagem de design da Apple (iOS 26 / visionOS).
+ * Mostrador de letra em "Liquid Glass" fotorrealista e volumétrico inspirado na estética de vidro líquido da Apple.
  *
- * Princípios ópticos e de engenharia visual implementados:
- * 1. Geometria de gota líquida com curvatura contínua (squircle de 25dp) e física de tensão superficial.
- * 2. Substrato de vidro cristalino translúcido com dispersão volumétrica e gradiente de incidência luminoso.
- * 3. Reflexo cáustico de cúpula convexa esférica (lensing dome glare) que confere volume tátil tridimensional.
- * 4. Dispersão cromática espectral física (Snell's Law / Cauchy):
- *    - Fringes de refração suaves e fotorrealistas posicionadas rigorosamente nos arcos de maior curvatura
- *      (arco superior-esquerdo para comprimentos de onda curtos ciano/azul-gelo a 225°;
- *       arco inferior-direito para comprimentos de onda longos pêssego/âmbar a 45°),
- *      sem coloração artificial berrante ou duplicidade de texto.
- * 5. Menisco interno de espessura de vidro (Inner Meniscus Bevel) reproduzindo a reflexão interna de parede.
- * 6. Chanfrado especular de borda externa nítida (Outer Specular Rim / Fresnel Highlight) com luz de 135°.
- * 7. Tipografia suspensa de alta legibilidade (branco puro com sombra óptica de profundidade),
- *    dando a percepção óptica exata de visualização através de uma lente líquida convexa.
- * 8. Resposta micro-física elástica (spring physics) a cada transição de letra do alfabeto.
+ * Arquitetura óptica de 8 camadas físicas:
+ * 1. Substrato mineral de safira/cristal denso com alta transmitância luminosa, conferindo presença física contra qualquer papel de parede.
+ * 2. Cúpula cáustica de brilho superior (*Curved Dome Glare / Crescent Specular*): reflexo esférico côncavo/convexo no hemisfério superior que confere volume tátil 3D imediato à gota.
+ * 3. Luz de rebote inferior (*Bottom Bounce Reflection*): reflexo interno na face curva inferior do cristal.
+ * 4. Dispersão cromática espectral fotorrealista (Lei de Snell / Cauchy):
+ *    - Arco incidente superior-esquerdo a 225°: refração ciano/azul-elétrico/violeta;
+ *    - Arco de saída inferior-direito a 45°: refração coral/âmbar/dourado.
+ * 5. Menisco interno de espessura de vidro (*Inner Meniscus Bevel*): refração da parede interna simulando espessura de 3mm.
+ * 6. Chanfrado especular externo nítido (*Fresnel Glare Rim*): realce puro com incidência a 135°.
+ * 7. Tipografia suspensa e ampliada por lente líquida: halo cáustico de luz traseiro, sombra física de suspensão e caractere cristalino em alto relevo.
+ * 8. Dinâmica de gota líquida (*Liquid Squish & Pop*): deformação elástica independente em X e Y simulando tensão superficial.
  */
 @Composable
 fun LiquidGlassLetterIndicator(
@@ -68,21 +68,34 @@ fun LiquidGlassLetterIndicator(
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
-    val bubbleSize = 74.dp
+    val bubbleSize = 78.dp
     val halfPx = with(density) { (bubbleSize / 2).toPx() }
     val insetPx = with(density) { 120.dp.toPx() }
 
-    // Micro-interação de tensão superficial líquida com resposta de mola elástica (spring physics)
-    val springScale = remember { Animatable(1f) }
+    // Dinâmica de tensão superficial líquida: ao trocar de letra, a gota se comprime e estica organicamente
+    val springScaleX = remember { Animatable(1f) }
+    val springScaleY = remember { Animatable(1f) }
     LaunchedEffect(letter) {
-        springScale.snapTo(0.91f)
-        springScale.animateTo(
-            targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium,
-            ),
-        )
+        springScaleX.snapTo(0.90f)
+        springScaleY.snapTo(1.08f)
+        launch {
+            springScaleX.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+            )
+        }
+        launch {
+            springScaleY.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+            )
+        }
     }
 
     Box(
@@ -96,166 +109,234 @@ fun LiquidGlassLetterIndicator(
             }
             .size(bubbleSize)
             .graphicsLayer {
-                scaleX = springScale.value
-                scaleY = springScale.value
+                scaleX = springScaleX.value
+                scaleY = springScaleY.value
             }
-            // Sombra física de elevação e suspensão óptica no espaço 3D
+            // Sombra física profunda de suspensão 3D sobre o plano de fundo
             .shadow(
-                elevation = 20.dp,
-                shape = RoundedCornerShape(25.dp),
-                ambientColor = Color(0x40000000),
-                spotColor = Color(0x60000000),
+                elevation = 24.dp,
+                shape = RoundedCornerShape(26.dp),
+                ambientColor = Color(0x60000000),
+                spotColor = Color(0x80000000),
             ),
         contentAlignment = Alignment.Center,
     ) {
-        // Camadas físicas do Vidro Líquido: Óptica, Refração, Menisco e Especularidade
+        // Pipeline de Renderização Óptica de Vidro Líquido
         Canvas(modifier = Modifier.size(bubbleSize)) {
             val w = size.width
             val h = size.height
-            val cornerRadius = 25.dp.toPx()
+            val cornerRadius = 26.dp.toPx()
             val outerPath = Path().apply {
                 addRoundRect(RoundRect(0f, 0f, w, h, CornerRadius(cornerRadius, cornerRadius)))
             }
 
-            // 1. Substrato de vidro cristalino translúcido (alta transparência luminosa)
-            val crystalSubstrateBrush = Brush.linearGradient(
-                0.00f to Color.White.copy(alpha = 0.28f),
-                0.32f to Color.White.copy(alpha = 0.12f),
-                0.68f to Color(0xFFDCE5F0).copy(alpha = 0.08f),
-                1.00f to Color(0xFF0F172A).copy(alpha = 0.20f),
+            // 1. Substrato Mineral Translúcido Escuro (Contraste e presença vítrea real)
+            val substrateBaseBrush = Brush.linearGradient(
+                0.00f to Color(0x551E293B), // Slate cristalino
+                0.50f to Color(0x350F172A),
+                1.00f to Color(0x45020617),
                 start = Offset(0f, 0f),
                 end = Offset(w, h),
             )
             drawRoundRect(
-                brush = crystalSubstrateBrush,
+                brush = substrateBaseBrush,
+                cornerRadius = CornerRadius(cornerRadius, cornerRadius),
+            )
+
+            // 2. Translucidez Leitosa / Brilho de Volume Vítreo (Luminous Glass Frost)
+            val frostBrush = Brush.radialGradient(
+                0.00f to Color.White.copy(alpha = 0.28f),
+                0.55f to Color.White.copy(alpha = 0.12f),
+                1.00f to Color.White.copy(alpha = 0.04f),
+                center = Offset(w * 0.5f, h * 0.40f),
+                radius = w * 0.70f,
+            )
+            drawRoundRect(
+                brush = frostBrush,
                 cornerRadius = CornerRadius(cornerRadius, cornerRadius),
             )
 
             clipPath(outerPath) {
-                // 2. Reflexo Cáustico de Cúpula Convexa Esférica (Lensing Dome Glare)
-                // Cria a percepção volumétrica de gota de vidro líquido 3D com luz incidente superior
-                val causticDomeBrush = Brush.radialGradient(
-                    0.00f to Color.White.copy(alpha = 0.42f),
-                    0.45f to Color.White.copy(alpha = 0.12f),
+                // 3. Cúpula Convexa Especular Superior (Crescent Dome Glare da Lente Líquida)
+                // O reflexo em meia-lua típico das superfícies líquidas e lentes convexas da Apple
+                val topDomeGlare = Brush.verticalGradient(
+                    0.00f to Color.White.copy(alpha = 0.70f),
+                    0.30f to Color.White.copy(alpha = 0.25f),
+                    0.75f to Color.White.copy(alpha = 0.04f),
                     1.00f to Color.Transparent,
-                    center = Offset(w * 0.44f, h * 0.22f),
-                    radius = w * 0.52f,
+                    startY = 0f,
+                    endY = h * 0.55f,
                 )
-                drawRoundRect(
-                    brush = causticDomeBrush,
-                    cornerRadius = CornerRadius(cornerRadius, cornerRadius),
+                drawOval(
+                    brush = topDomeGlare,
+                    topLeft = Offset(-w * 0.15f, -h * 0.10f),
+                    size = Size(w * 1.30f, h * 0.65f),
                 )
 
-                // 3. Dispersão Cromática Espectral Física (Aberração Óptica nos Bordos Refrativos)
-                // No vidro líquido real, a luz branca que refrata nos arcos de alta curvatura sofre dispersão:
-                // - Arco superior-esquerdo (quadrante 3, centro em 225° / normal 0.625): azul-gelo/ciano
-                val incidentDispersionBrush = Brush.sweepGradient(
+                // 4. Luz de Rebote Inferior (Bottom Bounce Glare na curvatura de saída)
+                val bottomBounceGlare = Brush.verticalGradient(
                     0.00f to Color.Transparent,
-                    0.46f to Color.Transparent,
-                    0.54f to Color(0xFF80D8FF).copy(alpha = 0.38f), // Ice blue
-                    0.625f to Color(0xFF00E5FF).copy(alpha = 0.42f), // Cyan crest
-                    0.71f to Color(0xFFB388FF).copy(alpha = 0.22f), // Soft violet
-                    0.79f to Color.Transparent,
+                    0.45f to Color.White.copy(alpha = 0.06f),
+                    1.00f to Color.White.copy(alpha = 0.40f),
+                    startY = h * 0.50f,
+                    endY = h,
+                )
+                drawOval(
+                    brush = bottomBounceGlare,
+                    topLeft = Offset(w * 0.05f, h * 0.58f),
+                    size = Size(w * 0.90f, h * 0.45f),
+                )
+
+                // 5. Dispersão Cromática Espectral Física (Lei de Snell nos arcos de refração)
+                // Arco incidente (superior-esquerdo a 225°): comprimentos de onda curtos (ciano elétrico, azul puro e violeta)
+                val incidentDispersion = Brush.sweepGradient(
+                    0.00f to Color.Transparent,
+                    0.45f to Color.Transparent,
+                    0.53f to Color(0xFF00E5FF).copy(alpha = 0.75f), // Cyan elétrico
+                    0.625f to Color(0xFF0091FF).copy(alpha = 0.80f), // Azul safira
+                    0.71f to Color(0xFF7C4DFF).copy(alpha = 0.55f), // Violeta prismático
+                    0.80f to Color.Transparent,
                     1.00f to Color.Transparent,
                     center = Offset(w / 2f, h / 2f),
                 )
                 drawRoundRect(
-                    brush = incidentDispersionBrush,
+                    brush = incidentDispersion,
                     cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-                    style = Stroke(width = 2.4.dp.toPx()),
+                    style = Stroke(width = 3.2.dp.toPx()),
                 )
 
-                // - Arco inferior-direito (quadrante 1, centro em 45° / normal 0.125): pêssego/âmbar
-                val exitDispersionBrush = Brush.sweepGradient(
+                // Arco de saída (inferior-direito a 45°): comprimentos de onda longos (coral, âmbar dourado e amarelo solar)
+                val exitDispersion = Brush.sweepGradient(
                     0.00f to Color.Transparent,
-                    0.05f to Color(0xFFFFAB91).copy(alpha = 0.22f), // Coral soft
-                    0.125f to Color(0xFFFFB74D).copy(alpha = 0.32f), // Warm amber
-                    0.20f to Color(0xFFFFE082).copy(alpha = 0.18f), // Pale gold
-                    0.26f to Color.Transparent,
+                    0.04f to Color(0xFFFF5252).copy(alpha = 0.55f), // Coral avermelhado
+                    0.125f to Color(0xFFFF9100).copy(alpha = 0.75f), // Âmbar puro
+                    0.21f to Color(0xFFFFD740).copy(alpha = 0.60f), // Amarelo dourado
+                    0.28f to Color.Transparent,
                     1.00f to Color.Transparent,
                     center = Offset(w / 2f, h / 2f),
                 )
                 drawRoundRect(
-                    brush = exitDispersionBrush,
+                    brush = exitDispersion,
                     cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-                    style = Stroke(width = 2.4.dp.toPx()),
+                    style = Stroke(width = 3.2.dp.toPx()),
                 )
 
-                // 4. Menisco Interno de Espessura do Vidro (Inner Meniscus Bevel)
-                // Simula a parede física e a reflexão da face interna da lente líquida
-                val innerInset = 2.2.dp.toPx()
+                // 6. Menisco Interno de Espessura do Vidro (Inner Meniscus Bevel)
+                // Simula o bisel interno e a refração da parede espessa do cristal
+                val innerInset = 2.5.dp.toPx()
                 val innerCorner = (cornerRadius - innerInset).coerceAtLeast(0f)
-                val innerMeniscusBrush = Brush.linearGradient(
-                    0.00f to Color.White.copy(alpha = 0.55f),
-                    0.40f to Color.Transparent,
-                    0.75f to Color.Transparent,
-                    1.00f to Color.White.copy(alpha = 0.20f),
+                val innerMeniscus = Brush.linearGradient(
+                    0.00f to Color.White.copy(alpha = 0.80f),
+                    0.30f to Color.White.copy(alpha = 0.20f),
+                    0.65f to Color.Transparent,
+                    1.00f to Color.White.copy(alpha = 0.40f),
                     start = Offset(0f, 0f),
                     end = Offset(w, h),
                 )
                 drawRoundRect(
-                    brush = innerMeniscusBrush,
+                    brush = innerMeniscus,
                     topLeft = Offset(innerInset, innerInset),
                     size = Size(w - innerInset * 2f, h - innerInset * 2f),
                     cornerRadius = CornerRadius(innerCorner, innerCorner),
-                    style = Stroke(width = 1.2.dp.toPx()),
+                    style = Stroke(width = 1.4.dp.toPx()),
                 )
             }
 
-            // 5. Chanfrado Especular Externo Nítido (Outer Specular Rim / Fresnel Glare)
-            // Traçado milimétrico de luz no perímetro polido do cristal com foco a 135°
-            val outerSpecularBrush = Brush.linearGradient(
-                0.00f to Color.White.copy(alpha = 0.95f),
-                0.28f to Color.White.copy(alpha = 0.35f),
-                0.52f to Color.White.copy(alpha = 0.10f),
-                0.80f to Color.White.copy(alpha = 0.30f),
-                1.00f to Color.White.copy(alpha = 0.60f),
+            // 7. Chanfrado Especular Externo Nítido (Outer Specular Rim / Fresnel Highlight)
+            // Traço polido de alta reflexão ao redor do perímetro com foco a 135°
+            val outerSpecular = Brush.linearGradient(
+                0.00f to Color.White.copy(alpha = 0.98f),
+                0.28f to Color.White.copy(alpha = 0.45f),
+                0.50f to Color.White.copy(alpha = 0.15f),
+                0.80f to Color.White.copy(alpha = 0.40f),
+                1.00f to Color.White.copy(alpha = 0.85f),
                 start = Offset(0f, 0f),
                 end = Offset(w, h),
             )
             drawRoundRect(
-                brush = outerSpecularBrush,
+                brush = outerSpecular,
                 cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-                style = Stroke(width = 1.5.dp.toPx()),
+                style = Stroke(width = 1.6.dp.toPx()),
             )
         }
 
-        // Camada Tipográfica Suspensa: Letra ou Ícone Nítido com Profundidade Óptica
+        // 8. Tipografia Suspensa e Ampliada por Lente Líquida
         if (letter == SCRUBBER_STAR) {
             Box(contentAlignment = Alignment.Center) {
-                // Sombra de profundidade óptica para suspensão no meio vítreo
+                // Halo cáustico de retroiluminação óptica através da lente
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.35f),
+                                    Color(0xFF80D8FF).copy(alpha = 0.15f),
+                                    Color.Transparent,
+                                ),
+                            ),
+                            shape = CircleShape,
+                        ),
+                )
+                // Sombra física projetada para criar percepção de suspensão no interior da gota
                 Icon(
                     imageVector = Icons.Rounded.Star,
                     contentDescription = null,
-                    tint = Color(0x60000000),
+                    tint = Color(0x99000000),
                     modifier = Modifier
-                        .size(38.dp)
-                        .offset(y = 3.dp),
+                        .size(40.dp)
+                        .offset(y = 3.5.dp),
                 )
-                // Ícone principal límpido e cristalino
+                // Ícone frontal puro com relevo de cristal
                 Icon(
                     imageVector = Icons.Rounded.Star,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(38.dp),
+                    modifier = Modifier.size(40.dp),
                 )
             }
         } else {
-            // Tipografia pura de altíssima legibilidade suspensa dentro da lente líquida
-            Text(
-                text = letter.toString(),
-                color = Color.White,
-                fontSize = 35.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = fontFamily,
-                style = TextStyle(
-                    shadow = Shadow(
-                        color = Color(0x75000000),
-                        offset = Offset(0f, with(density) { 3.dp.toPx() }),
-                        blurRadius = with(density) { 6.dp.toPx() },
+            Box(contentAlignment = Alignment.Center) {
+                // Halo cáustico de retroiluminação óptica através da lente
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.35f),
+                                    Color(0xFF80D8FF).copy(alpha = 0.15f),
+                                    Color.Transparent,
+                                ),
+                            ),
+                            shape = CircleShape,
+                        ),
+                )
+                // Sombra física de profundidade óptica interna
+                Text(
+                    text = letter.toString(),
+                    color = Color(0x99000000),
+                    fontSize = 38.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = fontFamily,
+                    modifier = Modifier.offset(y = 3.5.dp),
+                )
+                // Caractere cristalino em alto relevo com brilho superior
+                Text(
+                    text = letter.toString(),
+                    color = Color.White,
+                    fontSize = 38.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = fontFamily,
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = Color.White.copy(alpha = 0.60f),
+                            offset = Offset(0f, -1f),
+                            blurRadius = 3f,
+                        ),
                     ),
-                ),
-            )
+                )
+            }
         }
     }
 }
