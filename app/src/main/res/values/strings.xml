@@ -216,6 +216,8 @@
     <string name="widget_count">%1$d widgets</string>
     <string name="widget_count_single">1 widget</string>
     <string name="widget_no_matches">No widgets match “%1$s”.</string>
+    <string name="widget_unavailable">Widget unavailable</string>
+    <string name="widget_tap_to_remove">Tap or hold to remove</string>
 
     <!-- Now Playing -->
     <string name="now_playing_enable_access">Enable Now Playing access</string>

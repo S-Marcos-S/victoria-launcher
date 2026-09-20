@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.home
 
+import android.appwidget.AppWidgetManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -281,13 +282,32 @@ fun HomeScreen(
         ).show()
     }
 
+    val appWidgetManager = remember { AppWidgetManager.getInstance(context) }
     val effectiveWidgetIds = remember(widgetIds, widgetId) {
-        if (widgetIds.isNotEmpty()) widgetIds.filter { it > 0 }
+        val raw = if (widgetIds.isNotEmpty()) widgetIds.filter { it > 0 }
         else if (widgetId > 0) listOf(widgetId)
         else emptyList()
+        raw.filter { id ->
+            runCatching { appWidgetManager.getAppWidgetInfo(id) != null }.getOrDefault(false)
+        }
     }
     val hasWidget = effectiveWidgetIds.isNotEmpty()
     val showWidgetSlot = hasWidget
+
+    LaunchedEffect(widgetIds, widgetId) {
+        val raw = if (widgetIds.isNotEmpty()) widgetIds.filter { it > 0 }
+        else if (widgetId > 0) listOf(widgetId)
+        else emptyList()
+        val hasInvalid = raw.any { id ->
+            runCatching { appWidgetManager.getAppWidgetInfo(id) == null }.getOrDefault(true)
+        }
+        if (hasInvalid) {
+            val app = context.applicationContext as dev.victorialauncher.VictoriaApp
+            app.prefs.pruneInvalidWidgetIds { id ->
+                runCatching { appWidgetManager.getAppWidgetInfo(id) != null }.getOrDefault(false)
+            }
+        }
+    }
 
     var dragOrder by remember { mutableStateOf<List<HomeItem>?>(null) }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }

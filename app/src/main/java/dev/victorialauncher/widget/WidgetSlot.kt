@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -118,7 +119,11 @@ fun WidgetSlot(
     val density = LocalDensity.current
     val viewConfig = LocalViewConfiguration.current
 
-    val validWidgetIds = remember(widgetIds) { widgetIds.filter { it > 0 } }
+    val validWidgetIds = remember(widgetIds) {
+        widgetIds.filter { id ->
+            id > 0 && runCatching { appWidgetManager.getAppWidgetInfo(id) != null }.getOrDefault(false)
+        }
+    }
     if (validWidgetIds.isEmpty()) return
 
     var menuExpanded by remember { mutableStateOf(false) }
@@ -537,6 +542,58 @@ private fun SingleWidgetView(
                     }
                 },
             )
+        } else {
+            val localView = LocalView.current
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = 0.08f))
+                    .border(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                    .combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            HapticUtil.tick(localView, hapticsEnabled)
+                            onOpenMenu(widgetId, DpOffset.Zero)
+                        },
+                        onLongClick = {
+                            HapticUtil.tick(localView, hapticsEnabled)
+                            onOpenMenu(widgetId, DpOffset.Zero)
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(16.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.widget_unavailable),
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.widget_tap_to_remove),
+                        color = Color.White.copy(alpha = 0.55f),
+                        fontSize = 11.sp,
+                    )
+                }
+            }
         }
     }
 }
@@ -639,8 +696,14 @@ private fun WidgetContextMenu(
     onEditLayout: () -> Unit,
     actions: WidgetSlotActions,
 ) {
+    val context = LocalContext.current
+    val appWidgetManager = remember { AppWidgetManager.getInstance(context) }
+    val info = remember(activeWidgetId) {
+        if (activeWidgetId > 0) runCatching { appWidgetManager.getAppWidgetInfo(activeWidgetId) }.getOrNull() else null
+    }
+
     DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest, offset = offset) {
-        if (activeWidgetId > 0) {
+        if (activeWidgetId > 0 && info != null) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.action_resize)) },
                 leadingIcon = { Icon(Icons.Filled.OpenInFull, contentDescription = null) },
@@ -665,14 +728,16 @@ private fun WidgetContextMenu(
                     onEditLayout()
                 },
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.widget_change_settings)) },
-                leadingIcon = { Icon(Icons.Filled.Tune, contentDescription = null) },
-                onClick = {
-                    onDismissRequest()
-                    actions.onWidgetSettings(activeWidgetId)
-                },
-            )
+            if (info.configure != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.widget_change_settings)) },
+                    leadingIcon = { Icon(Icons.Filled.Tune, contentDescription = null) },
+                    onClick = {
+                        onDismissRequest()
+                        actions.onWidgetSettings(activeWidgetId)
+                    },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.widget_add_custom)) },
                 leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
@@ -687,6 +752,31 @@ private fun WidgetContextMenu(
                 onClick = {
                     onDismissRequest()
                     actions.onRemoveWidget(activeWidgetId)
+                },
+            )
+        } else if (activeWidgetId > 0) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_remove)) },
+                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                onClick = {
+                    onDismissRequest()
+                    actions.onRemoveWidget(activeWidgetId)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.widget_add_custom)) },
+                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                onClick = {
+                    onDismissRequest()
+                    actions.onAddWidget()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_edit_layout)) },
+                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                onClick = {
+                    onDismissRequest()
+                    onEditLayout()
                 },
             )
         } else {

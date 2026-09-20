@@ -288,7 +288,7 @@ fun VictoriaNavHost(
             onRemoveWidget = { targetId ->
                 val idToRemove = if (targetId > 0) targetId else (widgetIds.firstOrNull() ?: widgetId)
                 scope.launch {
-                    if (idToRemove > 0) app.widgetHost.deleteAppWidgetId(idToRemove)
+                    if (idToRemove > 0) runCatching { app.widgetHost.deleteAppWidgetId(idToRemove) }
                     app.prefs.removeWidgetId(idToRemove)
                 }
             },

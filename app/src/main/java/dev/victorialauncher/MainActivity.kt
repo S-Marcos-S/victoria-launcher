@@ -107,6 +107,10 @@ class MainActivity : ComponentActivity() {
         val app = application as VictoriaApp
         app.widgetHost.startListening()
         lifecycleScope.launch(Dispatchers.IO) {
+            val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(this@MainActivity)
+            app.prefs.pruneInvalidWidgetIds { id ->
+                runCatching { appWidgetManager.getAppWidgetInfo(id) != null }.getOrDefault(false)
+            }
             dev.victorialauncher.backup.BackupManager.checkAndRunAutoBackup(this@MainActivity, app.prefs)
         }
     }

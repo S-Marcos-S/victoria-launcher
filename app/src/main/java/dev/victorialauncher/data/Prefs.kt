@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.data
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
@@ -465,16 +466,26 @@ class Prefs(private val context: Context) {
 
     suspend fun setWidgetId(id: Int) {
         context.dataStore.edit { pref ->
-            pref[Keys.WIDGET_ID] = id
-            pref[Keys.WIDGET_IDS] = if (id > 0) id.toString() else ""
+            if (id > 0) {
+                pref[Keys.WIDGET_ID] = id
+                pref[Keys.WIDGET_IDS] = id.toString()
+            } else {
+                pref.remove(Keys.WIDGET_ID)
+                pref.remove(Keys.WIDGET_IDS)
+            }
         }
     }
 
     suspend fun setWidgetIds(ids: List<Int>) {
         context.dataStore.edit { pref ->
             val valid = ids.filter { it > 0 }
-            pref[Keys.WIDGET_IDS] = valid.joinToString(",")
-            pref[Keys.WIDGET_ID] = valid.firstOrNull() ?: -1
+            if (valid.isEmpty()) {
+                pref.remove(Keys.WIDGET_IDS)
+                pref.remove(Keys.WIDGET_ID)
+            } else {
+                pref[Keys.WIDGET_IDS] = valid.joinToString(",")
+                pref[Keys.WIDGET_ID] = valid.first()
+            }
         }
     }
 
@@ -504,8 +515,39 @@ class Prefs(private val context: Context) {
             } else {
                 current.filter { it != id }
             }
-            pref[Keys.WIDGET_IDS] = updated.joinToString(",")
-            pref[Keys.WIDGET_ID] = updated.firstOrNull() ?: -1
+            if (updated.isEmpty()) {
+                pref.remove(Keys.WIDGET_IDS)
+                pref.remove(Keys.WIDGET_ID)
+            } else {
+                pref[Keys.WIDGET_IDS] = updated.joinToString(",")
+                pref[Keys.WIDGET_ID] = updated.first()
+            }
+        }
+    }
+
+    suspend fun pruneInvalidWidgetIds(isValid: (Int) -> Boolean) {
+        context.dataStore.edit { pref ->
+            val current = pref[Keys.WIDGET_IDS]?.split(",")
+                ?.mapNotNull { it.trim().toIntOrNull() }
+                ?.filter { it > 0 }
+                ?: (pref[Keys.WIDGET_ID]?.takeIf { it > 0 }?.let { listOf(it) } ?: emptyList())
+            if (current.isEmpty()) {
+                if (pref.contains(Keys.WIDGET_ID) || pref.contains(Keys.WIDGET_IDS)) {
+                    pref.remove(Keys.WIDGET_IDS)
+                    pref.remove(Keys.WIDGET_ID)
+                }
+                return@edit
+            }
+            val valid = current.filter { isValid(it) }
+            if (valid != current) {
+                if (valid.isEmpty()) {
+                    pref.remove(Keys.WIDGET_IDS)
+                    pref.remove(Keys.WIDGET_ID)
+                } else {
+                    pref[Keys.WIDGET_IDS] = valid.joinToString(",")
+                    pref[Keys.WIDGET_ID] = valid.first()
+                }
+            }
         }
     }
 
@@ -639,12 +681,21 @@ class Prefs(private val context: Context) {
         }
     }
 
+    private val EXCLUDED_BACKUP_KEYS = setOf(
+        Keys.WIDGET_ID.name,
+        Keys.WIDGET_IDS.name,
+        Keys.BACKUP_LAST_AUTO_TIMESTAMP.name,
+        Keys.BACKUP_FOLDER_URI.name,
+        Keys.BACKUP_FOLDER_NAME.name,
+    )
+
     suspend fun exportAllPreferencesJson(): String {
         val prefsMap = context.dataStore.data.first().asMap()
         val root = JSONObject()
         val arr = JSONArray()
 
         for ((key, value) in prefsMap) {
+            if (key.name in EXCLUDED_BACKUP_KEYS) continue
             val item = JSONObject()
             item.put("key", key.name)
             when (value) {
@@ -691,12 +742,56 @@ class Prefs(private val context: Context) {
         val root = JSONObject(jsonStr)
         val arr = root.optJSONArray("preferences") ?: return 0
         var count = 0
+        val appWidgetManager = runCatching { AppWidgetManager.getInstance(context) }.getOrNull()
 
         context.dataStore.edit { prefs ->
             for (i in 0 until arr.length()) {
                 val item = arr.getJSONObject(i)
                 val keyName = item.getString("key")
                 val type = item.getString("type")
+
+                // Skip device-specific backup folder settings
+                if (keyName == Keys.BACKUP_FOLDER_URI.name ||
+                    keyName == Keys.BACKUP_FOLDER_NAME.name ||
+                    keyName == Keys.BACKUP_LAST_AUTO_TIMESTAMP.name
+                ) {
+                    continue
+                }
+
+                // Never import raw widget IDs from backup if they don't exist on this device
+                if (keyName == Keys.WIDGET_ID.name) {
+                    val candidateId = item.getInt("value")
+                    val isValid = candidateId > 0 && runCatching {
+                        appWidgetManager?.getAppWidgetInfo(candidateId) != null
+                    }.getOrDefault(false)
+                    if (isValid) {
+                        prefs[Keys.WIDGET_ID] = candidateId
+                        count++
+                    } else {
+                        prefs.remove(Keys.WIDGET_ID)
+                    }
+                    continue
+                }
+
+                if (keyName == Keys.WIDGET_IDS.name) {
+                    val candidateCsv = item.getString("value")
+                    val validIds = candidateCsv.split(",")
+                        .mapNotNull { it.trim().toIntOrNull() }
+                        .filter { id ->
+                            id > 0 && runCatching {
+                                appWidgetManager?.getAppWidgetInfo(id) != null
+                            }.getOrDefault(false)
+                        }
+                    if (validIds.isNotEmpty()) {
+                        prefs[Keys.WIDGET_IDS] = validIds.joinToString(",")
+                        prefs[Keys.WIDGET_ID] = validIds.first()
+                        count++
+                    } else {
+                        prefs.remove(Keys.WIDGET_IDS)
+                        prefs.remove(Keys.WIDGET_ID)
+                    }
+                    continue
+                }
 
                 when (type) {
                     "STRING" -> {
@@ -733,6 +828,23 @@ class Prefs(private val context: Context) {
                         count++
                     }
                 }
+            }
+
+            // Post-import sanitation: ensure no orphaned or dead widget IDs remain
+            val remainingIds = prefs[Keys.WIDGET_IDS]?.split(",")
+                ?.mapNotNull { it.trim().toIntOrNull() }
+                ?.filter { id ->
+                    id > 0 && runCatching {
+                        appWidgetManager?.getAppWidgetInfo(id) != null
+                    }.getOrDefault(false)
+                } ?: emptyList()
+
+            if (remainingIds.isEmpty()) {
+                prefs.remove(Keys.WIDGET_IDS)
+                prefs.remove(Keys.WIDGET_ID)
+            } else {
+                prefs[Keys.WIDGET_IDS] = remainingIds.joinToString(",")
+                prefs[Keys.WIDGET_ID] = remainingIds.first()
             }
         }
         return count

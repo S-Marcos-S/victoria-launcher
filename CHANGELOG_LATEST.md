@@ -1,6 +1,12 @@
-### 🚀 Novidades e Melhorias da Versão 0.59.7
+### 🚀 Novidades e Melhorias da Versão 0.59.8
 
-- **Abertura Confiável das Configurações de Launcher Padrão:**
-  - Corrigido o problema onde o botão "Definir como padrão" no diálogo da tela inicial e nas configurações não abria a tela de configurações do sistema.
-  - Implementada priorização direta do `Settings.ACTION_HOME_SETTINGS` com flags adequadas, garantindo que o sistema abra instantaneamente a tela de seleção de "App de início padrão" em todas as versões do Android (incluindo Android 13, 14, 15 e 16).
-  - Adicionado suporte a múltiplos níveis de contingência (Apps Padrão, RoleManager com Activity, interfaces customizadas de fabricantes como MIUI/HyperOS e Informações do App) para máxima compatibilidade entre diferentes marcas e modelos.
+- **Correção Completa de Widgets Fantasmas e Backup:**
+  - Corrigido o bug onde o backup armazenava referências a widgets locais que, ao serem restaurados (ou após reinstalação/migração), deixavam espaços invisíveis e vazios na tela inicial.
+  - IDs de widgets locais e efêmeros deixaram de ser exportados para backups, prevenindo a criação de widgets inválidos.
+  - Ao restaurar qualquer backup (incluindo backups antigos), o launcher agora valida os widgets com o `AppWidgetManager` do sistema e descarta automaticamente qualquer ID inexistente ou corrompido.
+- **Detecção e Limpeza Automática de Widgets Inválidos:**
+  - A tela inicial agora valida todos os widgets ativos em tempo real; se um widget não existir mais no sistema, seu espaço vazio é imediatamente removido e o layout da tela inicial é normalizado sem ocupar altura fantasma.
+  - Adicionada rotina de saneamento automático em segundo plano que remove referências órfãs de widgets das preferências.
+- **Card Interativo e Opção de Remoção para Widgets Indisponíveis:**
+  - Caso um widget venha a falhar ou ter seu app desinstalado, o launcher exibe um card visível ("Widget indisponível - Toque ou segure para remover").
+  - O menu de opções por clique longo foi atualizado para sempre disponibilizar a ação de **Remover**, permitindo excluir o widget mesmo sem informações do provedor.
