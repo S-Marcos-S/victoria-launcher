@@ -16,6 +16,9 @@
     - *Configurações do Celular:* Atalhos rápidos com suporte bilíngue (PT/EN) para mais de 20 telas essenciais do sistema Android (Wi-Fi, Bluetooth, Bateria, Tela, Som, Armazenamento, Notificações, Segurança, Acessibilidade, Desenvolvedor, Modo Avião, etc.).
     - *Calculadora Integrada:* Reconhecimento automático de expressões aritméticas (adição, subtração, multiplicação, divisão, porcentagem) com exibição imediata do resultado e toque para copiar para a área de transferência.
     - *Pesquisa na Web e na Play Store:* Ações rápidas para buscar diretamente no navegador padrão através do buscador configurado ou pesquisar novos aplicativos na Google Play Store.
+  - **Design Translúcido com Desfoque em Vidro Fosco (Frosted Glass & Blur):**
+    - Substituído o fundo cinza sólido anterior por uma superfície translúcida elegante com ativação nativa do desfoque de fundo do sistema (`FLAG_BLUR_BEHIND` e `blurBehindRadius = 45`), desfocando o papel de parede em tempo real com estética premium de vidro fosco.
+    - Barra de pesquisa, chips de categorias e cartões de resultados redesenhados com transparência vítrea refinada e contornos sutis de 1dp, garantindo contraste impecável e integração harmônica com qualquer tema e papel de parede.
   - **Tratamento Elegante e Seguro de Permissões de Usuário:**
     - Caso a permissão de leitura de contatos (`READ_CONTACTS`) ainda não tenha sido concedida, um card não intrusivo e elegante surge na tela de pesquisa explicando a finalidade e oferecendo um botão *"Ativar"* que abre diretamente o diálogo padrão de permissões do Android.
     - Caso o usuário não conceda ou prefira manter a permissão negada, a pesquisa continua funcionando perfeitamente para aplicativos, configurações, calculadora e web, sem mensagens intrusivas ou travamentos.

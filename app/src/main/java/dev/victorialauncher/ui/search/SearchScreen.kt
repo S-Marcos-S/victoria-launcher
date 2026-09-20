@@ -10,6 +10,9 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.ContactsContract
 import android.widget.Toast
+import android.app.Activity
+import android.os.Build
+import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -17,9 +20,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +67,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,6 +84,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -173,19 +180,53 @@ fun SearchScreen(
         }
     }
 
-    val surfaceColor = MaterialTheme.colorScheme.surface
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val window = (context as? Activity)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && window != null) {
+            val hadBlurFlag = (window.attributes.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND) != 0
+            val prevRadius = window.attributes.blurBehindRadius
+            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = window.attributes
+            params.blurBehindRadius = 45
+            window.attributes = params
+
+            onDispose {
+                val p = window.attributes
+                p.blurBehindRadius = prevRadius
+                window.attributes = p
+                if (!hadBlurFlag) {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                }
+            }
+        } else {
+            onDispose {}
+        }
+    }
+
+    val isDark = isSystemInDarkTheme()
     val contentColor = MaterialTheme.colorScheme.onSurface
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    Surface(
+    // Translucent background scrim for frosted glass over blurred wallpaper
+    val scrimColor = if (isDark) {
+        Color.Black.copy(alpha = 0.52f)
+    } else {
+        Color.White.copy(alpha = 0.58f)
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding(),
-        color = surfaceColor,
+            .background(scrimColor),
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .imePadding(),
+        ) {
             // Search Input Header Bar
             Row(
                 modifier = Modifier
@@ -206,7 +247,11 @@ fun SearchScreen(
                         .weight(1f)
                         .height(52.dp),
                     shape = RoundedCornerShape(26.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                    color = if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isDark) Color.White.copy(alpha = 0.16f) else Color.Black.copy(alpha = 0.10f),
+                    ),
                 ) {
                     Row(
                         modifier = Modifier
@@ -288,10 +333,26 @@ fun SearchScreen(
             ) {
                 items(categories) { (category, label) ->
                     val isSelected = selectedCategory == category
+                    val chipBg = if (isSelected) {
+                        primaryColor
+                    } else {
+                        if (isDark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.06f)
+                    }
+                    val chipContentColor = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        contentColor.copy(alpha = 0.85f)
+                    }
+                    val chipBorder = if (isSelected) null else BorderStroke(
+                        1.dp,
+                        if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f),
+                    )
+
                     Surface(
                         shape = CircleShape,
-                        color = if (isSelected) primaryColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else contentColor.copy(alpha = 0.85f),
+                        color = chipBg,
+                        contentColor = chipContentColor,
+                        border = chipBorder,
                         modifier = Modifier.clickable { selectedCategory = category },
                     ) {
                         Text(
@@ -728,12 +789,17 @@ private fun CalculationRow(
     calc: SearchResult.CalculationItem,
     onCopy: () -> Unit,
 ) {
+    val isDark = isSystemInDarkTheme()
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 18.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        color = if (isDark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.06f),
+        border = BorderStroke(
+            1.dp,
+            if (isDark) Color.White.copy(alpha = 0.14f) else Color.Black.copy(alpha = 0.10f),
+        ),
     ) {
         Row(
             modifier = Modifier
