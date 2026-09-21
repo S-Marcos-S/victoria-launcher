@@ -27,6 +27,7 @@ class VictoriaApp : Application() {
         iconPackRepository = IconPackRepository(this)
         widgetHost = VictoriaAppWidgetHost(this, HOST_ID)
         dev.victorialauncher.backup.BackupAlarmReceiver.schedulePeriodicCheck(this)
+        dev.victorialauncher.wallpaper.WallpaperBlurManager.init(this)
     }
 
     companion object {

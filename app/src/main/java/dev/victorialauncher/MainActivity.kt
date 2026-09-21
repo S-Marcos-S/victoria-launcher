@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         val app = application as VictoriaApp
         app.widgetHost.startListening()
+        dev.victorialauncher.wallpaper.WallpaperBlurManager.refresh(this)
         lifecycleScope.launch(Dispatchers.IO) {
             val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(this@MainActivity)
             app.prefs.pruneInvalidWidgetIds { id ->
