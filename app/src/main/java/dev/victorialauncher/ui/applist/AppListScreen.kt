@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.victorialauncher.ui.applist
 
-import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -10,9 +9,7 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalOverscrollConfiguration
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -67,8 +64,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
@@ -82,9 +77,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import dev.victorialauncher.wallpaper.WallpaperBlurManager
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalView
@@ -152,7 +144,6 @@ fun AppListScreen(
     nameOverrides: Map<String, String>,
     scrub: ScrubState,
     dimAlpha: Float,
-    blurAppList: Boolean = false,
     iconSizeDp: Int,
     labelSizeSp: Int,
     band: ScrubBand,
@@ -599,23 +590,6 @@ fun AppListScreen(
           animationSpec = if (!visible) snap() else tween(120),
           label = "starAlpha",
       )
-      val isDark = isSystemInDarkTheme()
-      val isBlurActive = blurAppList && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-      val blurredWallpaper by WallpaperBlurManager.blurredWallpaper.collectAsState()
-      val backgroundColor = if (isBlurActive) {
-          if (blurredWallpaper != null) {
-              if (isDark) Color.Black.copy(alpha = 0.42f) else Color.White.copy(alpha = 0.48f)
-          } else {
-              if (isDark) Color.Black.copy(alpha = 0.52f) else Color.White.copy(alpha = 0.58f)
-          }
-      } else {
-          Color.Black.copy(alpha = dimAlpha)
-      }
-      val effectiveContentColor = if (isBlurActive) {
-          MaterialTheme.colorScheme.onSurface
-      } else {
-          contentColor
-      }
       Box(
           modifier = Modifier
               .fillMaxSize()
@@ -627,21 +601,9 @@ fun AppListScreen(
                   scaleX = scale
                   scaleY = scale
                   alpha = (1f - 0.85f * progress) * starAlpha
-              },
+              }
+              .background(Color.Black.copy(alpha = dimAlpha)),
       ) {
-        if (isBlurActive && blurredWallpaper != null) {
-            Image(
-                bitmap = blurredWallpaper!!.asImageBitmap(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(backgroundColor),
-        )
         CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
         LazyColumn(
             state = listState,
@@ -688,7 +650,7 @@ fun AppListScreen(
                     is AppListRow.Header -> SectionHeader(
                         text = row.text,
                         labelSizeSp = labelSizeSp,
-                        contentColor = effectiveContentColor,
+                        contentColor = contentColor,
                         alignRight = alignRight,
                         startPadding = rowStart,
                         endPadding = rowEnd,
@@ -700,7 +662,7 @@ fun AppListScreen(
                         val latestNotification = appNotifications.firstOrNull()
 
                         AppRow(
-                            contentColor = effectiveContentColor,
+                            contentColor = contentColor,
                             alignRight = alignRight,
                             app = row.app,
                             label = displayName(row.app),
@@ -745,17 +707,17 @@ fun AppListScreen(
                     if (alignRight) {
                         Text(
                             stringResource(R.string.action_open_settings),
-                            color = effectiveContentColor.copy(alpha = 0.8f),
+                            color = contentColor.copy(alpha = 0.8f),
                             fontSize = labelSizeSp.sp,
                         )
                         Spacer(Modifier.width(16.dp))
-                        Icon(Icons.Filled.Settings, contentDescription = null, tint = effectiveContentColor.copy(alpha = 0.8f))
+                        Icon(Icons.Filled.Settings, contentDescription = null, tint = contentColor.copy(alpha = 0.8f))
                     } else {
-                        Icon(Icons.Filled.Settings, contentDescription = null, tint = effectiveContentColor.copy(alpha = 0.8f))
+                        Icon(Icons.Filled.Settings, contentDescription = null, tint = contentColor.copy(alpha = 0.8f))
                         Spacer(Modifier.width(16.dp))
                         Text(
                             stringResource(R.string.action_open_settings),
-                            color = effectiveContentColor.copy(alpha = 0.8f),
+                            color = contentColor.copy(alpha = 0.8f),
                             fontSize = labelSizeSp.sp,
                         )
                     }
@@ -765,11 +727,6 @@ fun AppListScreen(
         }
 
         // Fade the list out as it scrolls off the top.
-        val fadeTopColor = if (isBlurActive) {
-            if (isDark) Color.Black.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.75f)
-        } else {
-            Color.Black.copy(alpha = 0.75f)
-        }
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -777,7 +734,7 @@ fun AppListScreen(
                 .height(56.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(fadeTopColor, Color.Transparent),
+                        listOf(Color.Black.copy(alpha = 0.75f), Color.Transparent),
                     )
                 ),
         )
@@ -793,7 +750,6 @@ fun AppListScreen(
               band = band,
               side = activeSide,
               sidePaddingDp = sidePaddingDp,
-              contentColor = effectiveContentColor,
               modifier = Modifier
                   .align(if (activeSide == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd)
                   .graphicsLayer { alpha = dismissAlpha },

@@ -10,7 +10,9 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.ContactsContract
 import android.widget.Toast
+import android.app.Activity
 import android.os.Build
+import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -19,7 +21,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -66,7 +67,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -76,9 +76,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import dev.victorialauncher.wallpaper.WallpaperBlurManager
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -183,33 +180,46 @@ fun SearchScreen(
         }
     }
 
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val window = (context as? Activity)?.window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && window != null) {
+            val hadBlurFlag = (window.attributes.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND) != 0
+            val prevRadius = window.attributes.blurBehindRadius
+            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = window.attributes
+            params.blurBehindRadius = 45
+            window.attributes = params
+
+            onDispose {
+                val p = window.attributes
+                p.blurBehindRadius = prevRadius
+                window.attributes = p
+                if (!hadBlurFlag) {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                }
+            }
+        } else {
+            onDispose {}
+        }
+    }
+
     val isDark = isSystemInDarkTheme()
     val contentColor = MaterialTheme.colorScheme.onSurface
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    val blurredWallpaper by WallpaperBlurManager.blurredWallpaper.collectAsState()
+    // Translucent background scrim for frosted glass over blurred wallpaper
     val scrimColor = if (isDark) {
-        if (blurredWallpaper != null) Color.Black.copy(alpha = 0.42f) else Color.Black.copy(alpha = 0.52f)
+        Color.Black.copy(alpha = 0.52f)
     } else {
-        if (blurredWallpaper != null) Color.White.copy(alpha = 0.48f) else Color.White.copy(alpha = 0.58f)
+        Color.White.copy(alpha = 0.58f)
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(scrimColor),
     ) {
-        if (blurredWallpaper != null) {
-            Image(
-                bitmap = blurredWallpaper!!.asImageBitmap(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(scrimColor),
-        )
         Column(
             modifier = Modifier
                 .fillMaxSize()

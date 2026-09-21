@@ -69,7 +69,6 @@ class Prefs(private val context: Context) {
         val FONT = stringPreferencesKey("font")
         val HIDE_STATUS_BAR = booleanPreferencesKey("hide_status_bar")
         val DIM_WALLPAPER_ALPHA = floatPreferencesKey("dim_wallpaper_alpha")
-        val BLUR_APP_LIST = booleanPreferencesKey("blur_app_list")
         val HAPTICS_ENABLED = booleanPreferencesKey("haptics_enabled")
         val DIM_HOME_ALPHA = floatPreferencesKey("dim_home_alpha")
         val SHOW_FAVORITE_LABELS = booleanPreferencesKey("show_favorite_labels")
@@ -170,8 +169,6 @@ class Prefs(private val context: Context) {
     val hideStatusBar: Flow<Boolean> = data.map { it[Keys.HIDE_STATUS_BAR] ?: false }.distinctUntilChanged()
 
     val dimWallpaperAlpha: Flow<Float> = data.map { it[Keys.DIM_WALLPAPER_ALPHA] ?: 0.35f }.distinctUntilChanged()
-
-    val blurAppList: Flow<Boolean> = data.map { it[Keys.BLUR_APP_LIST] ?: false }.distinctUntilChanged()
 
     val hapticsEnabled: Flow<Boolean> = data.map { it[Keys.HAPTICS_ENABLED] ?: true }.distinctUntilChanged()
 
@@ -415,10 +412,6 @@ class Prefs(private val context: Context) {
 
     suspend fun setDimWallpaperAlpha(v: Float) {
         context.dataStore.edit { it[Keys.DIM_WALLPAPER_ALPHA] = v }
-    }
-
-    suspend fun setBlurAppList(v: Boolean) {
-        context.dataStore.edit { it[Keys.BLUR_APP_LIST] = v }
     }
 
     suspend fun setDimHomeAlpha(v: Float) {
