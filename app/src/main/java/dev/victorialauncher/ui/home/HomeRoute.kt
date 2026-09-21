@@ -483,6 +483,7 @@ fun HomeRoute(
                 nameOverrides = nameOverrides,
                 scrub = scrub,
                 dimAlpha = settings.dimWallpaperAlpha,
+                blurAppList = settings.blurAppList,
                 iconSizeDp = settings.iconSizeDp,
                 labelSizeSp = settings.labelSizeSp,
                 band = band,
@@ -533,6 +534,7 @@ fun HomeRoute(
                 band = band,
                 side = scrub.side,
                 sidePaddingDp = settings.sidePaddingDp,
+                contentColor = settings.contentColor,
                 modifier = Modifier.align(
                     if (scrub.side == EdgeSide.LEFT) Alignment.CenterStart else Alignment.CenterEnd
                 ),
@@ -706,6 +708,7 @@ data class HomeSettings(
     val showAlphabet: Boolean,
     val alignRight: Boolean,
     val dimWallpaperAlpha: Float,
+    val blurAppList: Boolean = false,
     val dimHomeAlpha: Float,
     val hapticsEnabled: Boolean,
     val showFavoriteLabels: Boolean,

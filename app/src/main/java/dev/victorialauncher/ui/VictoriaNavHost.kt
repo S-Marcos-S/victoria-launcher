@@ -139,6 +139,7 @@ fun VictoriaNavHost(
     val showAlphabet by app.prefs.showAlphabet.collectAsState(initial = true)
     val alignRight by app.prefs.alignRight.collectAsState(initial = false)
     val dimWallpaperAlpha by app.prefs.dimWallpaperAlpha.collectAsState(initial = 0.35f)
+    val blurAppList by app.prefs.blurAppList.collectAsState(initial = false)
     val hapticsEnabled by app.prefs.hapticsEnabled.collectAsState(initial = true)
     val dimHomeAlpha by app.prefs.dimHomeAlpha.collectAsState(initial = 0f)
     val showFavoriteLabels by app.prefs.showFavoriteLabels.collectAsState(initial = true)
@@ -238,6 +239,7 @@ fun VictoriaNavHost(
         showAlphabet = showAlphabet,
         alignRight = alignRight,
         dimWallpaperAlpha = dimWallpaperAlpha,
+        blurAppList = blurAppList,
         dimHomeAlpha = dimHomeAlpha,
         hapticsEnabled = hapticsEnabled,
         showFavoriteLabels = showFavoriteLabels,
@@ -389,6 +391,7 @@ fun VictoriaNavHost(
                 font = font,
                 hideStatusBar = hideStatusBar,
                 dimWallpaperAlpha = dimWallpaperAlpha,
+                blurAppList = blurAppList,
                 hapticsEnabled = hapticsEnabled,
                 dimHomeAlpha = dimHomeAlpha,
                 showFavoriteLabels = showFavoriteLabels,
@@ -411,6 +414,7 @@ fun VictoriaNavHost(
                 onSetFont = { scope.launch { app.prefs.setFont(it) } },
                 onSetHideStatusBar = { scope.launch { app.prefs.setHideStatusBar(it) } },
                 onSetDimWallpaper = { scope.launch { app.prefs.setDimWallpaperAlpha(it) } },
+                onSetBlurAppList = { scope.launch { app.prefs.setBlurAppList(it) } },
                 onSetHaptics = { scope.launch { app.prefs.setHapticsEnabled(it) } },
                 onSetDimHome = { scope.launch { app.prefs.setDimHomeAlpha(it) } },
                 onSetShowFavoriteLabels = { scope.launch { app.prefs.setShowFavoriteLabels(it) } },

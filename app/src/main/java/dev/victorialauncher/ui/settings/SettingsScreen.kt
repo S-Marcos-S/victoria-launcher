@@ -69,6 +69,7 @@ fun SettingsScreen(
     font: AppFont,
     hideStatusBar: Boolean,
     dimWallpaperAlpha: Float,
+    blurAppList: Boolean = false,
     hapticsEnabled: Boolean,
     dimHomeAlpha: Float,
     showFavoriteLabels: Boolean,
@@ -87,6 +88,7 @@ fun SettingsScreen(
     onSetFont: (AppFont) -> Unit,
     onSetHideStatusBar: (Boolean) -> Unit,
     onSetDimWallpaper: (Float) -> Unit,
+    onSetBlurAppList: (Boolean) -> Unit = {},
     onSetHaptics: (Boolean) -> Unit,
     onSetDimHome: (Float) -> Unit,
     onSetShowFavoriteLabels: (Boolean) -> Unit,
@@ -215,14 +217,23 @@ fun SettingsScreen(
                         step = 0.05f,
                     )
                     RowDivider()
-                    SliderRow(
-                        label = stringResource(R.string.settings_dim_applist),
-                        value = dimWallpaperAlpha,
-                        range = 0f..0.85f,
-                        valueLabel = "${(dimWallpaperAlpha * 100).toInt()}%",
-                        onValueChange = onSetDimWallpaper,
-                        step = 0.05f,
+                    SwitchRowWithDetail(
+                        label = stringResource(R.string.settings_blur_applist),
+                        detail = stringResource(R.string.settings_blur_applist_detail),
+                        checked = blurAppList,
+                        onCheckedChange = onSetBlurAppList,
                     )
+                    if (!blurAppList) {
+                        RowDivider()
+                        SliderRow(
+                            label = stringResource(R.string.settings_dim_applist),
+                            value = dimWallpaperAlpha,
+                            range = 0f..0.85f,
+                            valueLabel = "${(dimWallpaperAlpha * 100).toInt()}%",
+                            onValueChange = onSetDimWallpaper,
+                            step = 0.05f,
+                        )
+                    }
                 }
             }
 

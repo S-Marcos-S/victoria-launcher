@@ -139,6 +139,8 @@
     <string name="settings_hide_status_bar">Hide status bar</string>
     <string name="settings_dim_home">Dim wallpaper on home screen</string>
     <string name="settings_dim_applist">Dim wallpaper behind app list</string>
+    <string name="settings_blur_applist">Blur wallpaper behind app list</string>
+    <string name="settings_blur_applist_detail">Apply frosted glass blur to wallpaper when opening app list (Android 12+)</string>
     <string name="settings_haptics">Haptic feedback</string>
     <string name="settings_haptics_detail">Follows your system\'s touch feedback setting</string>
     <string name="settings_edge_side">Which edge opens the app list</string>

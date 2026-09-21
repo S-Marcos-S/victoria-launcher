@@ -1,12 +1,10 @@
-### 🚀 Novidades e Melhorias da Versão 0.59.8
+### 🚀 Novidades e Melhorias da Versão 0.59.9
 
-- **Correção Completa de Widgets Fantasmas e Backup:**
-  - Corrigido o bug onde o backup armazenava referências a widgets locais que, ao serem restaurados (ou após reinstalação/migração), deixavam espaços invisíveis e vazios na tela inicial.
-  - IDs de widgets locais e efêmeros deixaram de ser exportados para backups, prevenindo a criação de widgets inválidos.
-  - Ao restaurar qualquer backup (incluindo backups antigos), o launcher agora valida os widgets com o `AppWidgetManager` do sistema e descarta automaticamente qualquer ID inexistente ou corrompido.
-- **Detecção e Limpeza Automática de Widgets Inválidos:**
-  - A tela inicial agora valida todos os widgets ativos em tempo real; se um widget não existir mais no sistema, seu espaço vazio é imediatamente removido e o layout da tela inicial é normalizado sem ocupar altura fantasma.
-  - Adicionada rotina de saneamento automático em segundo plano que remove referências órfãs de widgets das preferências.
-- **Card Interativo e Opção de Remoção para Widgets Indisponíveis:**
-  - Caso um widget venha a falhar ou ter seu app desinstalado, o launcher exibe um card visível ("Widget indisponível - Toque ou segure para remover").
-  - O menu de opções por clique longo foi atualizado para sempre disponibilizar a ação de **Remover**, permitindo excluir o widget mesmo sem informações do provedor.
+- **Opção de Desfoque em Vidro Fosco (Blur) na Lista de Aplicativos (`AppListScreen`):**
+  - Adicionada opção nas configurações (*Aparência → Desfocar papel de parede na lista de apps*) para ativar o desfoque de fundo em tempo real na tela de aplicativos.
+  - Implementado com a mesma tecnologia de desfoque nativo do sistema presente na tela de pesquisa (`FLAG_BLUR_BEHIND` e `blurBehindRadius = 45` no Android 12+).
+  - Superfície com camada translúcida de vidro fosco calibrada para temas claro e escuro (`52%` preto em modo escuro e `58%` branco em modo claro), permitindo que as cores do wallpaper brilhem suavemente ao fundo.
+  - Ajuste dinâmico das cores de tipografia, cabeçalhos de seções e atalho de configurações para alto contraste e legibilidade impecável sobre o vidro fosco.
+  - Efeito de desvanecimento suave do topo da lista adaptado ao tema, evitando bordas escuras indesejadas no modo claro.
+  - O índice alfabético lateral (`EdgeScrubber`) agora respeita a cor de contraste dinâmico tanto na tela inicial quanto na lista de aplicativos.
+  - Transição segura e automática do desfoque de janela: o efeito é ativado dinamicamente ao abrir a gaveta de apps e imediatamente desativado ao fechar, retornar para a tela inicial ou alternar para a pesquisa.

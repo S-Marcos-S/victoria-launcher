@@ -47,6 +47,7 @@ fun EdgeScrubber(
     side: EdgeSide,
     modifier: Modifier = Modifier,
     sidePaddingDp: Int = 20,
+    contentColor: Color = Color.White,
 ) {
     if (letters.isEmpty() || band.heightPx <= 0f) return
     val density = LocalDensity.current.density
@@ -93,14 +94,14 @@ fun EdgeScrubber(
                     Icon(
                         imageVector = Icons.Rounded.Star,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = contentColor,
                         modifier = Modifier.size(13.dp),
                     )
                 } else {
                     Text(
                         text = c.toString(),
                         fontSize = 12.sp,
-                        color = Color.White,
+                        color = contentColor,
                     )
                 }
             }
