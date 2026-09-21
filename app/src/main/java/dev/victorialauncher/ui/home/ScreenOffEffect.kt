@@ -36,14 +36,30 @@ fun ScreenOffEffect(
 
     LaunchedEffect(Unit) {
         progress.snapTo(0f)
-        progress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = 240,
-                easing = FastOutSlowInEasing,
-            ),
-        )
-        onAnimationEnd()
+        var lockRequested = false
+        try {
+            progress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 240,
+                    easing = FastOutSlowInEasing,
+                ),
+            ) {
+                // Antecipa o comando de desligamento no sistema (nos últimos ~60ms)
+                // para que a transição de energia do display ocorra em sincronia com o
+                // fechamento do círculo, evitando que a tela de bloqueio (Keyguard)
+                // consiga desenhar um frame antes do visor apagar.
+                if (!lockRequested && value >= 0.85f) {
+                    lockRequested = true
+                    onAnimationEnd()
+                }
+            }
+        } finally {
+            if (!lockRequested) {
+                lockRequested = true
+                onAnimationEnd()
+            }
+        }
     }
 
     Canvas(
