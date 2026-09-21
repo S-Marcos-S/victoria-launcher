@@ -34,7 +34,7 @@ fun ScreenOffEffect(
     val progress = remember { Animatable(0f) }
     val path = remember { Path() }
 
-    LaunchedEffect(targetOffset) {
+    LaunchedEffect(Unit) {
         progress.snapTo(0f)
         progress.animateTo(
             targetValue = 1f,

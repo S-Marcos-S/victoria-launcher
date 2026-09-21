@@ -285,7 +285,7 @@ fun HomeRoute(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) closeAppList(snap = true)
-            if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_STOP) {
+            if (event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_RESUME) {
                 lockTargetOffset = null
             }
         }
@@ -651,6 +651,13 @@ fun HomeRoute(
                             context.getString(R.string.toast_enable_accessibility_lock),
                             Toast.LENGTH_SHORT,
                         ).show()
+                    } else {
+                        scope.launch {
+                            delay(2000L)
+                            if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                                lockTargetOffset = null
+                            }
+                        }
                     }
                 },
             )
