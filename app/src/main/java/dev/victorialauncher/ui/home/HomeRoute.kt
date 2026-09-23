@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -339,7 +340,9 @@ fun HomeRoute(
         // Opening answers a finger on the edge and must not lag behind it, so it snaps. Coming
         // back gets a short decelerating fade: the wallpaper is already there, so this is only
         // the icons settling in, and cutting them in on a single frame is what read as a jolt.
-        val showHome = !appListVisible || scrub.letter == SCRUBBER_STAR
+        val showHome by remember(appListVisible, scrub) {
+            derivedStateOf { !appListVisible || scrub.letter == SCRUBBER_STAR }
+        }
         val homeAlpha by animateFloatAsState(
             targetValue = if (showHome) 1f else 0f,
             animationSpec = if (!showHome || snapHome) {
@@ -349,13 +352,16 @@ fun HomeRoute(
             },
             label = "homeAlpha",
         )
+        val blockHomeTouches by remember(appListVisible, scrub) {
+            derivedStateOf { appListVisible && !scrub.active }
+        }
         Box(
             modifier = Modifier
                 .graphicsLayer { alpha = homeAlpha }
                 .then(
                     // Hidden, but still laid out: an AppWidgetHostView that is never placed
                     // loses its layout and comes back with its text collapsed.
-                    if (appListVisible && !scrub.active) {
+                    if (blockHomeTouches) {
                         Modifier.pointerInput(Unit) {
                             awaitEachGesture {
                                 while (true) {
@@ -465,16 +471,15 @@ fun HomeRoute(
 
         // Kept composed and measured even while hidden, just never placed. Not placing it
         // means it neither draws nor receives touches.
-        val overlayAlpha = if (appListVisible) 1f else 0f
         Box(
             modifier = Modifier
-                .graphicsLayer { alpha = overlayAlpha }
+                .graphicsLayer { alpha = if (appListVisible) 1f else 0f }
                 .layout { measurable, constraints ->
                     val placeable = measurable.measure(constraints)
-                    if (appListVisible) {
-                        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-                    } else {
-                        layout(0, 0) {}
+                    layout(placeable.width, placeable.height) {
+                        if (appListVisible) {
+                            placeable.place(0, 0)
+                        }
                     }
                 },
         ) {

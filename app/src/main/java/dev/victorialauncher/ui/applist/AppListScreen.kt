@@ -56,8 +56,6 @@ import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -523,8 +521,6 @@ fun AppListScreen(
     }
 
     // Long-press anywhere in the list (not just favorites) to edit that app.
-    var menuForKey by remember { mutableStateOf<String?>(null) }
-    var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     var editDialogFor by remember { mutableStateOf<AppInfo?>(null) }
     val touchPosition = remember { mutableStateOf(Offset.Zero) }
 
@@ -673,17 +669,9 @@ fun AppListScreen(
                             onNotificationClick = { notif ->
                                 activeDialogNotification = notif to row.app
                             },
-                            menuExpanded = false,
-                            menuOffset = menuOffset,
                             touchPosition = touchPosition,
                             onLaunch = { onLaunch(row.app) },
                             onLongPress = { _ -> appMenuFor = row.app },
-                            onDismissMenu = { menuForKey = null },
-                            onSetFavorite = { onSetFavorite(row.app, it) },
-                            onEdit = { editDialogFor = row.app },
-                            onAppInfo = { onAppInfo(row.app) },
-                            onHide = { onHideApp(row.app) },
-                            onMoveToFolder = { onMoveToFolder(row.app) },
                             startPadding = rowStart,
                             endPadding = rowEnd,
                         )
@@ -1022,16 +1010,8 @@ private fun AppRow(
     iconSizeDp: Int,
     labelSizeSp: Int,
     isFavorite: Boolean,
-    menuExpanded: Boolean,
-    menuOffset: DpOffset,
     onLaunch: () -> Unit,
     onLongPress: (DpOffset) -> Unit,
-    onDismissMenu: () -> Unit,
-    onSetFavorite: (Boolean) -> Unit,
-    onEdit: () -> Unit,
-    onAppInfo: () -> Unit,
-    onHide: () -> Unit,
-    onMoveToFolder: () -> Unit,
     notification: dev.victorialauncher.notification.AppNotificationItem? = null,
     onNotificationClick: (dev.victorialauncher.notification.AppNotificationItem) -> Unit = {},
     startPadding: Dp = 20.dp,
@@ -1043,139 +1023,104 @@ private fun AppRow(
     val pressed by interaction.collectIsPressedAsState()
     val density = LocalDensity.current
 
-    Box {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                // Ahead of the inset, so the long-press menu is still placed against the
-                // whole row rather than 20dp to the left of the finger.
-                .recordTouchPosition(touchPosition)
-                .padding(
-                    start = (startPadding - 8.dp).coerceAtLeast(0.dp),
-                    end = (endPadding - 8.dp).coerceAtLeast(0.dp),
-                )
-                .background(
-                    color = if (pressed) contentColor.copy(alpha = 0.15f) else Color.Transparent,
-                    shape = RoundedCornerShape(18.dp),
-                )
-                .combinedClickable(
-                    interactionSource = interaction,
-                    indication = null,
-                    onClick = onLaunch,
-                    onLongClick = {
-                        onLongPress(
-                            with(density) {
-                                DpOffset(touchPosition.value.x.toDp(), touchPosition.value.y.toDp())
-                            }
-                        )
-                    },
-                )
-                // The whole row is the target, not the label: at small icon sizes the strip
-                // left to tap was thinner than a fingertip.
-                .heightIn(min = MIN_ROW_HEIGHT)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val notificationContent: @Composable () -> Unit = {
-                if (notification != null) {
-                    val notifText = if (notification.messages.isNotEmpty()) {
-                        val lastMsg = notification.messages.last()
-                        val countSuffix = if (notification.messages.size > 1) " (${notification.messages.size})" else ""
-                        if (notification.title.isNotBlank()) {
-                            "${notification.title}: ${lastMsg.text}$countSuffix"
-                        } else {
-                            "${lastMsg.text}$countSuffix"
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            // Ahead of the inset, so the long-press menu is still placed against the
+            // whole row rather than 20dp to the left of the finger.
+            .recordTouchPosition(touchPosition)
+            .padding(
+                start = (startPadding - 8.dp).coerceAtLeast(0.dp),
+                end = (endPadding - 8.dp).coerceAtLeast(0.dp),
+            )
+            .background(
+                color = if (pressed) contentColor.copy(alpha = 0.15f) else Color.Transparent,
+                shape = RoundedCornerShape(18.dp),
+            )
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = onLaunch,
+                onLongClick = {
+                    onLongPress(
+                        with(density) {
+                            DpOffset(touchPosition.value.x.toDp(), touchPosition.value.y.toDp())
                         }
-                    } else if (notification.text.isNotBlank()) {
-                        "${notification.title}: ${notification.text}"
+                    )
+                },
+            )
+            // The whole row is the target, not the label: at small icon sizes the strip
+            // left to tap was thinner than a fingertip.
+            .heightIn(min = MIN_ROW_HEIGHT)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val notificationContent: @Composable () -> Unit = {
+            if (notification != null) {
+                val notifText = if (notification.messages.isNotEmpty()) {
+                    val lastMsg = notification.messages.last()
+                    val countSuffix = if (notification.messages.size > 1) " (${notification.messages.size})" else ""
+                    if (notification.title.isNotBlank()) {
+                        "${notification.title}: ${lastMsg.text}$countSuffix"
                     } else {
-                        notification.title
+                        "${lastMsg.text}$countSuffix"
                     }
-                    Text(
-                        text = notifText,
-                        color = contentColor.copy(alpha = 0.65f),
-                        fontSize = (labelSizeSp - 3).coerceAtLeast(11).sp,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { onNotificationClick(notification) },
-                            ),
-                    )
+                } else if (notification.text.isNotBlank()) {
+                    "${notification.title}: ${notification.text}"
+                } else {
+                    notification.title
                 }
-            }
-
-            if (alignRight) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.End,
-                ) {
-                    Text(
-                        label,
-                        color = contentColor,
-                        fontSize = labelSizeSp.sp,
-                        textAlign = TextAlign.End,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    notificationContent()
-                }
-                Spacer(Modifier.width(16.dp))
-                AppIcon(app = app, sizeDp = iconSizeDp)
-            } else {
-                AppIcon(app = app, sizeDp = iconSizeDp)
-                Spacer(Modifier.width(16.dp))
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.Start,
-                ) {
-                    Text(
-                        label,
-                        color = contentColor,
-                        fontSize = labelSizeSp.sp,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    notificationContent()
-                }
+                Text(
+                    text = notifText,
+                    color = contentColor.copy(alpha = 0.65f),
+                    fontSize = (labelSizeSp - 3).coerceAtLeast(11).sp,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    textAlign = if (alignRight) TextAlign.End else TextAlign.Start,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { onNotificationClick(notification) },
+                        ),
+                )
             }
         }
 
-        DropdownMenu(expanded = menuExpanded, onDismissRequest = onDismissMenu, offset = menuOffset) {
-            DropdownMenuItem(
-                text = { Text(stringResource(if (isFavorite) R.string.applist_remove_favorite else R.string.applist_add_favorite)) },
-                leadingIcon = {
-                    Icon(
-                        if (isFavorite) Icons.Filled.StarBorder else Icons.Filled.Star,
-                        contentDescription = null,
-                    )
-                },
-                onClick = { onDismissMenu(); onSetFavorite(!isFavorite) },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_edit_icon_and_name)) },
-                leadingIcon = { Icon(Icons.Filled.Tune, contentDescription = null) },
-                onClick = { onDismissMenu(); onEdit() },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_app_info)) },
-                leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },
-                onClick = { onDismissMenu(); onAppInfo() },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_move_to_folder)) },
-                leadingIcon = { Icon(Icons.Filled.Folder, contentDescription = null) },
-                onClick = { onDismissMenu(); onMoveToFolder() },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.applist_hide)) },
-                leadingIcon = { Icon(Icons.Filled.VisibilityOff, contentDescription = null) },
-                onClick = { onDismissMenu(); onHide() },
-            )
+        if (alignRight) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.End,
+            ) {
+                Text(
+                    label,
+                    color = contentColor,
+                    fontSize = labelSizeSp.sp,
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                notificationContent()
+            }
+            Spacer(Modifier.width(16.dp))
+            AppIcon(app = app, sizeDp = iconSizeDp)
+        } else {
+            AppIcon(app = app, sizeDp = iconSizeDp)
+            Spacer(Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(
+                    label,
+                    color = contentColor,
+                    fontSize = labelSizeSp.sp,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                notificationContent()
+            }
         }
     }
 }
